@@ -1,0 +1,74 @@
+name: m2-connectivity-selection
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/m2-connectivity-selection.yml"
+      - "experiments/run_connectivity_metric_selection.py"
+      - "experiments/run_diffusivity_proxy_falsification.py"
+      - "experiments/run_completion_support_ambiguity.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13"}
+      - run: python -m pip install -e .
+      - name: Run seeds
+        run: |
+          set -e
+          mkdir -p metric-selection
+          for seed in 31 53 79 113 167; do
+            python experiments/run_connectivity_metric_selection.py \
+              --seed "$seed" --random-cases 80 --replicates 100 \
+              --output "metric-selection/seed-${seed}.json" >/dev/null
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          runs=[]
+          for p in sorted(Path('metric-selection').glob('seed-*.json')):
+              d=json.loads(p.read_text())
+              runs.append({
+                  'seed':d['seed'],
+                  'normalized_rank':d['rank_correlation_with_si_spread']['normalized_laplacian_gap'],
+                  'algebraic_rank':d['rank_correlation_with_si_spread']['algebraic_connectivity_fraction'],
+                  'monotone':d['conclusion']['monotone_under_tested_missing_returns'],
+                  'supported':d['conclusion']['algebraic_candidate_supported'],
+              })
+          summary={
+              'schema':'adaptive-evolution.connectivity-metric-selection-aggregate.v0.1',
+              'runs':runs,
+              'mean_normalized_rank':sum(r['normalized_rank'] for r in runs)/len(runs),
+              'mean_algebraic_rank':sum(r['algebraic_rank'] for r in runs)/len(runs),
+              'monotone_runs':sum(bool(r['monotone']) for r in runs),
+              'supported_runs':sum(bool(r['supported']) for r in runs),
+              'decision':'adopt_algebraic_candidate_for_m2_diagnostics' if sum(bool(r['supported']) for r in runs)>=4 else 'retain_normalized_candidate_for_more_tests',
+              'authority':'synthetic_metric_selection_only',
+          }
+          Path('metric-selection/summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(summary,indent=2,sort_keys=True))
+          PY
+      - name: Publish results
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/metric-selection"; mkdir -p "$tmp"
+          cp -a metric-selection/. "$tmp/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan m2-connectivity-selection-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/m2-connectivity-selection/latest
+          cp -a "$tmp"/. results/m2-connectivity-selection/latest/
+          git add results/m2-connectivity-selection/latest
+          git commit -m "Record M2 connectivity metric selection for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:m2-connectivity-selection-results
