@@ -1,0 +1,30 @@
+{
+  "checked_at": "2026-08-19T21:13:00+09:00",
+  "repository": "NousResearch/hermes-agent",
+  "ref": "13ce0c5c675e843af70d19c9e5144249cd51c8d1",
+  "telemetry_schema_version": "hermes.observer.v1",
+  "plugin": {
+    "mode": "general-directory-plugin",
+    "decision": "plugin-first; fork only after live missing-primitive evidence"
+  },
+  "hooks_used": {
+    "on_session_start": ["session_id", "model", "platform"],
+    "on_session_end": ["session_id", "task_id", "turn_id", "completed", "failed", "interrupted", "turn_exit_reason", "model", "platform"],
+    "on_session_finalize": ["session_id", "platform"],
+    "on_session_reset": ["session_id", "platform"],
+    "post_tool_call": ["tool_name", "task_id", "session_id", "tool_call_id", "turn_id", "api_request_id", "duration_ms", "status", "error_type", "error_message"],
+    "api_request_error": ["task_id", "turn_id", "api_request_id", "session_id", "platform", "model", "provider", "status_code", "retry_count", "max_retries", "retryable", "reason", "error"],
+    "on_skill_lifecycle": ["action", "skill_name", "provenance", "task_id", "session_id", "use_count", "reused", "reuse_after_patch"],
+    "subagent_start": ["parent_session_id", "parent_turn_id", "parent_subagent_id", "child_session_id", "child_subagent_id", "child_role", "child_goal"],
+    "subagent_stop": ["parent_session_id", "parent_turn_id", "child_session_id", "child_role", "child_summary", "child_status", "tool_call_history", "duration_ms"],
+    "kanban_task_claimed": ["task_id", "profile_name", "board", "assignee", "run_id"],
+    "kanban_task_completed": ["task_id", "profile_name", "board", "assignee", "run_id", "summary"],
+    "kanban_task_blocked": ["task_id", "profile_name", "board", "assignee", "run_id", "reason"]
+  },
+  "hooks_intentionally_not_used": {
+    "pre_tool_call": "post_tool_call already covers success/block/error and correlation metadata; avoid unnecessary control hook registration",
+    "pre_api_request": "not needed for M1/M2 organization state; avoids constructing/requesting high-sensitivity request telemetry",
+    "post_api_request": "success payload/usage not required for M1/M2 state estimator"
+  },
+  "known_boundary": "subagent_start is observer-only after child construction; delegate_task can be blocked earlier through pre_tool_call, but no universal pre-agent invocation gate is assumed"
+}
