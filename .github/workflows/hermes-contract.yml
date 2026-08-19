@@ -30,5 +30,7 @@ jobs:
         run: |
           python -m pip install -e .
           python -m pip install 'hermes-agent==0.20.4'
-      - name: Validate real Hermes plugin contract
+      - name: Validate Hermes directory-plugin path
+        run: hermes plugins doctor . --ci
+      - name: Validate Hermes pip-plugin contract
         run: python scripts/check_hermes_contract.py
