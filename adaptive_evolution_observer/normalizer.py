@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
 
@@ -8,6 +7,7 @@ from typing import Any
 @dataclass(frozen=True)
 class CanonicalEvent:
     seq: int
+    observed_at_ns: int | None
     hook: str
     event_key: str
     session_id: str | None
@@ -34,25 +34,22 @@ def _child_agent(subagent_id: str | None, child_session_id: str | None) -> str |
 def _session_start_is_root_evidence(payload: dict[str, Any]) -> bool:
     """Return whether a session-start event may support root identity.
 
-    Hermes currently exposes ``platform`` additively on several lifecycle
-    surfaces. A subagent AIAgent is created with ``platform='subagent'``. Even
-    if a future/runtime path emits ``on_session_start`` for that child, it must
-    never promote the child session to root when the stronger
-    ``subagent_start`` edge was dropped. Missing platform remains weak root
-    evidence for backward compatibility; explicit subagent evidence wins.
+    A subagent AIAgent is created with ``platform='subagent'``. Even if a
+    runtime path emits ``on_session_start`` for that child, it must never
+    promote the child session to root when the stronger ``subagent_start`` edge
+    was dropped. Missing platform remains weak root evidence for backward
+    compatibility; explicit child evidence always wins.
     """
     platform = str(payload.get("platform") or "").strip().lower()
     return platform != "subagent"
 
 
 def normalize(raw_events: list[dict[str, Any]]) -> tuple[list[CanonicalEvent], dict[str, Any]]:
-    """Normalize/deduplicate raw hook records.
+    """Normalize/deduplicate raw hook records with conservative identity.
 
-    Two-pass identity resolution makes mild reordering harmless: a child tool
-    event can arrive before its corresponding subagent_start record and still be
-    attributed correctly during replay. Identity evidence is conservative:
-    explicit child-session mappings outrank session-start hints, and unknown
-    sessions remain uncertain rather than being invented as roots.
+    Two-pass identity resolution makes reordering harmless when a later or
+    earlier ``subagent_start`` supplies the child-session mapping. Unknown
+    sessions remain explicit uncertainty rather than being invented as roots.
     """
     seen: set[str] = set()
     unique: list[dict[str, Any]] = []
@@ -87,7 +84,6 @@ def normalize(raw_events: list[dict[str, Any]]) -> tuple[list[CanonicalEvent], d
         unique.append(row)
 
     session_to_agent: dict[str, str] = {}
-    session_to_role: dict[str, str] = {}
     root_sessions: set[str] = set()
     for row in unique:
         p = row["payload"]
@@ -103,13 +99,10 @@ def normalize(raw_events: list[dict[str, Any]]) -> tuple[list[CanonicalEvent], d
         child_agent = _child_agent(p.get("child_subagent_id"), child_session)
         if child_session and child_agent:
             session_to_agent[str(child_session)] = child_agent
-            if p.get("child_role"):
-                session_to_role[str(child_session)] = str(p["child_role"])
         parent_session = p.get("parent_session_id")
         if parent_session and not p.get("parent_subagent_id"):
             root_sessions.add(str(parent_session))
 
-    # Explicit child evidence always wins over weaker session-start hints.
     root_sessions.difference_update(session_to_agent)
     uncertain_session_events = 0
 
@@ -187,8 +180,15 @@ def normalize(raw_events: list[dict[str, Any]]) -> tuple[list[CanonicalEvent], d
         if kind in {"tool_result", "tool_start", "api_error", "api_request", "api_response", "skill"} and not agent_id:
             unattributed += 1
 
+        observed = row.get("received_at_ns")
+        try:
+            observed_at_ns = int(observed) if observed is not None else None
+        except (TypeError, ValueError):
+            observed_at_ns = None
+
         out.append(CanonicalEvent(
             seq=seq,
+            observed_at_ns=observed_at_ns,
             hook=hook,
             event_key=row["event_key"],
             session_id=str(session_id) if session_id else None,
