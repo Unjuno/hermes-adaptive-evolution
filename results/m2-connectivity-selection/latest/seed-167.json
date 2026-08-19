@@ -1,0 +1,537 @@
+{
+  "authority": "synthetic_metric_selection_only",
+  "conclusion": {
+    "algebraic_candidate_supported": true,
+    "monotone_under_tested_missing_returns": true,
+    "note": "Selection requires both decision-relevant correlation and conservative evidence semantics. No synthetic metric becomes routing authority without real-task validation."
+  },
+  "missing_return_monotonicity": {
+    "baseline": 0.06277186767309853,
+    "scenarios": [
+      {
+        "non_increasing": true,
+        "scenario": "missing_bridge_return",
+        "value": 0.02984378812835744
+      },
+      {
+        "non_increasing": true,
+        "scenario": "missing_local_return",
+        "value": 0.06277186767309856
+      }
+    ]
+  },
+  "random_cases": 80,
+  "rank_correlation_with_si_spread": {
+    "algebraic_connectivity_fraction": 0.949665126136541,
+    "normalized_laplacian_gap": 0.8772230013616872
+  },
+  "replicates_per_start": 100,
+  "rows": [
+    {
+      "algebraic_fraction": 0.019030116872178315,
+      "name": "path",
+      "normalized_gap": 0.0990311320975809,
+      "spread_fraction": 0.33765625
+    },
+    {
+      "algebraic_fraction": 0.12499999999999992,
+      "name": "star",
+      "normalized_gap": 0.9999999999999993,
+      "spread_fraction": 0.4359375
+    },
+    {
+      "algebraic_fraction": 0.07322330470336297,
+      "name": "ring",
+      "normalized_gap": 0.2928932188134526,
+      "spread_fraction": 0.37390625
+    },
+    {
+      "algebraic_fraction": 0.9999999999999996,
+      "name": "complete",
+      "normalized_gap": 1.1428571428571426,
+      "spread_fraction": 0.97109375
+    },
+    {
+      "algebraic_fraction": 0.1798058983988962,
+      "name": "random-000",
+      "normalized_gap": 0.4488281435688074,
+      "spread_fraction": 0.65171875
+    },
+    {
+      "algebraic_fraction": 0.11274227349787264,
+      "name": "random-001",
+      "normalized_gap": 0.5649523609451256,
+      "spread_fraction": 0.6646875
+    },
+    {
+      "algebraic_fraction": 0.3982991871689586,
+      "name": "random-002",
+      "normalized_gap": 0.7243818365964805,
+      "spread_fraction": 0.908125
+    },
+    {
+      "algebraic_fraction": 0.08622177950697334,
+      "name": "random-003",
+      "normalized_gap": 0.4490189532569492,
+      "spread_fraction": 0.594375
+    },
+    {
+      "algebraic_fraction": 0.1903484978232679,
+      "name": "random-004",
+      "normalized_gap": 0.5617188506335011,
+      "spread_fraction": 0.68625
+    },
+    {
+      "algebraic_fraction": 0.22500756717936446,
+      "name": "random-005",
+      "normalized_gap": 0.6660776295428684,
+      "spread_fraction": 0.78
+    },
+    {
+      "algebraic_fraction": 0.45713461465285354,
+      "name": "random-006",
+      "normalized_gap": 0.7954518550268074,
+      "spread_fraction": 0.89375
+    },
+    {
+      "algebraic_fraction": 0.163386771167059,
+      "name": "random-007",
+      "normalized_gap": 0.44950508005053413,
+      "spread_fraction": 0.6934375
+    },
+    {
+      "algebraic_fraction": 0.33590404335506746,
+      "name": "random-008",
+      "normalized_gap": 0.7628654418093924,
+      "spread_fraction": 0.83359375
+    },
+    {
+      "algebraic_fraction": 0.219783961548188,
+      "name": "random-009",
+      "normalized_gap": 0.5323231972769639,
+      "spread_fraction": 0.71953125
+    },
+    {
+      "algebraic_fraction": 0.15849364905389032,
+      "name": "random-010",
+      "normalized_gap": 0.49942102518936526,
+      "spread_fraction": 0.59171875
+    },
+    {
+      "algebraic_fraction": 0.19680088757853792,
+      "name": "random-011",
+      "normalized_gap": 0.5935277211982852,
+      "spread_fraction": 0.70046875
+    },
+    {
+      "algebraic_fraction": 0.08481280871372125,
+      "name": "random-012",
+      "normalized_gap": 0.4647863399981982,
+      "spread_fraction": 0.58140625
+    },
+    {
+      "algebraic_fraction": 0.17980589839889616,
+      "name": "random-013",
+      "normalized_gap": 0.5446505472958214,
+      "spread_fraction": 0.6390625
+    },
+    {
+      "algebraic_fraction": 0.06662512432264574,
+      "name": "random-014",
+      "normalized_gap": 0.35189944088042485,
+      "spread_fraction": 0.48484375
+    },
+    {
+      "algebraic_fraction": 0.08935718977127681,
+      "name": "random-015",
+      "normalized_gap": 0.4999999999999998,
+      "spread_fraction": 0.513125
+    },
+    {
+      "algebraic_fraction": 0.21519829881294425,
+      "name": "random-016",
+      "normalized_gap": 0.6152474140517752,
+      "spread_fraction": 0.67390625
+    },
+    {
+      "algebraic_fraction": 0.39829918716895896,
+      "name": "random-017",
+      "normalized_gap": 0.7563097188275243,
+      "spread_fraction": 0.8603125
+    },
+    {
+      "algebraic_fraction": 0.21403749957072468,
+      "name": "random-018",
+      "normalized_gap": 0.596166766186103,
+      "spread_fraction": 0.81640625
+    },
+    {
+      "algebraic_fraction": 0.1543631034808577,
+      "name": "random-019",
+      "normalized_gap": 0.4954352663517489,
+      "spread_fraction": 0.6325
+    },
+    {
+      "algebraic_fraction": 0.06942388488635311,
+      "name": "random-020",
+      "normalized_gap": 0.29947485249971095,
+      "spread_fraction": 0.491875
+    },
+    {
+      "algebraic_fraction": 0.11100430962182517,
+      "name": "random-021",
+      "normalized_gap": 0.5650543918114241,
+      "spread_fraction": 0.65796875
+    },
+    {
+      "algebraic_fraction": 0.28185924025987785,
+      "name": "random-022",
+      "normalized_gap": 0.6533003294006362,
+      "spread_fraction": 0.77359375
+    },
+    {
+      "algebraic_fraction": 0.25185471962055,
+      "name": "random-023",
+      "normalized_gap": 0.5782515812486589,
+      "spread_fraction": 0.806875
+    },
+    {
+      "algebraic_fraction": 0.36423372529356285,
+      "name": "random-024",
+      "normalized_gap": 0.7805222843832443,
+      "spread_fraction": 0.91640625
+    },
+    {
+      "algebraic_fraction": 0.1788937988085616,
+      "name": "random-025",
+      "normalized_gap": 0.5698101949859686,
+      "spread_fraction": 0.72484375
+    },
+    {
+      "algebraic_fraction": 0.0758005314026422,
+      "name": "random-026",
+      "normalized_gap": 0.3409873684096769,
+      "spread_fraction": 0.5378125
+    },
+    {
+      "algebraic_fraction": 0.3616129529093153,
+      "name": "random-027",
+      "normalized_gap": 0.8262615022156733,
+      "spread_fraction": 0.8653125
+    },
+    {
+      "algebraic_fraction": 0.21059234399176,
+      "name": "random-028",
+      "normalized_gap": 0.6063468413756999,
+      "spread_fraction": 0.78703125
+    },
+    {
+      "algebraic_fraction": 0.05022364815470914,
+      "name": "random-029",
+      "normalized_gap": 0.2811131026992099,
+      "spread_fraction": 0.44421875
+    },
+    {
+      "algebraic_fraction": 0.07973849673599728,
+      "name": "random-030",
+      "normalized_gap": 0.3760375212859254,
+      "spread_fraction": 0.53453125
+    },
+    {
+      "algebraic_fraction": 0.03830934972151584,
+      "name": "random-031",
+      "normalized_gap": 0.18636757520006797,
+      "spread_fraction": 0.3953125
+    },
+    {
+      "algebraic_fraction": 0.11629650870551245,
+      "name": "random-032",
+      "normalized_gap": 0.4256666972952991,
+      "spread_fraction": 0.50171875
+    },
+    {
+      "algebraic_fraction": 0.3454915028125264,
+      "name": "random-033",
+      "normalized_gap": 0.8333333333333335,
+      "spread_fraction": 0.87671875
+    },
+    {
+      "algebraic_fraction": 0.07940370143569928,
+      "name": "random-034",
+      "normalized_gap": 0.3912952193664678,
+      "spread_fraction": 0.53359375
+    },
+    {
+      "algebraic_fraction": 0.04428108611692625,
+      "name": "random-035",
+      "normalized_gap": 0.14761550755500968,
+      "spread_fraction": 0.49609375
+    },
+    {
+      "algebraic_fraction": 0.2303050957383935,
+      "name": "random-036",
+      "normalized_gap": 0.7262853689221879,
+      "spread_fraction": 0.774375
+    },
+    {
+      "algebraic_fraction": 0.08638367935935419,
+      "name": "random-037",
+      "normalized_gap": 0.35516473450352537,
+      "spread_fraction": 0.52953125
+    },
+    {
+      "algebraic_fraction": 0.08054118850024426,
+      "name": "random-038",
+      "normalized_gap": 0.38824253287588195,
+      "spread_fraction": 0.56703125
+    },
+    {
+      "algebraic_fraction": 0.03052310605953178,
+      "name": "random-039",
+      "normalized_gap": 0.15424075703147722,
+      "spread_fraction": 0.39421875
+    },
+    {
+      "algebraic_fraction": 0.4452145950746381,
+      "name": "random-040",
+      "normalized_gap": 0.8191832750162383,
+      "spread_fraction": 0.86890625
+    },
+    {
+      "algebraic_fraction": 0.28238067941893463,
+      "name": "random-041",
+      "normalized_gap": 0.6085355891325364,
+      "spread_fraction": 0.77765625
+    },
+    {
+      "algebraic_fraction": 0.33191615959254006,
+      "name": "random-042",
+      "normalized_gap": 0.713765240170923,
+      "spread_fraction": 0.79265625
+    },
+    {
+      "algebraic_fraction": 0.1464466094067262,
+      "name": "random-043",
+      "normalized_gap": 0.4428962282219587,
+      "spread_fraction": 0.6296875
+    },
+    {
+      "algebraic_fraction": 0.38299183434339645,
+      "name": "random-044",
+      "normalized_gap": 0.727159707613558,
+      "spread_fraction": 0.84
+    },
+    {
+      "algebraic_fraction": 0.440456678077525,
+      "name": "random-045",
+      "normalized_gap": 0.7928378318716193,
+      "spread_fraction": 0.88078125
+    },
+    {
+      "algebraic_fraction": 0.17534808976508434,
+      "name": "random-046",
+      "normalized_gap": 0.5575053764612404,
+      "spread_fraction": 0.60234375
+    },
+    {
+      "algebraic_fraction": 0.0514078058652463,
+      "name": "random-047",
+      "normalized_gap": 0.27771204699360197,
+      "spread_fraction": 0.4675
+    },
+    {
+      "algebraic_fraction": 0.11632820478905416,
+      "name": "random-048",
+      "normalized_gap": 0.5115084736229755,
+      "spread_fraction": 0.63765625
+    },
+    {
+      "algebraic_fraction": 0.35842501677472255,
+      "name": "random-049",
+      "normalized_gap": 0.7803595972558632,
+      "spread_fraction": 0.8603125
+    },
+    {
+      "algebraic_fraction": 0.04113794292936635,
+      "name": "random-050",
+      "normalized_gap": 0.21228338350409093,
+      "spread_fraction": 0.441875
+    },
+    {
+      "algebraic_fraction": 0.11425603182737762,
+      "name": "random-051",
+      "normalized_gap": 0.5072390855841598,
+      "spread_fraction": 0.55578125
+    },
+    {
+      "algebraic_fraction": 0.2527838063398067,
+      "name": "random-052",
+      "normalized_gap": 0.5853012784942349,
+      "spread_fraction": 0.7628125
+    },
+    {
+      "algebraic_fraction": 0.2617595162423949,
+      "name": "random-053",
+      "normalized_gap": 0.6287924315363527,
+      "spread_fraction": 0.75109375
+    },
+    {
+      "algebraic_fraction": 0.19381378215210304,
+      "name": "random-054",
+      "normalized_gap": 0.6666666666666669,
+      "spread_fraction": 0.6896875
+    },
+    {
+      "algebraic_fraction": 0.13004831159469887,
+      "name": "random-055",
+      "normalized_gap": 0.41476596575992697,
+      "spread_fraction": 0.57703125
+    },
+    {
+      "algebraic_fraction": 0.2768829681607272,
+      "name": "random-056",
+      "normalized_gap": 0.6485492215338943,
+      "spread_fraction": 0.74234375
+    },
+    {
+      "algebraic_fraction": 0.08935718977127687,
+      "name": "random-057",
+      "normalized_gap": 0.4069296691827465,
+      "spread_fraction": 0.4515625
+    },
+    {
+      "algebraic_fraction": 0.4787391891717462,
+      "name": "random-058",
+      "normalized_gap": 0.8565602784561619,
+      "spread_fraction": 0.9078125
+    },
+    {
+      "algebraic_fraction": 0.09534469805942891,
+      "name": "random-059",
+      "normalized_gap": 0.5611564641728453,
+      "spread_fraction": 0.55421875
+    },
+    {
+      "algebraic_fraction": 0.11369799990273072,
+      "name": "random-060",
+      "normalized_gap": 0.5932295423960541,
+      "spread_fraction": 0.72625
+    },
+    {
+      "algebraic_fraction": 0.05426079276954708,
+      "name": "random-061",
+      "normalized_gap": 0.28784295274865407,
+      "spread_fraction": 0.53421875
+    },
+    {
+      "algebraic_fraction": 0.19021989020055277,
+      "name": "random-062",
+      "normalized_gap": 0.5251260854038097,
+      "spread_fraction": 0.6996875
+    },
+    {
+      "algebraic_fraction": 0.0514468149575473,
+      "name": "random-063",
+      "normalized_gap": 0.25692626865945556,
+      "spread_fraction": 0.50359375
+    },
+    {
+      "algebraic_fraction": 0.23873896308064807,
+      "name": "random-064",
+      "normalized_gap": 0.673681465307572,
+      "spread_fraction": 0.77578125
+    },
+    {
+      "algebraic_fraction": 0.22407457803222924,
+      "name": "random-065",
+      "normalized_gap": 0.49999999999999983,
+      "spread_fraction": 0.795625
+    },
+    {
+      "algebraic_fraction": 0.342274719342504,
+      "name": "random-066",
+      "normalized_gap": 0.7416516177260212,
+      "spread_fraction": 0.88578125
+    },
+    {
+      "algebraic_fraction": 0.03315365929182163,
+      "name": "random-067",
+      "normalized_gap": 0.155105933644223,
+      "spread_fraction": 0.4203125
+    },
+    {
+      "algebraic_fraction": 0.3119620944568628,
+      "name": "random-068",
+      "normalized_gap": 0.6697545901047721,
+      "spread_fraction": 0.81
+    },
+    {
+      "algebraic_fraction": 0.3127022234176213,
+      "name": "random-069",
+      "normalized_gap": 0.7117264584642461,
+      "spread_fraction": 0.82140625
+    },
+    {
+      "algebraic_fraction": 0.22278953026043474,
+      "name": "random-070",
+      "normalized_gap": 0.6625130011085235,
+      "spread_fraction": 0.73515625
+    },
+    {
+      "algebraic_fraction": 0.34549150281252616,
+      "name": "random-071",
+      "normalized_gap": 0.7429929392808856,
+      "spread_fraction": 0.8590625
+    },
+    {
+      "algebraic_fraction": 0.21150087998918404,
+      "name": "random-072",
+      "normalized_gap": 0.6326593950518181,
+      "spread_fraction": 0.7540625
+    },
+    {
+      "algebraic_fraction": 0.17787853259806127,
+      "name": "random-073",
+      "normalized_gap": 0.5439555281404064,
+      "spread_fraction": 0.6390625
+    },
+    {
+      "algebraic_fraction": 0.08367747823081575,
+      "name": "random-074",
+      "normalized_gap": 0.40562287993952717,
+      "spread_fraction": 0.6034375
+    },
+    {
+      "algebraic_fraction": 0.20418340699533252,
+      "name": "random-075",
+      "normalized_gap": 0.595992029367436,
+      "spread_fraction": 0.753125
+    },
+    {
+      "algebraic_fraction": 0.2644077731567304,
+      "name": "random-076",
+      "normalized_gap": 0.593763779532269,
+      "spread_fraction": 0.79703125
+    },
+    {
+      "algebraic_fraction": 0.18587577108060085,
+      "name": "random-077",
+      "normalized_gap": 0.5538074976017032,
+      "spread_fraction": 0.728125
+    },
+    {
+      "algebraic_fraction": 0.10074443668256294,
+      "name": "random-078",
+      "normalized_gap": 0.49403348202743314,
+      "spread_fraction": 0.58078125
+    },
+    {
+      "algebraic_fraction": 0.11987641666100832,
+      "name": "random-079",
+      "normalized_gap": 0.6603901651695592,
+      "spread_fraction": 0.728125
+    }
+  ],
+  "schema": "adaptive-evolution.connectivity-metric-selection.v0.1",
+  "seed": 167
+}

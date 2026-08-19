@@ -1,0 +1,46 @@
+{
+  "authority": "synthetic_metric_selection_only",
+  "decision": "adopt_algebraic_candidate_for_m2_diagnostics",
+  "mean_algebraic_rank": 0.9510575007514147,
+  "mean_normalized_rank": 0.864633715609252,
+  "monotone_runs": 5,
+  "runs": [
+    {
+      "algebraic_rank": 0.9577754266368884,
+      "monotone": true,
+      "normalized_rank": 0.858483641216028,
+      "seed": 113,
+      "supported": true
+    },
+    {
+      "algebraic_rank": 0.949665126136541,
+      "monotone": true,
+      "normalized_rank": 0.8772230013616872,
+      "seed": 167,
+      "supported": true
+    },
+    {
+      "algebraic_rank": 0.9481773219587019,
+      "monotone": true,
+      "normalized_rank": 0.8306815363148673,
+      "seed": 31,
+      "supported": true
+    },
+    {
+      "algebraic_rank": 0.9391759518590301,
+      "monotone": true,
+      "normalized_rank": 0.8703034353330068,
+      "seed": 53,
+      "supported": true
+    },
+    {
+      "algebraic_rank": 0.9604936771659124,
+      "monotone": true,
+      "normalized_rank": 0.8864769638206706,
+      "seed": 79,
+      "supported": true
+    }
+  ],
+  "schema": "adaptive-evolution.connectivity-metric-selection-aggregate.v0.1",
+  "supported_runs": 5
+}
