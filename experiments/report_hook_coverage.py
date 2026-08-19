@@ -97,7 +97,8 @@ def report(bundle: str | Path) -> dict[str, Any]:
         expected = EXPECTED_FIELDS.get(hook, ())
         fields = {}
         for field in sorted(set(all_fields) | set(expected)):
-            present = sum(
+            key_present = sum(1 for payload in payloads if field in payload)
+            non_null = sum(
                 1 for payload in payloads
                 if field in payload and payload.get(field) not in (None, "")
             )
@@ -106,9 +107,12 @@ def report(bundle: str | Path) -> dict[str, Any]:
                 for payload in payloads if field in payload
             )
             fields[field] = {
-                "present": present,
+                # Backward-compatible name: `present` means non-null/non-empty.
+                "present": non_null,
+                "fraction": non_null / count if count else None,
+                "key_present": key_present,
+                "key_fraction": key_present / count if count else None,
                 "total": count,
-                "fraction": present / count if count else None,
                 "types": dict(sorted(types.items())),
                 "expected_by_current_contract": field in expected,
                 "correlation_field": field in CORRELATION_FIELDS,
@@ -119,7 +123,12 @@ def report(bundle: str | Path) -> dict[str, Any]:
             "observed_fields": all_fields,
             "missing_expected_fields_entirely": [
                 field for field in expected
-                if not any(field in payload and payload.get(field) not in (None, "") for payload in payloads)
+                if not any(field in payload for payload in payloads)
+            ],
+            "expected_fields_only_null_or_empty": [
+                field for field in expected
+                if any(field in payload for payload in payloads)
+                and not any(payload.get(field) not in (None, "") for payload in payloads if field in payload)
             ],
             "additive_fields_not_in_checked_contract": [
                 field for field in all_fields if field not in expected
@@ -139,7 +148,7 @@ def report(bundle: str | Path) -> dict[str, Any]:
     }
 
     return {
-        "schema": "adaptive-evolution.hook-coverage.v0.1",
+        "schema": "adaptive-evolution.hook-coverage.v0.2",
         "bundle": str(Path(bundle).expanduser()),
         "events": len(rows),
         "hooks_observed": sorted(by_hook),
@@ -154,7 +163,7 @@ def report(bundle: str | Path) -> dict[str, Any]:
             "stop_sessions_without_start": len(stop_sessions - start_sessions),
         },
         "authority": "contract_observation_only",
-        "note": "Field coverage describes this capture only; absence does not prove the Hermes API cannot provide a field on other execution paths.",
+        "note": "Field coverage describes this capture only. A key present with null is distinct from a key absent from the payload; neither alone proves the Hermes API cannot provide a non-null value on another path.",
     }
 
 
