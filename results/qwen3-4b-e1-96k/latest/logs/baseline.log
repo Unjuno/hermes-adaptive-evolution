@@ -1,0 +1,22 @@
+======================================================================
+FAIL: test_multiple_steps (test_counter.CounterFixtureTests.test_multiple_steps)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/work/hermes-adaptive-evolution/hermes-adaptive-evolution/experiments/fixtures/e1_repair_project/test_counter.py", line 11, in test_multiple_steps
+    self.assertEqual(advance(4, 3), 7)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: 8 != 7
+
+======================================================================
+FAIL: test_single_step (test_counter.CounterFixtureTests.test_single_step)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/runner/work/hermes-adaptive-evolution/hermes-adaptive-evolution/experiments/fixtures/e1_repair_project/test_counter.py", line 8, in test_single_step
+    self.assertEqual(advance(4), 5)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: 6 != 5
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+FAILED (failures=2)

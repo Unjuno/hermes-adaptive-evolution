@@ -1,0 +1,925 @@
+{
+  "authority": "experiment_only",
+  "baseline": {
+    "event_diagnostics": {
+      "duplicates_removed": 0,
+      "known_child_sessions": 1,
+      "known_root_sessions": 1,
+      "raw_count": 18,
+      "unattributed_observer_events": 0,
+      "uncertain_session_events": 0,
+      "unique_count": 18
+    },
+    "organization_state": {
+      "agents": 2,
+      "authority": "diagnostic_only",
+      "completed_flow_connectivity": 1.0,
+      "completed_flow_connectivity_method": "unnormalized_algebraic_lambda2_over_n_binary_completed_relations",
+      "completed_interaction_events": 1,
+      "directed_diffusivity": 1.0,
+      "directed_diffusivity_authority": "deprecated_diagnostic_only",
+      "directed_traffic_breadth": 1.0,
+      "experimental": true,
+      "fragility": {
+        "root:20260819_181633_c0b9f9": 0.2,
+        "subagent:sa-0-c0b31a2c": 0.4
+      },
+      "interaction_completion_coverage": 1.0,
+      "interaction_events": 1,
+      "interaction_sources": 1,
+      "mean_role_entropy": 0.8401546359093304,
+      "note": "Topology is intentionally vector-valued: directed traffic breadth measures local fan-out, while completed-flow connectivity measures global bottlenecks. v0.4 uses monotone unnormalized algebraic connectivity on binary completed relations so additional completed-edge evidence cannot worsen the connectivity value for a fixed node set. Completion coverage remains support metadata, not confidence. The legacy start-only directed_diffusivity is retained only for backward-compatible diagnostics. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks.",
+      "role_conditioned_traffic_coverage": 0.02554386846664799,
+      "role_confidence": {
+        "root:20260819_181633_c0b9f9": 0.16242837679500655,
+        "subagent:sa-0-c0b31a2c": 0.15726235138633282
+      },
+      "role_evidence": {
+        "root:20260819_181633_c0b9f9": 8.0,
+        "subagent:sa-0-c0b31a2c": 3.0
+      },
+      "role_posteriors": {
+        "root:20260819_181633_c0b9f9": {
+          "coordination": 0.15,
+          "implementation": 0.35,
+          "research": 0.45,
+          "verification": 0.05
+        },
+        "subagent:sa-0-c0b31a2c": {
+          "coordination": 0.1,
+          "implementation": 0.3,
+          "research": 0.5,
+          "verification": 0.1
+        }
+      },
+      "schema": "adaptive-evolution.organization-state.v0.4",
+      "support": {
+        "agents_with_outcome_evidence": 2,
+        "agents_with_outgoing_interactions": 1,
+        "agents_with_tool_role_evidence": 2,
+        "completed_interaction_count": 1,
+        "interaction_completion_coverage": 1.0,
+        "interaction_count": 1,
+        "role_conditioned_interaction_weight": 0.02554386846664799
+      },
+      "tool_outcomes": 11,
+      "traffic_weighted_role_mixing": 0.6499999999999999
+    }
+  },
+  "note": "No corruption-rate or sample-count result is a production activation threshold. Topology corruption is evaluated as a vector: traffic breadth, completed-flow connectivity, and completion support are separate observables.",
+  "schema": "adaptive-evolution.capture-corruption.v0.2",
+  "summary": {
+    "groups": [
+      {
+        "metrics": {
+          "completed_flow_connectivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "completed_interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "fragility_mae": {
+            "max": 0.07500000000000001,
+            "median": 0.0111111111111111,
+            "min": 0.0,
+            "p90": 0.05250000000000003
+          },
+          "interaction_completion_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "legacy_diffusivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.034170089132983916,
+            "median": 0.011780766383499008,
+            "min": 0.0,
+            "p90": 0.03172264504045303
+          },
+          "normalized_count_ratio": {
+            "max": 0.9444444444444444,
+            "median": 0.9444444444444444,
+            "min": 0.9444444444444444,
+            "p90": 0.9444444444444444
+          },
+          "role_conditioned_traffic_coverage_abs_error": {
+            "max": 0.01110038422562254,
+            "median": 0.0037053420452042712,
+            "min": 0.0,
+            "p90": 0.010305315483129917
+          },
+          "role_mixing_abs_error": {
+            "max": 0.025000000000000133,
+            "median": 0.011111111111111127,
+            "min": 0.0,
+            "p90": 0.025000000000000133
+          },
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": -1.0,
+            "min": -1.0,
+            "p90": 0.0
+          },
+          "traffic_breadth_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.01,
+        "replicates": 20,
+        "scenario": "drop"
+      },
+      {
+        "metrics": {
+          "completed_flow_connectivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "completed_interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": -1.0,
+            "p90": 0.0
+          },
+          "fragility_mae": {
+            "max": 0.07500000000000001,
+            "median": 0.0111111111111111,
+            "min": 0.0,
+            "p90": 0.04999999999999999
+          },
+          "interaction_completion_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": -1.0,
+            "p90": 0.0
+          },
+          "legacy_diffusivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.045482470511141404,
+            "median": 0.03145070680794959,
+            "min": 0.0,
+            "p90": 0.045482470511141404
+          },
+          "normalized_count_ratio": {
+            "max": 0.9444444444444444,
+            "median": 0.9444444444444444,
+            "min": 0.9444444444444444,
+            "p90": 0.9444444444444444
+          },
+          "role_conditioned_traffic_coverage_abs_error": {
+            "max": 0.01430536051888328,
+            "median": 0.010216974511741847,
+            "min": 0.0,
+            "p90": 0.01430536051888328
+          },
+          "role_mixing_abs_error": {
+            "max": 0.02777777777777768,
+            "median": 0.025000000000000133,
+            "min": 0.0,
+            "p90": 0.02777777777777768
+          },
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": -1.0,
+            "min": -1.0,
+            "p90": 0.0
+          },
+          "traffic_breadth_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 6.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.6000000000000085
+          }
+        },
+        "rate": 0.05,
+        "replicates": 20,
+        "scenario": "drop"
+      },
+      {
+        "metrics": {
+          "completed_flow_connectivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "completed_interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": -1.0,
+            "p90": 0.0
+          },
+          "fragility_mae": {
+            "max": 0.09444444444444444,
+            "median": 0.034722222222222224,
+            "min": 0.0,
+            "p90": 0.08611111111111111
+          },
+          "interaction_completion_coverage_abs_error": {
+            "max": 1.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.10000000000000142
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "legacy_diffusivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.045957147343397176,
+            "median": 0.022389322749484908,
+            "min": 0.0,
+            "p90": 0.04350404060664356
+          },
+          "normalized_count_ratio": {
+            "max": 0.8888888888888888,
+            "median": 0.8888888888888888,
+            "min": 0.8888888888888888,
+            "p90": 0.8888888888888888
+          },
+          "role_conditioned_traffic_coverage_abs_error": {
+            "max": 0.014454658108461582,
+            "median": 0.005796112553519535,
+            "min": 0.0,
+            "p90": 0.012641702365896299
+          },
+          "role_mixing_abs_error": {
+            "max": 0.03750000000000009,
+            "median": 0.025000000000000133,
+            "min": 0.0,
+            "p90": 0.03749999999999987
+          },
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": -1.5,
+            "min": -2.0,
+            "p90": -0.8999999999999986
+          },
+          "traffic_breadth_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.1,
+        "replicates": 20,
+        "scenario": "drop"
+      },
+      {
+        "metrics": {
+          "completed_flow_connectivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "completed_interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_completion_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "legacy_diffusivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 1.0,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "role_mixing_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "traffic_breadth_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.01,
+        "replicates": 20,
+        "scenario": "duplicate"
+      },
+      {
+        "metrics": {
+          "completed_flow_connectivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "completed_interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_completion_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "legacy_diffusivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 1.0,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "role_mixing_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "traffic_breadth_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.05,
+        "replicates": 20,
+        "scenario": "duplicate"
+      },
+      {
+        "metrics": {
+          "completed_flow_connectivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "completed_interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_completion_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "legacy_diffusivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 1.0,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "role_mixing_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "traffic_breadth_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.1,
+        "replicates": 20,
+        "scenario": "duplicate"
+      },
+      {
+        "metrics": {
+          "completed_flow_connectivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "completed_interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_completion_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "legacy_diffusivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 1.0,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "role_mixing_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "traffic_breadth_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 1.0,
+        "replicates": 20,
+        "scenario": "full_reorder"
+      },
+      {
+        "metrics": {
+          "completed_flow_connectivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "completed_interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_completion_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "legacy_diffusivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 1.0,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "role_mixing_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "traffic_breadth_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.01,
+        "replicates": 20,
+        "scenario": "strip_optional_ids"
+      },
+      {
+        "metrics": {
+          "completed_flow_connectivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "completed_interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_completion_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "legacy_diffusivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 1.0,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "role_mixing_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "traffic_breadth_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.05,
+        "replicates": 20,
+        "scenario": "strip_optional_ids"
+      },
+      {
+        "metrics": {
+          "completed_flow_connectivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "completed_interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_completion_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "legacy_diffusivity_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 1.0,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "role_mixing_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "traffic_breadth_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.1,
+        "replicates": 20,
+        "scenario": "strip_optional_ids"
+      }
+    ]
+  }
+}

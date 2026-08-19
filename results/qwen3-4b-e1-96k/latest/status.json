@@ -1,0 +1,26 @@
+{
+  "authority": "provider_backed_e1_contract",
+  "context_length": 98304,
+  "created_at": "2026-08-19T18:31:26.690589+00:00",
+  "critical_gate_passed": true,
+  "external_api_credentials_used": false,
+  "hermes_contract_sha": "b5455fdd16fe608214f91149233660e1836b067c",
+  "hermes_wall_seconds": 897,
+  "max_tokens": 2048,
+  "model": "qwen3:4b-instruct",
+  "note": "Fair-context Qwen3 4B comparison against LFM2.5 E1; not a general coding benchmark.",
+  "outcomes": {
+    "baseline": "success",
+    "configure": "success",
+    "hermes_run": "success",
+    "install": "success",
+    "model_preload": "success",
+    "ollama_install": "success",
+    "repair_verify": "success",
+    "validate": "success"
+  },
+  "provider": "ollama-local",
+  "run_id": "32286173832",
+  "schema": "adaptive-evolution.qwen3-4b-e1-96k.v0.1",
+  "source_sha": "af2cb1f5ec1ea8bd039ca5d0019639d99d2b4758"
+}

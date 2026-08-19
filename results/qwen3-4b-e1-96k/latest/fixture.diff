@@ -1,0 +1,10 @@
+diff --git a/experiments/fixtures/e1_repair_project/counter.py b/experiments/fixtures/e1_repair_project/counter.py
+index d24cb77..e0ee299 100644
+--- a/experiments/fixtures/e1_repair_project/counter.py
++++ b/experiments/fixtures/e1_repair_project/counter.py
+@@ -6,4 +6,4 @@ def advance(value: int, steps: int = 1) -> int:
+     """
+     if value < 0 or steps < 0:
+         raise ValueError("value and steps must be non-negative")
+-    return value + steps + 1  # intentional off-by-one bug
++    return value + steps  # intentional off-by-one bug

@@ -1,0 +1,21 @@
+Obtaining file:///home/runner/work/hermes-adaptive-evolution/hermes-adaptive-evolution
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Collecting numpy<3,>=1.26 (from hermes-adaptive-evolution==0.2.0)
+  Using cached numpy-2.5.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (6.6 kB)
+Using cached numpy-2.5.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (16.7 MB)
+Building wheels for collected packages: hermes-adaptive-evolution
+  Building editable for hermes-adaptive-evolution (pyproject.toml): started
+  Building editable for hermes-adaptive-evolution (pyproject.toml): finished with status 'done'
+  Created wheel for hermes-adaptive-evolution: filename=hermes_adaptive_evolution-0.2.0-0.editable-py3-none-any.whl size=10818 sha256=9fd2524acbb3cf10f1d42ff55922febd297d47a9eeb26c533135dd3eb3d7dfbf
+  Stored in directory: /tmp/pip-ephem-wheel-cache-o2vz48y7/wheels/5c/95/79/f1ab60d5124e874caea5ef89cf06c95c0b1c353e23bdf40f62
+Successfully built hermes-adaptive-evolution
+Installing collected packages: numpy, hermes-adaptive-evolution
+
+Successfully installed hermes-adaptive-evolution-0.2.0 numpy-2.5.2
