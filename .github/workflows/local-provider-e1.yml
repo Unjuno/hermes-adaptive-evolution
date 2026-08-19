@@ -59,7 +59,7 @@ jobs:
             python -m pip install -e .
           } 2>&1 | tee local-e1-artifact/logs/install.log
 
-      - name: Install and start Ollama
+      - name: Install and start Ollama at Hermes context size
         id: ollama_install
         continue-on-error: true
         shell: bash
@@ -67,7 +67,10 @@ jobs:
           set -o pipefail
           {
             curl -fsSL https://ollama.com/install.sh | sh
-            nohup ollama serve > local-e1-artifact/logs/ollama-serve.log 2>&1 &
+            OLLAMA_CONTEXT_LENGTH="$E1_CONTEXT" \
+            OLLAMA_NUM_PARALLEL=1 \
+            OLLAMA_MAX_LOADED_MODELS=1 \
+              nohup ollama serve > local-e1-artifact/logs/ollama-serve.log 2>&1 &
             echo $! > local-e1-artifact/ollama.pid
             for i in $(seq 1 60); do
               if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then
@@ -90,6 +93,48 @@ jobs:
             ollama pull "$E1_MODEL"
             ollama show "$E1_MODEL"
           } 2>&1 | tee local-e1-artifact/logs/model-pull.log
+
+      - name: Preload model and verify runtime context
+        id: context_preload
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee local-e1-artifact/logs/context-preload.log
+          import json
+          import os
+          import urllib.request
+
+          model = os.environ["E1_MODEL"]
+          context = int(os.environ["E1_CONTEXT"])
+          payload = json.dumps({
+              "model": model,
+              "messages": [{"role": "user", "content": "Reply with OK."}],
+              "stream": False,
+              "keep_alive": "30m",
+              "options": {"num_ctx": context, "temperature": 0.0},
+          }).encode()
+          req = urllib.request.Request(
+              "http://127.0.0.1:11434/api/chat",
+              data=payload,
+              headers={"Content-Type": "application/json"},
+          )
+          with urllib.request.urlopen(req, timeout=600) as response:
+              body = json.load(response)
+          print("preload response model:", body.get("model"))
+
+          with urllib.request.urlopen("http://127.0.0.1:11434/api/ps", timeout=30) as response:
+              ps = json.load(response)
+          print(json.dumps(ps, indent=2, sort_keys=True))
+          models = ps.get("models") or []
+          if not models:
+              raise SystemExit("Ollama reports no loaded model after preload")
+          loaded = next((m for m in models if m.get("name") == model or m.get("model") == model), models[0])
+          runtime_ctx = int(loaded.get("context_length") or 0)
+          if runtime_ctx < 64000:
+              raise SystemExit(f"Ollama runtime context too small: {runtime_ctx}")
+          print("verified runtime context:", runtime_ctx)
+          PY
 
       - name: Configure isolated Hermes profile
         id: configure
@@ -155,9 +200,9 @@ jobs:
           cd experiments/fixtures/e1_repair_project
           python -m unittest -q 2>&1 | tee "${GITHUB_WORKSPACE}/local-e1-artifact/logs/final-test.log"
           git diff -- counter.py test_counter.py > "${GITHUB_WORKSPACE}/local-e1-artifact/fixture.diff"
-          if git diff --name-only -- . | grep -v '^counter.py$' | grep -q .; then
-            echo "fixture changed files other than counter.py" >&2
-            git diff --name-only -- . >&2
+          changed="$(git diff --name-only --relative -- .)"
+          if [ "$changed" != "counter.py" ]; then
+            echo "expected only counter.py to change; got: $changed" >&2
             exit 1
           fi
 
@@ -217,6 +262,7 @@ jobs:
           INSTALL: ${{ steps.install.outcome }}
           OLLAMA_INSTALL: ${{ steps.ollama_install.outcome }}
           MODEL_PULL: ${{ steps.model_pull.outcome }}
+          CONTEXT_PRELOAD: ${{ steps.context_preload.outcome }}
           CONFIGURE: ${{ steps.configure.outcome }}
           BASELINE: ${{ steps.baseline.outcome }}
           HERMES_RUN: ${{ steps.hermes_run.outcome }}
@@ -239,6 +285,7 @@ jobs:
               "install": os.environ["INSTALL"],
               "ollama_install": os.environ["OLLAMA_INSTALL"],
               "model_pull": os.environ["MODEL_PULL"],
+              "context_preload": os.environ["CONTEXT_PRELOAD"],
               "configure": os.environ["CONFIGURE"],
               "baseline": os.environ["BASELINE"],
               "hermes_run": os.environ["HERMES_RUN"],
@@ -248,9 +295,13 @@ jobs:
               "hook_coverage": os.environ["HOOK_COVERAGE"],
               "corruption": os.environ["CORRUPTION"],
           }
-          critical = ["install", "ollama_install", "model_pull", "configure", "baseline", "hermes_run", "repair_verify", "bundle", "e1_validate"]
+          critical = [
+              "install", "ollama_install", "model_pull", "context_preload",
+              "configure", "baseline", "hermes_run", "repair_verify",
+              "bundle", "e1_validate",
+          ]
           status = {
-              "schema": "adaptive-evolution.local-provider-e1-result.v0.1",
+              "schema": "adaptive-evolution.local-provider-e1-result.v0.2",
               "created_at": datetime.now(timezone.utc).isoformat(),
               "source_sha": os.environ["GITHUB_SHA"],
               "run_id": os.environ["GITHUB_RUN_ID"],
@@ -331,6 +382,7 @@ jobs:
           INSTALL: ${{ steps.install.outcome }}
           OLLAMA_INSTALL: ${{ steps.ollama_install.outcome }}
           MODEL_PULL: ${{ steps.model_pull.outcome }}
+          CONTEXT_PRELOAD: ${{ steps.context_preload.outcome }}
           CONFIGURE: ${{ steps.configure.outcome }}
           BASELINE: ${{ steps.baseline.outcome }}
           HERMES_RUN: ${{ steps.hermes_run.outcome }}
@@ -342,10 +394,12 @@ jobs:
         run: |
           python - <<'PY'
           import os
-          outcomes = {k.lower(): v for k, v in os.environ.items() if k in {
-              "INSTALL", "OLLAMA_INSTALL", "MODEL_PULL", "CONFIGURE", "BASELINE",
-              "HERMES_RUN", "REPAIR_VERIFY", "BUNDLE", "E1_VALIDATE", "PUBLISH"
-          }}
+          names = {
+              "INSTALL", "OLLAMA_INSTALL", "MODEL_PULL", "CONTEXT_PRELOAD",
+              "CONFIGURE", "BASELINE", "HERMES_RUN", "REPAIR_VERIFY",
+              "BUNDLE", "E1_VALIDATE", "PUBLISH",
+          }
+          outcomes = {k.lower(): v for k, v in os.environ.items() if k in names}
           failed = [k for k, v in outcomes.items() if v != "success"]
           if failed:
               raise SystemExit(f"provider-backed E1 gate failed: {failed}; outcomes={outcomes}")
