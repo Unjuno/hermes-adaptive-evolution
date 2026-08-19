@@ -88,13 +88,27 @@ def sanitize(value: Any, *, key: str = "", depth: int = 0) -> Any:
 
 
 def event_key(hook: str, payload: dict[str, Any]) -> str:
-    """Best-effort idempotency key using Hermes correlation IDs where available."""
-    parts = [hook]
-    for k in (
+    """Best-effort event identity using hook-specific correlation fields.
+
+    A Hermes correlation ID is not always itself an event ID. API retries may
+    share ``api_request_id`` while ``retry_count`` changes, and Skill lifecycle
+    events may share session/action/skill while ``use_count`` advances. Those
+    fields therefore participate in the key rather than being collapsed as
+    duplicates.
+    """
+    common = (
         "session_id", "task_id", "turn_id", "tool_call_id", "api_request_id",
         "parent_turn_id", "parent_subagent_id", "child_session_id", "child_subagent_id",
         "run_id", "action", "skill_name",
-    ):
+    )
+    hook_specific: dict[str, tuple[str, ...]] = {
+        "api_request_error": ("retry_count", "max_retries"),
+        "on_skill_lifecycle": ("use_count", "reused", "reuse_after_patch", "provenance"),
+        "on_session_reset": ("old_session_id", "new_session_id"),
+    }
+
+    parts = [hook]
+    for k in common + hook_specific.get(hook, ()):
         v = payload.get(k)
         if v not in (None, ""):
             parts.append(f"{k}={v}")
