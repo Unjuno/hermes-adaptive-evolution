@@ -31,12 +31,28 @@ def _child_agent(subagent_id: str | None, child_session_id: str | None) -> str |
     return None
 
 
+def _session_start_is_root_evidence(payload: dict[str, Any]) -> bool:
+    """Return whether a session-start event may support root identity.
+
+    Hermes currently exposes ``platform`` additively on several lifecycle
+    surfaces. A subagent AIAgent is created with ``platform='subagent'``. Even
+    if a future/runtime path emits ``on_session_start`` for that child, it must
+    never promote the child session to root when the stronger
+    ``subagent_start`` edge was dropped. Missing platform remains weak root
+    evidence for backward compatibility; explicit subagent evidence wins.
+    """
+    platform = str(payload.get("platform") or "").strip().lower()
+    return platform != "subagent"
+
+
 def normalize(raw_events: list[dict[str, Any]]) -> tuple[list[CanonicalEvent], dict[str, Any]]:
     """Normalize/deduplicate raw hook records.
 
     Two-pass identity resolution makes mild reordering harmless: a child tool
     event can arrive before its corresponding subagent_start record and still be
-    attributed correctly during replay.
+    attributed correctly during replay. Identity evidence is conservative:
+    explicit child-session mappings outrank session-start hints, and unknown
+    sessions remain uncertain rather than being invented as roots.
     """
     seen: set[str] = set()
     unique: list[dict[str, Any]] = []
@@ -75,7 +91,11 @@ def normalize(raw_events: list[dict[str, Any]]) -> tuple[list[CanonicalEvent], d
     root_sessions: set[str] = set()
     for row in unique:
         p = row["payload"]
-        if row["hook"] == "on_session_start" and p.get("session_id"):
+        if (
+            row["hook"] == "on_session_start"
+            and p.get("session_id")
+            and _session_start_is_root_evidence(p)
+        ):
             root_sessions.add(str(p["session_id"]))
         if row["hook"] != "subagent_start":
             continue
@@ -89,6 +109,8 @@ def normalize(raw_events: list[dict[str, Any]]) -> tuple[list[CanonicalEvent], d
         if parent_session and not p.get("parent_subagent_id"):
             root_sessions.add(str(parent_session))
 
+    # Explicit child evidence always wins over weaker session-start hints.
+    root_sessions.difference_update(session_to_agent)
     uncertain_session_events = 0
 
     def resolve_session(sid: Any) -> tuple[str | None, bool]:
