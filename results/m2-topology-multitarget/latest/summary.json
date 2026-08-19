@@ -1,0 +1,46 @@
+{
+  "authority": "synthetic_multitarget_falsification_only",
+  "decision": "retain_multiple_topology_order_parameters",
+  "mean_consensus_corr": 0.9999982022949367,
+  "mean_reach_corr": 0.999714243430852,
+  "run_count": 5,
+  "runs": [
+    {
+      "consensus_corr": 0.999994472940309,
+      "degree_blind": true,
+      "reach_corr": 0.9999112861574235,
+      "retain_vector_state": true,
+      "seed": 131
+    },
+    {
+      "consensus_corr": 0.999999974120185,
+      "degree_blind": true,
+      "reach_corr": 0.9999116026112554,
+      "retain_vector_state": true,
+      "seed": 197
+    },
+    {
+      "consensus_corr": 0.9999967926796742,
+      "degree_blind": true,
+      "reach_corr": 0.9993958058048326,
+      "retain_vector_state": true,
+      "seed": 23
+    },
+    {
+      "consensus_corr": 0.9999997719587255,
+      "degree_blind": true,
+      "reach_corr": 0.9998777612712548,
+      "retain_vector_state": true,
+      "seed": 47
+    },
+    {
+      "consensus_corr": 0.9999999997757898,
+      "degree_blind": true,
+      "reach_corr": 0.999474761309494,
+      "retain_vector_state": true,
+      "seed": 83
+    }
+  ],
+  "schema": "adaptive-evolution.topology-proxy-multitarget-aggregate.v0.1",
+  "vector_state_support_count": 5
+}

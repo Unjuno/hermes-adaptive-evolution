@@ -1,0 +1,72 @@
+{
+  "conclusion": {
+    "completed_flow_gap_vs_consensus_speed_corr": 0.9999997719587255,
+    "completed_flow_gap_vs_cross_reach_corr": 0.9998777612712548,
+    "degree_proxy_blind_by_construction": true,
+    "note": "Equal-degree cases deliberately falsify any policy that collapses topology to degree/breadth alone. No synthetic metric is a production routing threshold.",
+    "recommended_topology_state": [
+      "traffic/local breadth",
+      "completed-flow/global connectivity"
+    ],
+    "retain_vector_state": true
+  },
+  "replicates": 3000,
+  "rows": [
+    {
+      "completed_flow_gap": 0.25464400750007027,
+      "consensus_residual": 0.030073377376506845,
+      "cross_partition_reach": 0.6025833333333334,
+      "current_directed_gap": 1.0,
+      "degree_sequence": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "edge_expansion_proxy": 0.42857142857142855,
+      "name": "two_cliques_two_bridges"
+    },
+    {
+      "completed_flow_gap": 0.6666666666666665,
+      "consensus_residual": 0.003344460467628284,
+      "cross_partition_reach": 0.8358333333333333,
+      "current_directed_gap": 1.0,
+      "degree_sequence": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "edge_expansion_proxy": 0.42857142857142855,
+      "name": "two_cliques_four_bridges"
+    },
+    {
+      "completed_flow_gap": 0.6666666666666664,
+      "consensus_residual": 0.003365295934175285,
+      "cross_partition_reach": 0.8400833333333333,
+      "current_directed_gap": 1.0,
+      "degree_sequence": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "edge_expansion_proxy": 0.42857142857142855,
+      "name": "cube"
+    }
+  ],
+  "schema": "adaptive-evolution.topology-proxy-multitarget.v0.1",
+  "seed": 47
+}
