@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   test:
@@ -30,3 +30,50 @@ jobs:
         run: python -m compileall -q adaptive_evolution_observer __init__.py
       - name: Build wheel
         run: python -m pip wheel --no-deps --no-build-isolation . -w dist
+
+  publish-ci-result:
+    if: always() && github.event_name == 'push'
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build result
+        env:
+          MATRIX_RESULT: ${{ needs.test.result }}
+        shell: bash
+        run: |
+          mkdir -p ci-result
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          result={
+              'schema':'adaptive-evolution.ci-result.v0.1',
+              'created_at':datetime.now(timezone.utc).isoformat(),
+              'source_sha':os.environ['GITHUB_SHA'],
+              'run_id':os.environ['GITHUB_RUN_ID'],
+              'python_matrix':['3.11','3.13'],
+              'matrix_result':os.environ['MATRIX_RESULT'],
+              'passed':os.environ['MATRIX_RESULT']=='success',
+          }
+          Path('ci-result/status.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(result,indent=2,sort_keys=True))
+          PY
+      - name: Publish ci-results branch
+        shell: bash
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/ci-result"
+          mkdir -p "$tmp"
+          cp ci-result/status.json "$tmp/status.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan ci-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/ci/latest
+          cp "$tmp/status.json" results/ci/latest/status.json
+          git add results/ci/latest/status.json
+          git commit -m "Record CI result for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:ci-results
