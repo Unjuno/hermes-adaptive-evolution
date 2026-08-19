@@ -7,6 +7,7 @@ from typing import Any
 from .estimator import estimate
 from .normalizer import normalize
 from .store import EventStore, default_data_dir, resolve_db_path
+from .window import select_recent
 
 # Observer hooks only. Directive hooks are intentionally excluded from v0.2 so
 # this slice cannot change execution behavior while M1/M2 contracts are tested.
@@ -51,10 +52,16 @@ def _record(hook: str, **kwargs: Any) -> None:
 
 def _status_payload(limit: int | None = None) -> dict[str, Any]:
     store = _store()
-    raw = store.load(limit=limit)
+    raw = store.load()
     canonical, diag = normalize(raw)
-    state = estimate(canonical)
-    return {"events": diag, "state": state, "database": str(store.path)}
+    selected, window = select_recent(canonical, limit)
+    state = estimate(selected)
+    return {
+        "events": diag,
+        "window": window,
+        "state": state,
+        "database": str(store.path),
+    }
 
 
 def handle_status(params: dict, **kwargs: Any) -> str:
@@ -81,10 +88,17 @@ def handle_export(params: dict, **kwargs: Any) -> str:
     with path.open("w", encoding="utf-8") as f:
         for e in canonical:
             f.write(json.dumps({
-                "seq": e.seq, "hook": e.hook, "event_key": e.event_key,
-                "session_id": e.session_id, "task_id": e.task_id, "turn_id": e.turn_id,
-                "agent_id": e.agent_id, "parent_agent_id": e.parent_agent_id,
-                "kind": e.kind, "data": e.data,
+                "seq": e.seq,
+                "observed_at_ns": e.observed_at_ns,
+                "hook": e.hook,
+                "event_key": e.event_key,
+                "session_id": e.session_id,
+                "task_id": e.task_id,
+                "turn_id": e.turn_id,
+                "agent_id": e.agent_id,
+                "parent_agent_id": e.parent_agent_id,
+                "kind": e.kind,
+                "data": e.data,
             }, ensure_ascii=False, sort_keys=True) + "\n")
     return json.dumps({"success": True, "path": str(path), "events": diag}, ensure_ascii=False)
 
@@ -103,7 +117,14 @@ def register(ctx) -> None:
             "description": "Return experimental organization-state telemetry inferred from Hermes observer hooks.",
             "parameters": {
                 "type": "object",
-                "properties": {"limit": {"type": "integer", "minimum": 1, "maximum": 50000}},
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 50000,
+                        "description": "Estimate state on the most recent N normalized events while preserving full-history identity correlation.",
+                    }
+                },
             },
         },
         handler=handle_status,
