@@ -52,7 +52,7 @@ def _rows():
             "received_at_ns": 1,
             "hook": "on_session_start",
             "event_key": "s1",
-            "payload": {"session_id": "root"},
+            "payload": {"session_id": "root", "platform": "cli"},
         },
         {
             "id": 2,
@@ -101,6 +101,55 @@ def test_missing_subagent_start_does_not_invent_identity():
     tool = next(e for e in events if e.kind == "tool_result")
     assert tool.agent_id == "session:child"
     assert diag["uncertain_session_events"] >= 1
+
+
+def test_subagent_session_start_is_not_root_evidence_without_start_edge():
+    rows = [
+        {
+            "id": 1,
+            "received_at_ns": 1,
+            "hook": "on_session_start",
+            "event_key": "child-session-start",
+            "payload": {"session_id": "child", "platform": "subagent"},
+        },
+        {
+            "id": 2,
+            "received_at_ns": 2,
+            "hook": "post_tool_call",
+            "event_key": "child-tool",
+            "payload": {
+                "session_id": "child",
+                "turn_id": "ct1",
+                "tool_call_id": "tc1",
+                "tool_name": "python",
+                "status": "success",
+            },
+        },
+    ]
+    events, diag = normalize(rows)
+    start = next(e for e in events if e.kind == "on_session_start")
+    tool = next(e for e in events if e.kind == "tool_result")
+    assert start.agent_id == "session:child"
+    assert tool.agent_id == "session:child"
+    assert diag["known_root_sessions"] == 0
+    assert diag["uncertain_session_events"] >= 2
+
+
+def test_explicit_subagent_start_overrides_session_start_hint():
+    rows = _rows() + [
+        {
+            "id": 4,
+            "received_at_ns": 4,
+            "hook": "on_session_start",
+            "event_key": "child-start-extra",
+            "payload": {"session_id": "child"},
+        }
+    ]
+    events, diag = normalize(rows)
+    child_events = [e for e in events if e.session_id == "child"]
+    assert child_events
+    assert all(e.agent_id == "subagent:sub1" for e in child_events)
+    assert diag["known_root_sessions"] == 1
 
 
 def test_estimator_produces_diagnostic_state():
