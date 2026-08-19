@@ -1,0 +1,49 @@
+name: lfm25-qlora-contract
+
+on:
+  push:
+    branches: [lfm25-experiment]
+    paths:
+      - ".github/workflows/lfm25-qlora-contract.yml"
+      - "experiments/lfm25/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Compile training harness
+        run: python -m py_compile experiments/lfm25/train_qlora.py
+      - name: Validate verified-data filtering and run config
+        shell: bash
+        run: |
+          tmp="$(mktemp -d)"
+          python experiments/lfm25/train_qlora.py \
+            --dataset experiments/lfm25/fixtures/verified_sft.jsonl \
+            --output-dir "$tmp/run" \
+            --max-seq-length 2048 \
+            --rank 16 \
+            --alpha 32 \
+            --seed 7 \
+            --dry-run > "$tmp/stdout.json"
+          python - "$tmp/run/run-config.json" <<'PY'
+          import json, sys
+          p = sys.argv[1]
+          data = json.load(open(p))
+          assert data["load_in_4bit"] is True
+          assert data["training_artifact_type"] == "qlora_adapter"
+          assert data["inference_gguf_is_not_training_checkpoint"] is True
+          assert data["data_examples"] == 2, data
+          assert data["rank"] == 16
+          assert data["alpha"] == 32
+          assert data["seed"] == 7
+          print(json.dumps(data, indent=2, sort_keys=True))
+          PY
