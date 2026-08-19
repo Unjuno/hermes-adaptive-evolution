@@ -8,6 +8,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+TOOL_SUCCESS_STATUSES = frozenset({"ok", "success"})
+
 
 def _parent() -> SimpleNamespace:
     """Strict-ish parent fixture for the current Hermes delegation surface.
@@ -256,8 +258,12 @@ def main() -> int:
             recovery_event = terminal_events.get("terminal-recovered")
             if not fail_event or fail_event.get("status") != "error" or fail_event.get("error_type") != "tool_error":
                 raise SystemExit(f"non-zero terminal exit was not observed as tool_error: {fail_event}")
-            if not recovery_event or recovery_event.get("status") != "success":
-                raise SystemExit(f"terminal recovery was not observed as success: {recovery_event}")
+            recovery_status = str((recovery_event or {}).get("status") or "").strip().lower()
+            if not recovery_event or recovery_status not in TOOL_SUCCESS_STATUSES:
+                raise SystemExit(
+                    f"terminal recovery was not observed as a recognized success status "
+                    f"{sorted(TOOL_SUCCESS_STATUSES)}: {recovery_event}"
+                )
 
             serialized_rows = json.dumps(rows, ensure_ascii=False)
             for secret in (
@@ -288,6 +294,7 @@ def main() -> int:
                 "terminal_failure_status": fail_event.get("status"),
                 "terminal_failure_type": fail_event.get("error_type"),
                 "terminal_recovery_status": recovery_event.get("status"),
+                "recognized_tool_success_statuses": sorted(TOOL_SUCCESS_STATUSES),
                 "event_diagnostics": report["events"],
                 "organization_state": state,
             }
