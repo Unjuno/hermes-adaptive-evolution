@@ -9,15 +9,18 @@ from .bundle import create_bundle, replay_bundle
 from .estimator import estimate
 from .normalizer import normalize
 from .store import EventStore
+from .window import select_recent
 
 
 def status(db: str | Path | None = None, limit: int | None = None) -> dict[str, Any]:
     store = EventStore(db)
-    canonical, diagnostics = normalize(store.load(limit=limit))
+    canonical, diagnostics = normalize(store.load())
+    selected, window = select_recent(canonical, limit)
     return {
         "database": str(store.path),
         "events": diagnostics,
-        "state": estimate(canonical),
+        "window": window,
+        "state": estimate(selected),
     }
 
 
@@ -30,6 +33,7 @@ def export(db: str | Path | None, path: str | Path) -> dict[str, Any]:
         for e in canonical:
             f.write(json.dumps({
                 "seq": e.seq,
+                "observed_at_ns": e.observed_at_ns,
                 "hook": e.hook,
                 "event_key": e.event_key,
                 "session_id": e.session_id,
@@ -49,13 +53,18 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_status = sub.add_parser("status", help="Print normalized diagnostics and organization state as JSON.")
-    p_status.add_argument("--limit", type=int, default=None, help="Analyze only the most recent N events.")
+    p_status.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Estimate state on the most recent N normalized events while preserving full-history identity context.",
+    )
 
     p_export = sub.add_parser("export", help="Export normalized/deduplicated events as JSONL.")
     p_export.add_argument("path", help="Destination JSONL path.")
 
     p_bundle = sub.add_parser("bundle", help="Create a checksummed, metadata-first portable capture bundle.")
-    p_bundle.add_argument("directory", help="Destination directory for manifest.json and normalized-events.jsonl.")
+    p_bundle.add_argument("directory", help="Destination directory for manifest and sanitized/normalized event streams.")
 
     p_replay = sub.add_parser("replay", help="Verify and replay a portable capture bundle without SQLite.")
     p_replay.add_argument("directory", help="Capture bundle directory.")
