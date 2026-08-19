@@ -2,7 +2,7 @@
 
 Independent research framework and **Hermes Agent plugin** for adaptive multi-agent organization, trajectory observability, safe self-repair, skill evolution, and later model specialization.
 
-> Status: **experimental / diagnostic-only**. The current `v0.2` slice observes Hermes through public plugin hooks; it does not autonomously reconfigure the runtime yet.
+> Status: **experimental / diagnostic-only**. The current `v0.2` slice is a hook-only observer; it does not add model-facing tools and it does not autonomously reconfigure Hermes.
 
 ## Why a Hermes plugin first
 
@@ -19,19 +19,18 @@ normalization / correlation
       ↓
 Organization State Estimator
       ├─ functional-role posterior
-      ├─ traffic-weighted role mixing
+      ├─ confidence-gated traffic role mixing
       ├─ directed diffusivity
       └─ policy fragility proxy
       ↓
 future: task-conditioned organization router
 ```
 
-## Current plugin tools
+## Non-interference boundary
 
-- `adaptive_evolution_observer_status` — replay captured events and return the current experimental organization state.
-- `adaptive_evolution_observer_export` — export normalized/deduplicated events as JSONL.
+The M1/M2 plugin registers **hooks only**. It intentionally does not add status/export tools to the agent's tool schema. Analysis is performed externally through the `adaptive-evolution-observer` CLI so the measurement system does not become part of the behavior being measured.
 
-The returned state is explicitly `diagnostic_only`. No synthetic event-count threshold authorizes organization changes.
+State-estimator output is explicitly `diagnostic_only`. No synthetic event-count threshold authorizes organization changes.
 
 ## Privacy boundary
 
@@ -88,11 +87,13 @@ export ADAPTIVE_EVOLUTION_DATA_DIR=/path/to/data-dir
 
 ## Capture and replay workflow
 
-After a Hermes run, inspect the observer database without asking the observed agent to call an analysis tool:
+After a Hermes run, inspect the observer database externally:
 
 ```bash
 adaptive-evolution-observer --db "$HERMES_HOME/adaptive-evolution/observer.sqlite3" status
 ```
+
+`status --limit N` resolves identity/correlation against the full available history first and only then evaluates the most recent `N` normalized events. This avoids turning a known child into an unknown session merely because its earlier `subagent_start` lies outside the measurement window.
 
 A plain normalized JSONL export is available when that is all you need:
 
@@ -116,11 +117,22 @@ capture-001/
 └── normalized-events.jsonl
 ```
 
-The raw stream in the bundle is already sanitized before leaving SQLite. Both event streams have SHA-256 checksums, the raw SQLite database is not included, and replay verifies that re-normalization and organization state still match the manifest.
+The raw stream in the bundle is already sanitized before leaving SQLite. Both event streams have SHA-256 checksums, the raw SQLite database is not included, and replay verifies that re-normalization and organization state still match the manifest. Normalized events retain observer timestamps for later temporal/role-drift experiments.
+
+### E1 hook field coverage
+
+A real capture can be inspected without printing hook values:
+
+```bash
+python experiments/report_hook_coverage.py ./capture-001 \
+  --output ./capture-001-hook-coverage.json
+```
+
+The report contains per-hook field presence fractions, observed types, additive fields, and parent/child session coverage.
 
 ### E2 corruption experiments
 
-Once a real Hermes capture exists, use the same immutable sanitized event stream to measure robustness against telemetry corruption:
+Use the same immutable sanitized event stream to measure robustness against telemetry corruption:
 
 ```bash
 python experiments/run_capture_corruption.py ./capture-001 \
@@ -135,9 +147,23 @@ Current scenarios include:
 - full event reorder;
 - 1/5/10% optional correlation-ID stripping.
 
-The experiment reports distributions of identity uncertainty, normalized event loss, interaction-count error, role-mixing error, diffusivity error, role-entropy error, and fragility error. These results are explicitly `experiment_only`; no synthetic or single-capture threshold enables organization reconfiguration.
+The experiment reports distributions of identity uncertainty, normalized event loss, interaction-count error, role-mixing error, role-evidence traffic coverage, diffusivity error, role-entropy error, and fragility error. These results are explicitly `experiment_only`; no synthetic or single-capture threshold enables organization reconfiguration.
 
-This separation is deliberate: the system being observed does not need to participate in analysis of its own telemetry.
+### Observer overhead
+
+```bash
+python experiments/benchmark_observer_overhead.py \
+  --events 1000 \
+  --payload-bytes 1024
+```
+
+This isolates recorder/replay cost only; it is not a substitute for end-to-end Hermes latency measurement.
+
+## Organization-state semantics
+
+Role uncertainty is not silently converted into a mixing signal. `traffic_weighted_role_mixing` is confidence-weighted by the role posteriors at both ends of an interaction, and `role_conditioned_traffic_coverage` is reported separately. If role evidence is absent, role mixing may be `null` by design.
+
+Unknown sessions remain explicit `session:<id>` identities. Missing evidence is uncertainty, not a guessed root/subagent relationship.
 
 ## Research direction
 
@@ -166,7 +192,7 @@ python scripts/check_hermes_contract.py
 python scripts/check_hermes_delegate_hooks.py
 ```
 
-The dedicated `hermes-contract` workflow runs the directory-plugin contract before installing this repository as a Python distribution, then validates the pip entry point and an offline real-Hermes `delegate_task` lifecycle.
+The dedicated `hermes-contract` workflow validates the directory-plugin path before installing this repository as a Python distribution, validates the pip entry point, exercises an offline real-Hermes `delegate_task` lifecycle, creates a capture bundle, runs E1/E2 diagnostics, benchmarks isolated observer overhead, and uploads the resulting artifact.
 
 ## License
 
