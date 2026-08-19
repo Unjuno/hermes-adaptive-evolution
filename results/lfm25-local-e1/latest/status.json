@@ -1,0 +1,33 @@
+{
+  "authority": "provider_backed_e1_contract",
+  "context_length": 98304,
+  "created_at": "2026-08-19T17:51:40.886648+00:00",
+  "critical_gate_passed": false,
+  "external_api_credentials_used": false,
+  "hermes_contract_sha": "b5455fdd16fe608214f91149233660e1836b067c",
+  "model": "LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M",
+  "note": "This is an observability/tool-delegation gate, not a coding-quality or fine-tuning benchmark.",
+  "outcomes": {
+    "baseline": "success",
+    "bundle": "success",
+    "configure": "success",
+    "corruption": "success",
+    "e1_validate": "failure",
+    "hermes_run": "failure",
+    "hook_coverage": "success",
+    "install": "success",
+    "model_probe": "failure",
+    "model_start": "failure",
+    "repair_verify": "failure",
+    "runtime_install": "success"
+  },
+  "provider": "llama.cpp-local",
+  "quantization": "Q4_K_M",
+  "run_id": "32283346838",
+  "runtime_timing": {
+    "max_rss_kb": "204532",
+    "wall_seconds": "mm:ss or m:ss): 0:27.99"
+  },
+  "schema": "adaptive-evolution.lfm25-local-e1-result.v0.1",
+  "source_sha": "97375f273c80fbf2ccf9a37d70f7ad376e16e4b6"
+}

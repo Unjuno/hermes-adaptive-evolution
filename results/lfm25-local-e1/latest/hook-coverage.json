@@ -1,0 +1,480 @@
+{
+  "authority": "contract_observation_only",
+  "bundle": "lfm-e1-artifact/capture",
+  "events": 8,
+  "hooks": {
+    "api_request_error": {
+      "additive_fields_not_in_checked_contract": [
+        "api_call_count",
+        "api_duration",
+        "api_mode",
+        "base_url",
+        "ended_at",
+        "request",
+        "started_at",
+        "telemetry_schema_version"
+      ],
+      "events": 6,
+      "expected_fields": [
+        "task_id",
+        "turn_id",
+        "api_request_id",
+        "session_id",
+        "platform",
+        "model",
+        "provider",
+        "status_code",
+        "retry_count",
+        "max_retries",
+        "retryable",
+        "reason",
+        "error"
+      ],
+      "expected_fields_only_null_or_empty": [
+        "status_code"
+      ],
+      "fields": {
+        "api_call_count": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "int": 6
+          }
+        },
+        "api_duration": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "float": 6
+          }
+        },
+        "api_mode": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "str": 6
+          }
+        },
+        "api_request_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "str": 6
+          }
+        },
+        "base_url": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "str": 6
+          }
+        },
+        "ended_at": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "float": 6
+          }
+        },
+        "error": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "object": 6
+          }
+        },
+        "max_retries": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "int": 6
+          }
+        },
+        "model": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "str": 6
+          }
+        },
+        "platform": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "str": 6
+          }
+        },
+        "provider": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "str": 6
+          }
+        },
+        "reason": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "object": 6
+          }
+        },
+        "request": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "object": 6
+          }
+        },
+        "retry_count": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "int": 6
+          }
+        },
+        "retryable": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "bool": 6
+          }
+        },
+        "session_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "str": 6
+          }
+        },
+        "started_at": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "float": 6
+          }
+        },
+        "status_code": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 0.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 0,
+          "total": 6,
+          "types": {
+            "null": 6
+          }
+        },
+        "task_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "str": 6
+          }
+        },
+        "telemetry_schema_version": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "str": 6
+          }
+        },
+        "turn_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 6,
+          "present": 6,
+          "total": 6,
+          "types": {
+            "str": 6
+          }
+        }
+      },
+      "missing_expected_fields_entirely": [],
+      "observed_fields": [
+        "api_call_count",
+        "api_duration",
+        "api_mode",
+        "api_request_id",
+        "base_url",
+        "ended_at",
+        "error",
+        "max_retries",
+        "model",
+        "platform",
+        "provider",
+        "reason",
+        "request",
+        "retry_count",
+        "retryable",
+        "session_id",
+        "started_at",
+        "status_code",
+        "task_id",
+        "telemetry_schema_version",
+        "turn_id"
+      ]
+    },
+    "on_session_finalize": {
+      "additive_fields_not_in_checked_contract": [
+        "reason",
+        "telemetry_schema_version"
+      ],
+      "events": 1,
+      "expected_fields": [
+        "session_id",
+        "platform"
+      ],
+      "expected_fields_only_null_or_empty": [],
+      "fields": {
+        "platform": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "reason": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "object": 1
+          }
+        },
+        "session_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "telemetry_schema_version": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        }
+      },
+      "missing_expected_fields_entirely": [],
+      "observed_fields": [
+        "platform",
+        "reason",
+        "session_id",
+        "telemetry_schema_version"
+      ]
+    },
+    "on_session_start": {
+      "additive_fields_not_in_checked_contract": [
+        "telemetry_schema_version"
+      ],
+      "events": 1,
+      "expected_fields": [
+        "session_id",
+        "model",
+        "platform"
+      ],
+      "expected_fields_only_null_or_empty": [],
+      "fields": {
+        "model": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "platform": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "session_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "telemetry_schema_version": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        }
+      },
+      "missing_expected_fields_entirely": [],
+      "observed_fields": [
+        "model",
+        "platform",
+        "session_id",
+        "telemetry_schema_version"
+      ]
+    }
+  },
+  "hooks_missing_from_observer_contract": [
+    "kanban_task_blocked",
+    "kanban_task_claimed",
+    "kanban_task_completed",
+    "on_session_end",
+    "on_session_reset",
+    "on_skill_lifecycle",
+    "post_tool_call",
+    "subagent_start",
+    "subagent_stop"
+  ],
+  "hooks_observed": [
+    "api_request_error",
+    "on_session_finalize",
+    "on_session_start"
+  ],
+  "identity": {
+    "start_child_sessions": 0,
+    "stop_child_sessions": 0,
+    "stop_sessions_seen_in_start": 0,
+    "stop_sessions_without_start": 0,
+    "subagent_start_events": 0,
+    "subagent_stop_events": 0
+  },
+  "note": "Field coverage describes this capture only. A key present with null is distinct from a key absent from the payload; neither alone proves the Hermes API cannot provide a non-null value on another path.",
+  "schema": "adaptive-evolution.hook-coverage.v0.2"
+}

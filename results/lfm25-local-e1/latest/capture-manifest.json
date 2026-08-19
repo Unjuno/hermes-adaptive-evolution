@@ -1,0 +1,75 @@
+{
+  "created_at": "2026-08-19T17:51:40.360749+00:00",
+  "event_diagnostics": {
+    "duplicates_removed": 3,
+    "known_child_sessions": 0,
+    "known_root_sessions": 1,
+    "raw_count": 8,
+    "unattributed_observer_events": 0,
+    "uncertain_session_events": 0,
+    "unique_count": 5
+  },
+  "normalized_trace": {
+    "events": 5,
+    "file": "normalized-events.jsonl",
+    "sha256": "3e466bf4b5ce9656ee896038b46942aa0e5b11dba54c78b8e3f36e9900441e63"
+  },
+  "organization_state": {
+    "agents": 1,
+    "authority": "diagnostic_only",
+    "directed_diffusivity": null,
+    "experimental": true,
+    "fragility": {
+      "root:20260819_175114_87eac5": 0.8
+    },
+    "interaction_events": 0,
+    "interaction_sources": 0,
+    "mean_role_entropy": 1.0,
+    "note": "Role mixing is confidence-weighted and may be null when role evidence is insufficient. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks.",
+    "role_conditioned_traffic_coverage": null,
+    "role_confidence": {
+      "root:20260819_175114_87eac5": 0.0
+    },
+    "role_evidence": {
+      "root:20260819_175114_87eac5": 0.0
+    },
+    "role_posteriors": {
+      "root:20260819_175114_87eac5": {
+        "coordination": 0.25,
+        "implementation": 0.25,
+        "research": 0.25,
+        "verification": 0.25
+      }
+    },
+    "schema": "adaptive-evolution.organization-state.v0.2",
+    "support": {
+      "agents_with_outcome_evidence": 1,
+      "agents_with_outgoing_interactions": 0,
+      "agents_with_tool_role_evidence": 0,
+      "interaction_count": 0,
+      "role_conditioned_interaction_weight": 0.0
+    },
+    "tool_outcomes": 3,
+    "traffic_weighted_role_mixing": null
+  },
+  "privacy": {
+    "capture_content": false,
+    "raw_event_stream_is_pre_sanitized": true,
+    "raw_sqlite_included": false
+  },
+  "runtime": {
+    "hermes_agent_version": "0.20.4",
+    "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+    "plugin_version": "0.2.0",
+    "python": "3.13.15"
+  },
+  "sanitized_raw_trace": {
+    "events": 8,
+    "file": "sanitized-raw-events.jsonl",
+    "sha256": "b8ac40dbf072c6a464fb7093a32e01569ea9a515276b7faca8b4ab0944e5e9f8"
+  },
+  "schema": "adaptive-evolution.capture-bundle.v0.2",
+  "source": {
+    "database_name": "lfm25-e1-observer.sqlite3"
+  }
+}

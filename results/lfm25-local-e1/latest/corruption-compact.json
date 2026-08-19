@@ -1,0 +1,518 @@
+{
+  "authority": "experiment_only",
+  "baseline": {
+    "event_diagnostics": {
+      "duplicates_removed": 3,
+      "known_child_sessions": 0,
+      "known_root_sessions": 1,
+      "raw_count": 8,
+      "unattributed_observer_events": 0,
+      "uncertain_session_events": 0,
+      "unique_count": 5
+    },
+    "organization_state": {
+      "agents": 1,
+      "authority": "diagnostic_only",
+      "directed_diffusivity": null,
+      "experimental": true,
+      "fragility": {
+        "root:20260819_175114_87eac5": 0.8
+      },
+      "interaction_events": 0,
+      "interaction_sources": 0,
+      "mean_role_entropy": 1.0,
+      "note": "Role mixing is confidence-weighted and may be null when role evidence is insufficient. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks.",
+      "role_conditioned_traffic_coverage": null,
+      "role_confidence": {
+        "root:20260819_175114_87eac5": 0.0
+      },
+      "role_evidence": {
+        "root:20260819_175114_87eac5": 0.0
+      },
+      "role_posteriors": {
+        "root:20260819_175114_87eac5": {
+          "coordination": 0.25,
+          "implementation": 0.25,
+          "research": 0.25,
+          "verification": 0.25
+        }
+      },
+      "schema": "adaptive-evolution.organization-state.v0.2",
+      "support": {
+        "agents_with_outcome_evidence": 1,
+        "agents_with_outgoing_interactions": 0,
+        "agents_with_tool_role_evidence": 0,
+        "interaction_count": 0,
+        "role_conditioned_interaction_weight": 0.0
+      },
+      "tool_outcomes": 3,
+      "traffic_weighted_role_mixing": null
+    }
+  },
+  "note": "No corruption-rate or sample-count result is a production activation threshold.",
+  "schema": "adaptive-evolution.capture-corruption.v0.1",
+  "summary": {
+    "groups": [
+      {
+        "metrics": {
+          "diffusivity_abs_error": null,
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 0.8,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": null,
+          "role_mixing_abs_error": null,
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.01,
+        "replicates": 20,
+        "scenario": "drop"
+      },
+      {
+        "metrics": {
+          "diffusivity_abs_error": null,
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 0.8,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": null,
+          "role_mixing_abs_error": null,
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 4.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.4000000000000057
+          }
+        },
+        "rate": 0.05,
+        "replicates": 20,
+        "scenario": "drop"
+      },
+      {
+        "metrics": {
+          "diffusivity_abs_error": null,
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 0.8,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": null,
+          "role_mixing_abs_error": null,
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 4.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 4.0
+          }
+        },
+        "rate": 0.1,
+        "replicates": 20,
+        "scenario": "drop"
+      },
+      {
+        "metrics": {
+          "diffusivity_abs_error": null,
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 1.0,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": null,
+          "role_mixing_abs_error": null,
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.01,
+        "replicates": 20,
+        "scenario": "duplicate"
+      },
+      {
+        "metrics": {
+          "diffusivity_abs_error": null,
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 1.0,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": null,
+          "role_mixing_abs_error": null,
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.05,
+        "replicates": 20,
+        "scenario": "duplicate"
+      },
+      {
+        "metrics": {
+          "diffusivity_abs_error": null,
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 1.0,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": null,
+          "role_mixing_abs_error": null,
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.1,
+        "replicates": 20,
+        "scenario": "duplicate"
+      },
+      {
+        "metrics": {
+          "diffusivity_abs_error": null,
+          "fragility_mae": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 1.0,
+            "p90": 1.0
+          },
+          "role_conditioned_traffic_coverage_abs_error": null,
+          "role_mixing_abs_error": null,
+          "tool_outcome_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 1.0,
+        "replicates": 20,
+        "scenario": "full_reorder"
+      },
+      {
+        "metrics": {
+          "diffusivity_abs_error": null,
+          "fragility_mae": {
+            "max": 0.033333333333333326,
+            "median": 0.033333333333333326,
+            "min": 0.0,
+            "p90": 0.033333333333333326
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.2,
+            "median": 1.2,
+            "min": 1.0,
+            "p90": 1.2
+          },
+          "role_conditioned_traffic_coverage_abs_error": null,
+          "role_mixing_abs_error": null,
+          "tool_outcome_delta": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 0.0,
+            "p90": 1.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.01,
+        "replicates": 20,
+        "scenario": "strip_optional_ids"
+      },
+      {
+        "metrics": {
+          "diffusivity_abs_error": null,
+          "fragility_mae": {
+            "max": 0.033333333333333326,
+            "median": 0.033333333333333326,
+            "min": 0.0,
+            "p90": 0.033333333333333326
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.2,
+            "median": 1.2,
+            "min": 1.0,
+            "p90": 1.2
+          },
+          "role_conditioned_traffic_coverage_abs_error": null,
+          "role_mixing_abs_error": null,
+          "tool_outcome_delta": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 0.0,
+            "p90": 1.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.05,
+        "replicates": 20,
+        "scenario": "strip_optional_ids"
+      },
+      {
+        "metrics": {
+          "diffusivity_abs_error": null,
+          "fragility_mae": {
+            "max": 0.033333333333333326,
+            "median": 0.033333333333333326,
+            "min": 0.0,
+            "p90": 0.033333333333333326
+          },
+          "interaction_event_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "mean_role_entropy_abs_error": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          },
+          "normalized_count_ratio": {
+            "max": 1.2,
+            "median": 1.2,
+            "min": 1.0,
+            "p90": 1.2
+          },
+          "role_conditioned_traffic_coverage_abs_error": null,
+          "role_mixing_abs_error": null,
+          "tool_outcome_delta": {
+            "max": 1.0,
+            "median": 1.0,
+            "min": 0.0,
+            "p90": 1.0
+          },
+          "uncertain_session_events_delta": {
+            "max": 0.0,
+            "median": 0.0,
+            "min": 0.0,
+            "p90": 0.0
+          }
+        },
+        "rate": 0.1,
+        "replicates": 20,
+        "scenario": "strip_optional_ids"
+      }
+    ]
+  }
+}
