@@ -87,32 +87,37 @@ def interaction_completion_coverage(starts: np.ndarray, stops: np.ndarray) -> fl
 
 
 def completed_flow_connectivity(starts: np.ndarray, stops: np.ndarray) -> float | None:
-    """Global connectivity of completed interaction relations in [0, 1].
+    """Monotone global connectivity of completed interaction relations.
 
     `None` means there is no completed relation evidence at all. Once at least
     one completion exists, the node set is defined by *start* evidence so a
     started child with a missing stop remains an isolate and can drive the
     connectivity estimate to zero rather than disappearing from the graph.
+
+    Completed relations are binarized and symmetrized. The metric is
+    lambda_2(L) / N for the unnormalized graph Laplacian L. For a fixed node
+    set, adding a non-negative edge Laplacian cannot decrease lambda_2, so more
+    completed relation evidence cannot spuriously make connectivity worse. A
+    complete graph maps to 1.
     """
     starts = np.asarray(starts, dtype=float)
     completed = _completed_counts(starts, stops)
     if float(completed.sum()) <= 0:
         return None
     start_active = (starts.sum(axis=0) + starts.sum(axis=1)) > 0
-    if int(start_active.sum()) < 2:
+    n = int(start_active.sum())
+    if n < 2:
         return None
-    sym = completed + completed.T
+    sym = ((completed + completed.T) > 0).astype(float)
     a = sym[np.ix_(start_active, start_active)]
     degree = a.sum(axis=1)
     if np.any(degree <= 0):
         return 0.0
-    inv_sqrt = 1.0 / np.sqrt(degree)
-    normalized_adj = inv_sqrt[:, None] * a * inv_sqrt[None, :]
-    lap = np.eye(a.shape[0]) - normalized_adj
+    lap = np.diag(degree) - a
     eig = np.sort(np.real(np.linalg.eigvalsh(lap)))
     if eig.size < 2:
         return None
-    return float(np.clip(eig[1] / 2.0, 0.0, 1.0))
+    return float(np.clip(eig[1] / n, 0.0, 1.0))
 
 
 def estimate(events: Iterable[CanonicalEvent]) -> dict:
@@ -199,7 +204,7 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
     completion_coverage = interaction_completion_coverage(start_edges, stop_edges)
     legacy_gap = directed_diffusivity(start_edges)
     return {
-        "schema": "adaptive-evolution.organization-state.v0.3",
+        "schema": "adaptive-evolution.organization-state.v0.4",
         "experimental": True,
         "agents": len(agents),
         "interaction_events": int(total_edge),
@@ -210,6 +215,7 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
         "role_conditioned_traffic_coverage": role_conditioned_traffic_coverage,
         "directed_traffic_breadth": directed_traffic_breadth(start_edges),
         "completed_flow_connectivity": completed_flow_connectivity(start_edges, stop_edges),
+        "completed_flow_connectivity_method": "unnormalized_algebraic_lambda2_over_n_binary_completed_relations",
         "interaction_completion_coverage": completion_coverage,
         "directed_diffusivity": legacy_gap,
         "directed_diffusivity_authority": "deprecated_diagnostic_only",
@@ -230,10 +236,10 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
         "authority": "diagnostic_only",
         "note": (
             "Topology is intentionally vector-valued: directed traffic breadth measures local fan-out, while "
-            "completed-flow connectivity measures global bottlenecks. Unknown completed-flow state is None, while "
-            "partial missing return evidence is conservative and can reduce connectivity to zero. The legacy "
-            "start-only directed_diffusivity was falsified for delegation DAGs and is retained only for backward-"
-            "compatible diagnostics. Role mixing is confidence-weighted and may be null when role evidence is "
-            "insufficient. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks."
+            "completed-flow connectivity measures global bottlenecks. v0.4 uses monotone unnormalized algebraic "
+            "connectivity on binary completed relations so additional completed-edge evidence cannot worsen the "
+            "connectivity value for a fixed node set. Completion coverage remains support metadata, not confidence. "
+            "The legacy start-only directed_diffusivity is retained only for backward-compatible diagnostics. "
+            "No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks."
         ),
     }
