@@ -153,6 +153,18 @@ class EventStore:
             self._pid = pid
         return self._con
 
+    def close(self) -> None:
+        """Close the process-local connection; future operations reopen lazily."""
+        with self._lock:
+            con = self._con
+            self._con = None
+            self._pid = None
+            if con is not None:
+                try:
+                    con.close()
+                except Exception:
+                    pass
+
     def _init_db(self) -> None:
         with self._lock:
             con = self._connect()
