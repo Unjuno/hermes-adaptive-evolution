@@ -1,0 +1,371 @@
+name: lfm25-local-e1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/lfm25-local-e1.yml"
+      - "adaptive_evolution_observer/**"
+      - "experiments/validate_e1_capture.py"
+      - "experiments/report_hook_coverage.py"
+      - "experiments/run_capture_corruption.py"
+      - "experiments/fixtures/e1_repair_project/**"
+      - "plugin.yaml"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  lfm25-q4-e1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
+      E1_MODEL: LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M
+      E1_CONTEXT: "98304"
+      E1_PORT: "8080"
+      ADAPTIVE_EVOLUTION_CAPTURE_CONTENT: "0"
+    steps:
+      - name: Checkout adaptive-evolution
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout pinned Hermes source
+        uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install Hermes and observer plugin
+        id: install
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p lfm-e1-artifact/logs
+          {
+            test "$(git -C _hermes rev-parse HEAD)" = "$HERMES_CONTRACT_SHA"
+            python -m pip install -e ./_hermes
+            python -m pip install -e .
+          } 2>&1 | tee lfm-e1-artifact/logs/install.log
+
+      - name: Install llama.cpp
+        id: runtime_install
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            curl -LsSf https://llama.app/install.sh | sh
+            export PATH="$HOME/.local/bin:$HOME/.llama/bin:$PATH"
+            command -v llama-server || command -v llama
+            (llama-server --version || llama --version || true)
+          } 2>&1 | tee lfm-e1-artifact/logs/runtime-install.log
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.llama/bin" >> "$GITHUB_PATH"
+
+      - name: Start LFM2.5 Q4 OpenAI-compatible server
+        id: model_start
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p lfm-e1-artifact/logs
+          if command -v llama-server >/dev/null 2>&1; then
+            nohup llama-server \
+              -hf LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M \
+              -c "$E1_CONTEXT" \
+              --host 127.0.0.1 --port "$E1_PORT" \
+              > lfm-e1-artifact/logs/llama-server.log 2>&1 &
+          else
+            nohup llama serve \
+              -hf LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M \
+              -c "$E1_CONTEXT" \
+              --host 127.0.0.1 --port "$E1_PORT" \
+              > lfm-e1-artifact/logs/llama-server.log 2>&1 &
+          fi
+          echo $! > lfm-e1-artifact/llama.pid
+          for i in $(seq 1 180); do
+            if curl -fsS "http://127.0.0.1:${E1_PORT}/v1/models" > lfm-e1-artifact/models.json 2>/dev/null; then
+              cat lfm-e1-artifact/models.json
+              exit 0
+            fi
+            sleep 2
+          done
+          tail -120 lfm-e1-artifact/logs/llama-server.log || true
+          echo "llama.cpp server did not become ready" >&2
+          exit 1
+
+      - name: Probe model with tools
+        id: model_probe
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee lfm-e1-artifact/logs/model-probe.log
+          import json, os, urllib.request
+          port = os.environ["E1_PORT"]
+          model = os.environ["E1_MODEL"]
+          payload = {
+              "model": model,
+              "messages": [{"role": "user", "content": "Call the ping tool exactly once."}],
+              "tools": [{"type": "function", "function": {"name": "ping", "description": "Return pong", "parameters": {"type": "object", "properties": {}, "additionalProperties": False}}}],
+              "tool_choice": "auto",
+              "temperature": 0,
+              "max_tokens": 256,
+          }
+          req = urllib.request.Request(
+              f"http://127.0.0.1:{port}/v1/chat/completions",
+              data=json.dumps(payload).encode(),
+              headers={"Content-Type": "application/json"},
+          )
+          with urllib.request.urlopen(req, timeout=300) as r:
+              body = json.load(r)
+          print(json.dumps(body, indent=2, sort_keys=True))
+          msg = body["choices"][0]["message"]
+          if not msg.get("tool_calls"):
+              raise SystemExit("LFM2.5 did not emit a tool call in the tool probe")
+          PY
+
+      - name: Configure isolated Hermes profile
+        id: configure
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -e
+          export HERMES_HOME="${RUNNER_TEMP}/hermes-lfm25-e1"
+          mkdir -p "$HERMES_HOME"
+          fixture="${GITHUB_WORKSPACE}/experiments/fixtures/e1_repair_project"
+          cat > "$HERMES_HOME/config.yaml" <<EOF
+          model:
+            default: "$E1_MODEL"
+            provider: custom
+            base_url: "http://127.0.0.1:$E1_PORT/v1"
+            context_length: $E1_CONTEXT
+            max_tokens: 2048
+            reasoning:
+              enabled: false
+          terminal:
+            cwd: "$fixture"
+          plugins:
+            enabled:
+              - adaptive-evolution
+          delegation:
+            max_concurrent_children: 1
+            subagent_auto_approve: false
+          EOF
+          cat "$HERMES_HOME/config.yaml" > lfm-e1-artifact/config-redacted.yaml
+          echo "HERMES_HOME=$HERMES_HOME" >> "$GITHUB_ENV"
+          echo "ADAPTIVE_EVOLUTION_OBSERVER_DB=${RUNNER_TEMP}/lfm25-e1-observer.sqlite3" >> "$GITHUB_ENV"
+
+      - name: Verify deterministic failing baseline
+        id: baseline
+        continue-on-error: true
+        shell: bash
+        run: |
+          cd experiments/fixtures/e1_repair_project
+          if python -m unittest -q > "${GITHUB_WORKSPACE}/lfm-e1-artifact/logs/baseline-test.log" 2>&1; then
+            echo "fixture baseline unexpectedly passed" >&2
+            exit 1
+          fi
+          echo "expected failing baseline observed"
+
+      - name: Run provider-backed Hermes E1 with LFM2.5 Q4
+        id: hermes_run
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          prompt='This is an E1 observability fixture. Use delegate_task exactly once with a leaf subagent. Ask the child to reproduce the failing unittest before editing, fix the root cause with the smallest change in counter.py only, run python -m unittest -q after the patch, and return the evidence. Do not modify the tests. After the child returns, inspect the result and report whether the test transitioned from failing to passing.'
+          cd experiments/fixtures/e1_repair_project
+          /usr/bin/time -v timeout 900s hermes -t terminal,file,delegation chat \
+            -q "$prompt" -Q --max-turns 16 --source adaptive-evolution-lfm25-e1 \
+            > "${GITHUB_WORKSPACE}/lfm-e1-artifact/hermes-output.txt" \
+            2> "${GITHUB_WORKSPACE}/lfm-e1-artifact/logs/hermes-run.log"
+
+      - name: Verify repair outcome
+        id: repair_verify
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          cd experiments/fixtures/e1_repair_project
+          python -m unittest -q 2>&1 | tee "${GITHUB_WORKSPACE}/lfm-e1-artifact/logs/final-test.log"
+          git diff -- counter.py test_counter.py > "${GITHUB_WORKSPACE}/lfm-e1-artifact/fixture.diff"
+          changed="$(git diff --name-only --relative -- .)"
+          if [ "$changed" != "counter.py" ]; then
+            echo "expected only counter.py to change; got: $changed" >&2
+            exit 1
+          fi
+
+      - name: Create capture bundle
+        id: bundle
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          test -f "$ADAPTIVE_EVOLUTION_OBSERVER_DB"
+          adaptive-evolution-observer --db "$ADAPTIVE_EVOLUTION_OBSERVER_DB" bundle lfm-e1-artifact/capture \
+            2>&1 | tee lfm-e1-artifact/logs/bundle.log
+
+      - name: Validate E1 capture
+        id: e1_validate
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python experiments/validate_e1_capture.py lfm-e1-artifact/capture \
+            --output lfm-e1-artifact/e1-validation.json \
+            2>&1 | tee lfm-e1-artifact/logs/e1-validation.log
+
+      - name: Report hook coverage
+        id: hook_coverage
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          python experiments/report_hook_coverage.py lfm-e1-artifact/capture \
+            --output lfm-e1-artifact/hook-coverage.json
+
+      - name: Run corruption sweep
+        id: corruption
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          python experiments/run_capture_corruption.py lfm-e1-artifact/capture \
+            --replicates 20 --output lfm-e1-artifact/corruption-summary.json
+
+      - name: Build machine-readable result
+        id: summarize
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          RUNTIME_INSTALL: ${{ steps.runtime_install.outcome }}
+          MODEL_START: ${{ steps.model_start.outcome }}
+          MODEL_PROBE: ${{ steps.model_probe.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          BASELINE: ${{ steps.baseline.outcome }}
+          HERMES_RUN: ${{ steps.hermes_run.outcome }}
+          REPAIR_VERIFY: ${{ steps.repair_verify.outcome }}
+          BUNDLE: ${{ steps.bundle.outcome }}
+          E1_VALIDATE: ${{ steps.e1_validate.outcome }}
+          HOOK_COVERAGE: ${{ steps.hook_coverage.outcome }}
+          CORRUPTION: ${{ steps.corruption.outcome }}
+        shell: bash
+        run: |
+          mkdir -p results/lfm25-local-e1/latest
+          python - <<'PY'
+          import json, os, re
+          from datetime import datetime, timezone
+          from pathlib import Path
+          src = Path('lfm-e1-artifact')
+          dst = Path('results/lfm25-local-e1/latest')
+          outcomes = {k.lower(): os.environ[k] for k in (
+              'INSTALL','RUNTIME_INSTALL','MODEL_START','MODEL_PROBE','CONFIGURE','BASELINE',
+              'HERMES_RUN','REPAIR_VERIFY','BUNDLE','E1_VALIDATE','HOOK_COVERAGE','CORRUPTION')}
+          critical = ('install','runtime_install','model_start','model_probe','configure','baseline','hermes_run','repair_verify','bundle','e1_validate')
+          timing = {}
+          p = src / 'logs/hermes-run.log'
+          if p.exists():
+              text = p.read_text(errors='replace')
+              for key, label in [('wall_seconds','Elapsed (wall clock) time'), ('max_rss_kb','Maximum resident set size')]:
+                  m = re.search(rf'{re.escape(label)}[^:]*:\s*(.+)', text)
+                  if m: timing[key] = m.group(1).strip()
+          status = {
+              'schema': 'adaptive-evolution.lfm25-local-e1-result.v0.1',
+              'created_at': datetime.now(timezone.utc).isoformat(),
+              'source_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],
+              'hermes_contract_sha': os.environ['HERMES_CONTRACT_SHA'],
+              'provider': 'llama.cpp-local', 'model': os.environ['E1_MODEL'],
+              'quantization': 'Q4_K_M', 'context_length': int(os.environ['E1_CONTEXT']),
+              'external_api_credentials_used': False, 'outcomes': outcomes,
+              'critical_gate_passed': all(outcomes[k] == 'success' for k in critical),
+              'runtime_timing': timing,
+              'authority': 'provider_backed_e1_contract',
+              'note': 'This is an observability/tool-delegation gate, not a coding-quality or fine-tuning benchmark.'
+          }
+          (dst/'status.json').write_text(json.dumps(status, indent=2, sort_keys=True)+'\n')
+          for name in ('e1-validation.json','hook-coverage.json','fixture.diff'):
+              p = src/name
+              if p.exists(): (dst/name).write_bytes(p.read_bytes())
+          manifest = src/'capture/manifest.json'
+          if manifest.exists(): (dst/'capture-manifest.json').write_bytes(manifest.read_bytes())
+          corr = src/'corruption-summary.json'
+          if corr.exists():
+              data=json.loads(corr.read_text())
+              compact={k:data.get(k) for k in ('schema','baseline','summary','authority','note')}
+              (dst/'corruption-compact.json').write_text(json.dumps(compact,indent=2,sort_keys=True)+'\n')
+          logs=dst/'logs'; logs.mkdir(exist_ok=True)
+          for p in sorted((src/'logs').glob('*.log')):
+              lines=p.read_text(errors='replace').splitlines()
+              (logs/p.name).write_text('\n'.join(lines[-180:])+'\n')
+          out=src/'hermes-output.txt'
+          if out.exists(): (dst/'hermes-output-tail.txt').write_text(out.read_text(errors='replace')[-4000:])
+          PY
+
+      - name: Publish result branch
+        id: publish
+        if: always()
+        shell: bash
+        run: |
+          set -e
+          publish_dir="${RUNNER_TEMP}/lfm25-e1-latest"
+          rm -rf "$publish_dir" && mkdir -p "$publish_dir"
+          cp -a results/lfm25-local-e1/latest/. "$publish_dir/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan lfm25-local-e1-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/lfm25-local-e1/latest
+          cp -a "$publish_dir"/. results/lfm25-local-e1/latest/
+          git add results/lfm25-local-e1/latest
+          git commit -m "Record LFM2.5 Q4 E1 for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:lfm25-local-e1-results
+
+      - name: Upload full artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lfm25-local-e1
+          path: lfm-e1-artifact/
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Enforce provider-backed E1 gate
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          RUNTIME_INSTALL: ${{ steps.runtime_install.outcome }}
+          MODEL_START: ${{ steps.model_start.outcome }}
+          MODEL_PROBE: ${{ steps.model_probe.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          BASELINE: ${{ steps.baseline.outcome }}
+          HERMES_RUN: ${{ steps.hermes_run.outcome }}
+          REPAIR_VERIFY: ${{ steps.repair_verify.outcome }}
+          BUNDLE: ${{ steps.bundle.outcome }}
+          E1_VALIDATE: ${{ steps.e1_validate.outcome }}
+          PUBLISH: ${{ steps.publish.outcome }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          names=('INSTALL','RUNTIME_INSTALL','MODEL_START','MODEL_PROBE','CONFIGURE','BASELINE','HERMES_RUN','REPAIR_VERIFY','BUNDLE','E1_VALIDATE','PUBLISH')
+          outcomes={n.lower():os.environ[n] for n in names}
+          failed=[k for k,v in outcomes.items() if v!='success']
+          if failed: raise SystemExit(f'LFM2.5 provider E1 failed: {failed}; outcomes={outcomes}')
+          print('LFM2.5 provider-backed E1 gate passed')
+          PY
