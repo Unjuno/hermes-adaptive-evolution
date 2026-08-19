@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import adaptive_evolution_observer.plugin as plugin_mod
 from adaptive_evolution_observer.estimator import estimate
 from adaptive_evolution_observer.normalizer import normalize
-from adaptive_evolution_observer.plugin import HOOKS, handle_status, register
+from adaptive_evolution_observer.plugin import HOOKS, register
 from adaptive_evolution_observer.store import EventStore, resolve_db_path, sanitize
 
 
@@ -22,13 +21,12 @@ class FakeContext:
         self.tools[name] = {"handler": handler, **kwargs}
 
 
-def test_registers_observer_surface_only():
+def test_registers_hook_only_observer_surface():
     ctx = FakeContext()
     register(ctx)
     assert set(ctx.hooks) == set(HOOKS)
     assert "pre_tool_call" not in ctx.hooks
-    assert "adaptive_evolution_observer_status" in ctx.tools
-    assert "adaptive_evolution_observer_export" in ctx.tools
+    assert ctx.tools == {}
 
 
 def test_sanitize_is_metadata_first(monkeypatch):
@@ -221,9 +219,3 @@ def test_plugin_store_rebinds_when_profile_changes(monkeypatch, tmp_path: Path):
     finally:
         plugin_mod._STORE = None
         plugin_mod._STORE_PATH = None
-
-
-def test_status_limit_validation(monkeypatch, tmp_path: Path):
-    monkeypatch.setenv("ADAPTIVE_EVOLUTION_OBSERVER_DB", str(tmp_path / "status.sqlite3"))
-    out = json.loads(handle_status({"limit": "bad"}))
-    assert out["success"] is False
