@@ -1,0 +1,25 @@
+preload response model: qwen3:4b-instruct
+{
+  "models": [
+    {
+      "context_length": 65536,
+      "details": {
+        "families": [
+          "qwen3"
+        ],
+        "family": "qwen3",
+        "format": "gguf",
+        "parameter_size": "4.0B",
+        "parent_model": "",
+        "quantization_level": "Q4_K_M"
+      },
+      "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+      "expires_at": "2026-08-19T18:45:41.891048768Z",
+      "model": "qwen3:4b-instruct",
+      "name": "qwen3:4b-instruct",
+      "size": 12759638997,
+      "size_vram": 0
+    }
+  ]
+}
+verified runtime context: 65536

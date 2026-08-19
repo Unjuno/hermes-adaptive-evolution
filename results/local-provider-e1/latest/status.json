@@ -1,0 +1,28 @@
+{
+  "authority": "provider_backed_e1_contract",
+  "context_length": 65536,
+  "created_at": "2026-08-19T18:30:47.951656+00:00",
+  "critical_gate_passed": false,
+  "external_api_credentials_used": false,
+  "hermes_contract_sha": "b5455fdd16fe608214f91149233660e1836b067c",
+  "model": "qwen3:4b-instruct",
+  "note": "This gate exercises a real local model through Hermes; it is not a coding-quality benchmark or M2 routing gate.",
+  "outcomes": {
+    "baseline": "success",
+    "bundle": "success",
+    "configure": "success",
+    "context_preload": "success",
+    "corruption": "success",
+    "e1_validate": "failure",
+    "hermes_run": "failure",
+    "hook_coverage": "success",
+    "install": "success",
+    "model_pull": "success",
+    "ollama_install": "success",
+    "repair_verify": "failure"
+  },
+  "provider": "ollama-local",
+  "run_id": "32286173730",
+  "schema": "adaptive-evolution.local-provider-e1-result.v0.2",
+  "source_sha": "af2cb1f5ec1ea8bd039ca5d0019639d99d2b4758"
+}
