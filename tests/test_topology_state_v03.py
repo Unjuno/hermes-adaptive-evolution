@@ -63,12 +63,11 @@ def test_breadth_and_global_connectivity_are_distinct_observables():
     assert star["directed_traffic_breadth"] > chain["directed_traffic_breadth"]
     assert star["completed_flow_connectivity"] is not None
     assert chain["completed_flow_connectivity"] is not None
-    # Neither quantity is a synonym for the legacy start-only SLEM gap.
     assert "directed_diffusivity" in star
     assert star["directed_diffusivity_authority"] == "deprecated_diagnostic_only"
 
 
-def test_missing_one_stop_reduces_completion_coverage():
+def test_missing_one_stop_reduces_completion_coverage_and_connectivity():
     events = [
         _event(1, "interaction_start", agent="a", parent="root"),
         _event(2, "interaction_stop", agent="a", parent="root"),
@@ -78,3 +77,6 @@ def test_missing_one_stop_reduces_completion_coverage():
     assert state["interaction_events"] == 2
     assert state["completed_interaction_events"] == 1
     assert state["interaction_completion_coverage"] == 0.5
+    # b was observed to start, so it remains an unsupported isolate instead of
+    # vanishing from the completed-flow graph and making connectivity look good.
+    assert state["completed_flow_connectivity"] == 0.0
