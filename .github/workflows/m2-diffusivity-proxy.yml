@@ -1,0 +1,88 @@
+name: m2-diffusivity-proxy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/m2-diffusivity-proxy.yml"
+      - "experiments/run_diffusivity_proxy_falsification.py"
+      - "adaptive_evolution_observer/estimator.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  falsify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install observer
+        run: python -m pip install -e .
+      - name: Run independent seeds
+        shell: bash
+        run: |
+          set -e
+          mkdir -p m2-proxy-artifact
+          for seed in 17 29 43 71 101; do
+            python experiments/run_diffusivity_proxy_falsification.py \
+              --seed "$seed" --nodes 8 --random-cases 80 --replicates 120 \
+              --output "m2-proxy-artifact/seed-${seed}.json" >/dev/null
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[]
+          for p in sorted(Path('m2-proxy-artifact').glob('seed-*.json')):
+              d=json.loads(p.read_text())
+              rows.append({
+                  'seed': d['seed'],
+                  'current_rank': d['correlations']['current_directed_gap']['rank'],
+                  'completed_rank': d['correlations']['completed_flow_gap']['rank'],
+                  'expansion_rank': d['correlations']['edge_expansion_proxy']['rank'],
+                  'current_falsified': d['conclusion']['current_metric_falsified'],
+              })
+          def mean(k): return sum(r[k] for r in rows)/len(rows)
+          summary={
+              'schema':'adaptive-evolution.diffusivity-proxy-aggregate.v0.1',
+              'runs':rows,
+              'mean_rank_correlation':{
+                  'current_directed_gap':mean('current_rank'),
+                  'completed_flow_gap':mean('completed_rank'),
+                  'edge_expansion_proxy':mean('expansion_rank'),
+              },
+              'falsified_runs':sum(bool(r['current_falsified']) for r in rows),
+              'run_count':len(rows),
+              'decision': 'replace_current_as_m2_authority' if sum(bool(r['current_falsified']) for r in rows)>=4 else 'retain_for_more_tests',
+              'authority':'synthetic_proxy_falsification_only',
+          }
+          Path('m2-proxy-artifact/summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(summary,indent=2,sort_keys=True))
+          PY
+      - name: Publish result branch
+        shell: bash
+        run: |
+          set -e
+          publish_dir="${RUNNER_TEMP}/m2-proxy"
+          mkdir -p "$publish_dir"
+          cp -a m2-proxy-artifact/. "$publish_dir/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan m2-diffusivity-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/m2-diffusivity/latest
+          cp -a "$publish_dir"/. results/m2-diffusivity/latest/
+          git add results/m2-diffusivity/latest
+          git commit -m "Record M2 diffusivity proxy falsification for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:m2-diffusivity-results
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m2-diffusivity-proxy
+          path: m2-proxy-artifact/
+          retention-days: 7
