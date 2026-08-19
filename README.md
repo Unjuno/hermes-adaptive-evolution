@@ -62,16 +62,28 @@ When using the directory form, install this project's Python dependencies in the
 
 ## State
 
-Default observer database:
+The default observer database is profile-aware:
+
+```text
+$HERMES_HOME/adaptive-evolution/observer.sqlite3
+```
+
+When `HERMES_HOME` is unset, this resolves to:
 
 ```text
 ~/.hermes/adaptive-evolution/observer.sqlite3
 ```
 
-Override it with:
+Override it explicitly with:
 
 ```bash
 export ADAPTIVE_EVOLUTION_OBSERVER_DB=/path/to/observer.sqlite3
+```
+
+or move all adaptive-evolution data with:
+
+```bash
+export ADAPTIVE_EVOLUTION_DATA_DIR=/path/to/data-dir
 ```
 
 ## Offline capture inspection
@@ -79,8 +91,8 @@ export ADAPTIVE_EVOLUTION_OBSERVER_DB=/path/to/observer.sqlite3
 After a Hermes run, inspect or export the observer database without asking the agent to execute any plugin tool:
 
 ```bash
-adaptive-evolution-observer --db ~/.hermes/adaptive-evolution/observer.sqlite3 status
-adaptive-evolution-observer --db ~/.hermes/adaptive-evolution/observer.sqlite3 export ./trace.jsonl
+adaptive-evolution-observer --db "$HERMES_HOME/adaptive-evolution/observer.sqlite3" status
+adaptive-evolution-observer --db "$HERMES_HOME/adaptive-evolution/observer.sqlite3" export ./trace.jsonl
 ```
 
 This separation is deliberate: the system being observed does not need to participate in analysis of its own telemetry.
@@ -102,6 +114,14 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`experiments/EXPERIMENT_PLAN.md`](
 ```bash
 python -m pytest
 python -m compileall -q adaptive_evolution_observer __init__.py
+```
+
+For the real Hermes contract path (requires `hermes-agent==0.20.4`):
+
+```bash
+hermes plugins doctor . --ci
+python scripts/check_hermes_contract.py
+python scripts/check_hermes_delegate_hooks.py
 ```
 
 ## License
