@@ -15,7 +15,11 @@ SENSITIVE_KEYS = {
     "request_messages", "user_message", "assistant_response", "response_text",
     "final_response", "child_goal",
 }
-CONTENT_KEYS = {"args", "result", "request", "response", "assistant_message", "error", "error_message", "reason", "summary"}
+CONTENT_KEYS = {
+    "args", "result", "request", "response", "assistant_message", "error",
+    "error_message", "reason", "summary", "child_summary", "tool_input",
+    "tool_output",
+}
 
 
 def default_data_dir() -> Path:
@@ -47,21 +51,25 @@ def sanitize(value: Any, *, key: str = "", depth: int = 0) -> Any:
     """Bound/redact telemetry before persistence.
 
     The recorder is intentionally metadata-first. Raw prompt/tool content is not
-    retained by default even when the Hermes hook exposes it.
+    retained by default even when the Hermes hook exposes it. Secret-bearing
+    values are never fingerprinted: a short hash of a low-entropy password,
+    token, or proprietary goal would still enable offline guessing/linkage.
     """
     if depth > 6:
         return "<max-depth>"
     lk = key.lower()
     if lk in SENSITIVE_KEYS or any(part in lk for part in ("password", "secret", "token")):
         if isinstance(value, str):
-            digest = hashlib.sha256(value.encode("utf-8", errors="ignore")).hexdigest()[:16]
-            return {"redacted": True, "sha256_16": digest, "length": len(value)}
+            return {"redacted": True, "length": len(value)}
         return "<redacted>"
     if lk in CONTENT_KEYS and os.getenv("ADAPTIVE_EVOLUTION_CAPTURE_CONTENT", "0") != "1":
         if isinstance(value, dict):
             allowed = {
                 k: v for k, v in value.items()
-                if str(k).lower() in {"ok", "success", "status", "error", "error_type", "error_message", "reason", "type"}
+                if str(k).lower() in {
+                    "ok", "success", "status", "error", "error_type",
+                    "error_message", "reason", "type", "exit_code",
+                }
             }
             return sanitize(allowed, depth=depth + 1)
         if isinstance(value, str):
