@@ -17,6 +17,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8,<10"]
 
+[project.scripts]
+adaptive-evolution-observer = "adaptive_evolution_observer.cli:main"
+
 [project.entry-points."hermes_agent.plugins"]
 adaptive-evolution = "adaptive_evolution_observer"
 

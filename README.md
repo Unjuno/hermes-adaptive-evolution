@@ -74,6 +74,17 @@ Override it with:
 export ADAPTIVE_EVOLUTION_OBSERVER_DB=/path/to/observer.sqlite3
 ```
 
+## Offline capture inspection
+
+After a Hermes run, inspect or export the observer database without asking the agent to execute any plugin tool:
+
+```bash
+adaptive-evolution-observer --db ~/.hermes/adaptive-evolution/observer.sqlite3 status
+adaptive-evolution-observer --db ~/.hermes/adaptive-evolution/observer.sqlite3 export ./trace.jsonl
+```
+
+This separation is deliberate: the system being observed does not need to participate in analysis of its own telemetry.
+
 ## Research direction
 
 The current working hypotheses are deliberately falsifiable:
