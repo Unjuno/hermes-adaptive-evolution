@@ -103,10 +103,14 @@ def compare_state(
         "normalized_count_ratio": float(candidate_diag.get("unique_count", 0)) / baseline_unique,
         "uncertain_session_events_delta": int(candidate_diag.get("uncertain_session_events", 0)) - int(baseline_diag.get("uncertain_session_events", 0)),
         "interaction_event_delta": int(candidate.get("interaction_events", 0)) - int(baseline.get("interaction_events", 0)),
+        "completed_interaction_event_delta": int(candidate.get("completed_interaction_events", 0)) - int(baseline.get("completed_interaction_events", 0)),
         "tool_outcome_delta": int(candidate.get("tool_outcomes", 0)) - int(baseline.get("tool_outcomes", 0)),
         "role_mixing_abs_error": _abs_error(candidate.get("traffic_weighted_role_mixing"), baseline.get("traffic_weighted_role_mixing")),
         "role_conditioned_traffic_coverage_abs_error": _abs_error(candidate.get("role_conditioned_traffic_coverage"), baseline.get("role_conditioned_traffic_coverage")),
-        "diffusivity_abs_error": _abs_error(candidate.get("directed_diffusivity"), baseline.get("directed_diffusivity")),
+        "traffic_breadth_abs_error": _abs_error(candidate.get("directed_traffic_breadth"), baseline.get("directed_traffic_breadth")),
+        "completed_flow_connectivity_abs_error": _abs_error(candidate.get("completed_flow_connectivity"), baseline.get("completed_flow_connectivity")),
+        "interaction_completion_coverage_abs_error": _abs_error(candidate.get("interaction_completion_coverage"), baseline.get("interaction_completion_coverage")),
+        "legacy_diffusivity_abs_error": _abs_error(candidate.get("directed_diffusivity"), baseline.get("directed_diffusivity")),
         "mean_role_entropy_abs_error": _abs_error(candidate.get("mean_role_entropy"), baseline.get("mean_role_entropy")),
         "fragility_mae": _fragility_mae(baseline, candidate),
     }
@@ -185,7 +189,7 @@ def run(bundle: str | Path, *, replicates: int, seed: int) -> dict[str, Any]:
                 })
 
     return {
-        "schema": "adaptive-evolution.capture-corruption.v0.1",
+        "schema": "adaptive-evolution.capture-corruption.v0.2",
         "bundle": str(Path(bundle).expanduser()),
         "seed": seed,
         "replicates": replicates,
@@ -196,7 +200,11 @@ def run(bundle: str | Path, *, replicates: int, seed: int) -> dict[str, Any]:
         "summary": summarize(records),
         "records": records,
         "authority": "experiment_only",
-        "note": "No corruption-rate or sample-count result is a production activation threshold.",
+        "note": (
+            "No corruption-rate or sample-count result is a production activation threshold. "
+            "Topology corruption is evaluated as a vector: traffic breadth, completed-flow connectivity, "
+            "and completion support are separate observables."
+        ),
     }
 
 
