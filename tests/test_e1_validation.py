@@ -7,7 +7,13 @@ from adaptive_evolution_observer.store import EventStore
 from experiments.validate_e1_capture import validate
 
 
-def _capture(tmp_path: Path, *, include_recovery: bool = True, include_delegation: bool = True) -> Path:
+def _capture(
+    tmp_path: Path,
+    *,
+    include_recovery: bool = True,
+    include_delegation: bool = True,
+    recovery_status: str = "ok",
+) -> Path:
     db = tmp_path / "observer.sqlite3"
     store = EventStore(db)
     store.append("on_session_start", {
@@ -42,7 +48,7 @@ def _capture(tmp_path: Path, *, include_recovery: bool = True, include_delegatio
             "turn_id": "turn-recovery",
             "tool_call_id": "tool-recovery",
             "tool_name": "terminal",
-            "status": "success",
+            "status": recovery_status,
             "result": "sensitive passing-test output",
         })
     if include_delegation:
@@ -58,11 +64,23 @@ def _capture(tmp_path: Path, *, include_recovery: bool = True, include_delegatio
     return target
 
 
-def test_e1_validation_accepts_delegation_failure_recovery_trace(tmp_path: Path):
-    result = validate(_capture(tmp_path))
+def test_e1_validation_accepts_current_hermes_ok_recovery_status(tmp_path: Path):
+    result = validate(_capture(tmp_path, recovery_status="ok"))
     assert result["passed"] is True
     assert all(result["checks"].values())
     assert result["counts"]["same_agent_failure_recovery_pairs"] == 1
+
+
+def test_e1_validation_keeps_backward_success_status_compatible(tmp_path: Path):
+    result = validate(_capture(tmp_path, recovery_status="success"))
+    assert result["passed"] is True
+    assert result["counts"]["tool_successes"] == 1
+
+
+def test_e1_validation_rejects_unknown_recovery_status(tmp_path: Path):
+    result = validate(_capture(tmp_path, recovery_status="unknown"))
+    assert result["passed"] is False
+    assert result["checks"]["has_later_same_agent_tool_success"] is False
 
 
 def test_e1_validation_rejects_missing_recovery(tmp_path: Path):
