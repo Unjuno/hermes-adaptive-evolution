@@ -1,0 +1,45 @@
+{
+  "authority": "runtime_contract_comparison_only",
+  "baseline": {
+    "context_length": 98304,
+    "critical_gate_passed": false,
+    "delegation_starts": 0,
+    "delegation_stops": 0,
+    "e1_validation_passed": false,
+    "failure_recovery_pairs": 0,
+    "hermes_run": "failure",
+    "identity_clean": true,
+    "max_tokens": 2048,
+    "model": "qwen3:4b-instruct",
+    "provider": "ollama-local",
+    "repair_verify": "failure",
+    "tool_errors": 0,
+    "tool_successes": 0,
+    "wall_seconds": null
+  },
+  "interpretation": {
+    "baseline_passed_provider_e1": false,
+    "lfm_passed_provider_e1": true,
+    "quality_ranking_authorized": false,
+    "reason": "E1 is a runtime/tool/delegation observability gate, not a general quality benchmark. A failed model may also be confounded by provider/model-metadata/context handling."
+  },
+  "lfm": {
+    "context_length": 98304,
+    "critical_gate_passed": true,
+    "delegation_starts": 1,
+    "delegation_stops": 1,
+    "e1_validation_passed": true,
+    "failure_recovery_pairs": 5,
+    "hermes_run": "success",
+    "identity_clean": true,
+    "max_tokens": 2048,
+    "model": "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M",
+    "provider": "ollama-local",
+    "repair_verify": "success",
+    "tool_errors": 5,
+    "tool_successes": 12,
+    "wall_seconds": 1100
+  },
+  "same_declared_context": true,
+  "schema": "adaptive-evolution.local-e1-model-comparison.v0.1"
+}
