@@ -1,0 +1,48 @@
+name: m2-state-estimator
+
+on:
+  push:
+    branches: [m2-state-estimator]
+    paths:
+      - ".github/workflows/m2-state-estimator.yml"
+      - "adaptive_evolution_observer/**"
+      - "experiments/run_directed_topology_metric_falsification.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  topology-metric-falsification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Run falsification
+        run: |
+          mkdir -p m2-artifact
+          python experiments/run_directed_topology_metric_falsification.py \
+            --output m2-artifact/topology-metric-falsification.json
+      - name: Publish result branch
+        shell: bash
+        run: |
+          publish_dir="${RUNNER_TEMP}/m2-state-estimator"
+          mkdir -p "$publish_dir"
+          cp -a m2-artifact/. "$publish_dir/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan m2-state-estimator-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/m2-state-estimator/latest
+          cp -a "$publish_dir"/. results/m2-state-estimator/latest/
+          git add results/m2-state-estimator/latest
+          git commit -m "Record M2 topology falsification for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:m2-state-estimator-results
