@@ -28,9 +28,19 @@ jobs:
       HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
       ADAPTIVE_EVOLUTION_CONTRACT_ARTIFACT_DIR: contract-artifact/capture
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout adaptive-evolution
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Checkout pinned Hermes source
+        uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
 
       - uses: actions/setup-python@v5
         with:
@@ -45,7 +55,9 @@ jobs:
           set -o pipefail
           mkdir -p contract-artifact/logs
           {
-            python -m pip install "git+https://github.com/NousResearch/hermes-agent.git@${HERMES_CONTRACT_SHA}"
+            actual_sha="$(git -C _hermes rev-parse HEAD)"
+            test "$actual_sha" = "$HERMES_CONTRACT_SHA"
+            python -m pip install -e ./_hermes
             python -m pip install 'numpy>=1.26,<3'
             python - <<'PY'
           import importlib.metadata as m
