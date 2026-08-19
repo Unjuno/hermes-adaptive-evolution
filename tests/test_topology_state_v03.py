@@ -23,11 +23,12 @@ def _event(seq: int, kind: str, *, agent: str, parent: str | None = None) -> Can
 def test_completed_connectivity_requires_return_evidence():
     events = [_event(1, "interaction_start", agent="child", parent="root")]
     state = estimate(events)
-    assert state["schema"] == "adaptive-evolution.organization-state.v0.3"
+    assert state["schema"] == "adaptive-evolution.organization-state.v0.4"
     assert state["interaction_events"] == 1
     assert state["completed_interaction_events"] == 0
     assert state["interaction_completion_coverage"] == 0.0
     assert state["completed_flow_connectivity"] is None
+    assert state["completed_flow_connectivity_method"] == "unnormalized_algebraic_lambda2_over_n_binary_completed_relations"
     assert state["directed_diffusivity_authority"] == "deprecated_diagnostic_only"
 
 
@@ -61,8 +62,7 @@ def test_breadth_and_global_connectivity_are_distinct_observables():
     assert star["interaction_completion_coverage"] == 1.0
     assert chain["interaction_completion_coverage"] == 1.0
     assert star["directed_traffic_breadth"] > chain["directed_traffic_breadth"]
-    assert star["completed_flow_connectivity"] is not None
-    assert chain["completed_flow_connectivity"] is not None
+    assert star["completed_flow_connectivity"] > chain["completed_flow_connectivity"]
     assert "directed_diffusivity" in star
     assert star["directed_diffusivity_authority"] == "deprecated_diagnostic_only"
 
@@ -77,6 +77,20 @@ def test_missing_one_stop_reduces_completion_coverage_and_connectivity():
     assert state["interaction_events"] == 2
     assert state["completed_interaction_events"] == 1
     assert state["interaction_completion_coverage"] == 0.5
-    # b was observed to start, so it remains an unsupported isolate instead of
-    # vanishing from the completed-flow graph and making connectivity look good.
     assert state["completed_flow_connectivity"] == 0.0
+
+
+def test_completed_connectivity_does_not_improve_when_return_evidence_is_removed():
+    full = _topology([("root", "a"), ("root", "b"), ("a", "c"), ("b", "c")])
+    partial_events = [
+        _event(1, "interaction_start", agent="a", parent="root"),
+        _event(2, "interaction_stop", agent="a", parent="root"),
+        _event(3, "interaction_start", agent="b", parent="root"),
+        _event(4, "interaction_stop", agent="b", parent="root"),
+        _event(5, "interaction_start", agent="c", parent="a"),
+        # Missing return on a->c.
+        _event(6, "interaction_start", agent="c", parent="b"),
+        _event(7, "interaction_stop", agent="c", parent="b"),
+    ]
+    partial = estimate(partial_events)
+    assert partial["completed_flow_connectivity"] <= full["completed_flow_connectivity"]
