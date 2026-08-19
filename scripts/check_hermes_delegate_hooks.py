@@ -5,35 +5,54 @@ import os
 import tempfile
 import threading
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 
-def _parent() -> MagicMock:
-    parent = MagicMock()
-    parent.base_url = "https://openrouter.ai/api/v1"
-    parent.api_key = "test-key"
-    parent.provider = "openrouter"
-    parent.api_mode = "chat_completions"
-    parent.model = "test-model"
-    parent.platform = "cli"
-    parent.providers_allowed = None
-    parent.providers_ignored = None
-    parent.providers_order = None
-    parent.provider_sort = None
-    parent.enabled_toolsets = ["terminal", "file"]
-    parent.disabled_toolsets = []
-    parent._session_db = None
-    parent._delegate_depth = 0
-    parent._active_children = []
-    parent._active_children_lock = threading.Lock()
-    parent._print_fn = None
-    parent.tool_progress_callback = None
-    parent.thinking_callback = None
-    parent._memory_manager = None
-    parent.session_id = "parent-session"
-    parent._current_turn_id = "parent-turn"
-    parent.session_estimated_cost_usd = 0.0
-    return parent
+def _parent() -> SimpleNamespace:
+    """Strict-ish parent fixture for the current Hermes delegation surface.
+
+    Unlike MagicMock, missing direct attributes raise instead of being silently
+    fabricated. Most optional Hermes fields are consumed through getattr(...,
+    default), so this keeps the fixture small while making upstream contract
+    drift visible.
+    """
+    return SimpleNamespace(
+        base_url="https://openrouter.ai/api/v1",
+        api_key="test-key",
+        provider="openrouter",
+        api_mode="chat_completions",
+        model="test-model",
+        platform="cli",
+        providers_allowed=None,
+        providers_ignored=None,
+        providers_order=None,
+        provider_sort=None,
+        provider_require_parameters=False,
+        provider_data_collection=None,
+        openrouter_min_coding_score=None,
+        request_overrides={},
+        enabled_toolsets=["terminal", "file"],
+        disabled_toolsets=[],
+        _session_db=None,
+        _delegate_depth=0,
+        _subagent_id=None,
+        _active_children=[],
+        _active_children_lock=threading.Lock(),
+        _print_fn=None,
+        tool_progress_callback=None,
+        thinking_callback=None,
+        _memory_manager=None,
+        session_id="parent-session",
+        _current_turn_id="parent-turn",
+        session_estimated_cost_usd=0.0,
+        reasoning_config=None,
+        prefill_messages=None,
+        _fallback_chain=None,
+        acp_command=None,
+        acp_args=[],
+        max_tokens=None,
+    )
 
 
 def main() -> int:
@@ -73,6 +92,7 @@ def main() -> int:
                     raise SystemExit(f"real PluginManager has no registered {hook} callback")
 
             from hermes_cli.lifecycle import invoke_hook
+            from model_tools import handle_function_call
             from tools.delegate_tool import delegate_task
 
             invoke_hook(
@@ -121,22 +141,35 @@ def main() -> int:
             if "error" in result:
                 raise SystemExit(f"delegate_task returned an error: {result['error']}")
 
-            # Exercise additive real-Hermes lifecycle dispatch beyond delegation.
-            # These events intentionally arrive after subagent_stop: the observer
-            # normalizer must correlate by child_session_id independent of order.
-            invoke_hook(
-                "post_tool_call",
-                session_id="child-session",
+            # Exercise the real Hermes terminal dispatch and post_tool_call
+            # semantics. Upstream treats non-zero terminal exit codes as
+            # status=error/error_type=tool_error even though the tool handler
+            # itself returned structured output. The observer can therefore
+            # capture failure -> recovery without retaining command/output text.
+            failed_raw = handle_function_call(
+                "terminal",
+                {"command": "python -c \"import sys; sys.exit(7)\""},
                 task_id="child-task",
-                turn_id="child-turn-1",
-                tool_call_id="tool-call-1",
-                api_request_id="api-request-1",
-                tool_name="python",
-                args={"code": "print('secret')", "api_key": "super-secret"},
-                result="sensitive tool output",
-                status="success",
-                duration_ms=2,
+                session_id="child-session",
+                tool_call_id="terminal-fail",
             )
+            recovered_raw = handle_function_call(
+                "terminal",
+                {"command": "python -c \"print('fixture recovered')\""},
+                task_id="child-task",
+                session_id="child-session",
+                tool_call_id="terminal-recovered",
+            )
+            failed_result = json.loads(failed_raw)
+            recovered_result = json.loads(recovered_raw)
+            if int(failed_result.get("exit_code", 0)) == 0:
+                raise SystemExit(f"terminal failure fixture unexpectedly succeeded: {failed_result}")
+            if int(recovered_result.get("exit_code", 1)) != 0:
+                raise SystemExit(f"terminal recovery fixture unexpectedly failed: {recovered_result}")
+
+            # Exercise additive real-Hermes lifecycle dispatch beyond tool and
+            # delegation. These events arrive after subagent_stop; two-pass
+            # normalization must still map the child session correctly.
             invoke_hook(
                 "api_request_error",
                 session_id="child-session",
@@ -213,16 +246,35 @@ def main() -> int:
             if missing:
                 raise SystemExit(f"observer did not persist required real-Hermes hooks: {missing}; got={hooks}")
 
+            terminal_events = {
+                row["payload"].get("tool_call_id"): row["payload"]
+                for row in rows
+                if row["hook"] == "post_tool_call"
+                and row["payload"].get("tool_call_id") in {"terminal-fail", "terminal-recovered"}
+            }
+            fail_event = terminal_events.get("terminal-fail")
+            recovery_event = terminal_events.get("terminal-recovered")
+            if not fail_event or fail_event.get("status") != "error" or fail_event.get("error_type") != "tool_error":
+                raise SystemExit(f"non-zero terminal exit was not observed as tool_error: {fail_event}")
+            if not recovery_event or recovery_event.get("status") != "success":
+                raise SystemExit(f"terminal recovery was not observed as success: {recovery_event}")
+
             serialized_rows = json.dumps(rows, ensure_ascii=False)
-            if "super-secret" in serialized_rows or "sensitive tool output" in serialized_rows:
-                raise SystemExit("metadata-first recorder leaked intentionally sensitive fixture content")
+            for secret in (
+                "fixture recovered",
+                "sys.exit(7)",
+                "sensitive provider error",
+                "sensitive completion detail",
+            ):
+                if secret in serialized_rows:
+                    raise SystemExit(f"metadata-first recorder leaked fixture content: {secret!r}")
 
             report = status(db)
             state = report["state"]
             if state["interaction_events"] < 1:
                 raise SystemExit(f"replay did not reconstruct a parent->child interaction: {state}")
-            if state["tool_outcomes"] < 1:
-                raise SystemExit(f"replay did not reconstruct tool outcome evidence: {state}")
+            if state["tool_outcomes"] < 2:
+                raise SystemExit(f"replay did not reconstruct failure/recovery tool evidence: {state}")
             if report["events"]["uncertain_session_events"]:
                 raise SystemExit(
                     "complete offline delegation fixture produced uncertain session identity: "
@@ -233,6 +285,9 @@ def main() -> int:
                 "result": "compatible",
                 "loaded_plugin_key": loaded.manifest.key or loaded.manifest.name,
                 "captured_hooks": hooks,
+                "terminal_failure_status": fail_event.get("status"),
+                "terminal_failure_type": fail_event.get("error_type"),
+                "terminal_recovery_status": recovery_event.get("status"),
                 "event_diagnostics": report["events"],
                 "organization_state": state,
             }
