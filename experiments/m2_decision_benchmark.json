@@ -1,0 +1,86 @@
+{
+  "schema": "adaptive-evolution.m2-decision-benchmark.v0.1",
+  "authority": "experiment_design_only",
+  "routers": {
+    "context_only": {
+      "features": ["task_context"],
+      "fallback": null
+    },
+    "context_plus_observed_state": {
+      "features": [
+        "task_context",
+        "directed_traffic_breadth",
+        "completed_flow_connectivity",
+        "interaction_completion_coverage",
+        "traffic_weighted_role_mixing",
+        "role_conditioned_traffic_coverage",
+        "fragility",
+        "identity_uncertainty"
+      ],
+      "forbidden_features": ["directed_diffusivity"],
+      "fallback": "context_only"
+    }
+  },
+  "templates": [
+    {
+      "id": "solo",
+      "max_children": 0,
+      "serial": true
+    },
+    {
+      "id": "one_leaf",
+      "max_children": 1,
+      "serial": true
+    },
+    {
+      "id": "two_leaf_serial",
+      "max_children": 2,
+      "serial": true
+    },
+    {
+      "id": "implement_then_review",
+      "max_children": 2,
+      "serial": true,
+      "required_roles": ["implementation", "verification"]
+    }
+  ],
+  "task_regimes": [
+    "single_local_fix",
+    "diagnose_then_fix",
+    "verification_critical",
+    "two_independent_subproblems"
+  ],
+  "splits": ["discovery", "selection", "final_test"],
+  "pairing": {
+    "same_repository_snapshot": true,
+    "same_task_text": true,
+    "same_model_and_adapter": true,
+    "same_seed_when_supported": true,
+    "same_resource_limits": true
+  },
+  "outcomes": [
+    "verified_success",
+    "quality",
+    "recovery_success",
+    "terminal_failure",
+    "unsafe_or_scope_violation",
+    "wall_seconds",
+    "model_usage",
+    "delegation_count",
+    "reconfiguration_cost"
+  ],
+  "primary_metrics": [
+    "held_out_routing_regret",
+    "verified_success_rate",
+    "terminal_or_unsafe_failure_rate",
+    "net_compute_cost",
+    "unsupported_fine_state_use_rate"
+  ],
+  "hard_rules": [
+    "unknown metrics are incomparable, never zero",
+    "legacy directed_diffusivity cannot authorize routing",
+    "synthetic event counts cannot become production gates",
+    "final split is fixture-family disjoint",
+    "rare or unsafe regression blocks promotion"
+  ]
+}
