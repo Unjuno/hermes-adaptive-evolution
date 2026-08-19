@@ -32,6 +32,11 @@ def _store() -> EventStore:
     path = resolve_db_path()
     key = str(path)
     if _STORE is None or _STORE_PATH != key:
+        old = _STORE
+        _STORE = None
+        _STORE_PATH = None
+        if old is not None:
+            old.close()
         _STORE = EventStore(path)
         _STORE_PATH = key
     return _STORE
