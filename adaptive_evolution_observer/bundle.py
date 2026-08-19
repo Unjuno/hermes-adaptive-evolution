@@ -14,8 +14,9 @@ from .estimator import estimate
 from .normalizer import CanonicalEvent, normalize
 from .store import EventStore
 
-BUNDLE_SCHEMA = "adaptive-evolution.capture-bundle.v0.1"
-TRACE_NAME = "normalized-events.jsonl"
+BUNDLE_SCHEMA = "adaptive-evolution.capture-bundle.v0.2"
+RAW_TRACE_NAME = "sanitized-raw-events.jsonl"
+NORMALIZED_TRACE_NAME = "normalized-events.jsonl"
 MANIFEST_NAME = "manifest.json"
 
 
@@ -41,10 +42,22 @@ def _event_dict(event: CanonicalEvent) -> dict[str, Any]:
     }
 
 
-def _encode_trace(events: list[CanonicalEvent]) -> bytes:
+def _raw_row_dict(row: dict[str, Any]) -> dict[str, Any]:
+    # EventStore payloads are sanitized before persistence. Exclude DB-local
+    # row ids and pids from the portable artifact; replay only needs ordering,
+    # hook, correlation key, and sanitized payload.
+    return {
+        "received_at_ns": int(row["received_at_ns"]),
+        "hook": str(row["hook"]),
+        "event_key": str(row["event_key"]),
+        "payload": dict(row.get("payload") or {}),
+    }
+
+
+def _encode_jsonl(rows: list[dict[str, Any]]) -> bytes:
     lines = [
-        json.dumps(_event_dict(event), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        for event in events
+        json.dumps(row, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        for row in rows
     ]
     text = "\n".join(lines)
     if lines:
@@ -52,23 +65,56 @@ def _encode_trace(events: list[CanonicalEvent]) -> bytes:
     return text.encode("utf-8")
 
 
+def _encode_normalized(events: list[CanonicalEvent]) -> bytes:
+    return _encode_jsonl([_event_dict(event) for event in events])
+
+
+def _read_jsonl(data: bytes, label: str) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for line_number, line in enumerate(data.decode("utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except Exception as exc:
+            raise ValueError(f"invalid {label} JSON at line {line_number}: {exc}") from exc
+        if not isinstance(row, dict):
+            raise ValueError(f"invalid {label} row at line {line_number}: expected object")
+        rows.append(row)
+    return rows
+
+
 def create_bundle(db: str | Path | None, directory: str | Path) -> dict[str, Any]:
     store = EventStore(db)
-    events, diagnostics = normalize(store.load())
+    raw_rows = store.load()
+    events, diagnostics = normalize(raw_rows)
     target = Path(directory).expanduser()
     target.mkdir(parents=True, exist_ok=True)
 
-    trace_bytes = _encode_trace(events)
-    trace_path = target / TRACE_NAME
-    trace_path.write_bytes(trace_bytes)
-    trace_sha256 = hashlib.sha256(trace_bytes).hexdigest()
+    raw_bytes = _encode_jsonl([_raw_row_dict(row) for row in raw_rows])
+    raw_path = target / RAW_TRACE_NAME
+    raw_path.write_bytes(raw_bytes)
+    raw_sha256 = hashlib.sha256(raw_bytes).hexdigest()
+
+    normalized_bytes = _encode_normalized(events)
+    normalized_path = target / NORMALIZED_TRACE_NAME
+    normalized_path.write_bytes(normalized_bytes)
+    normalized_sha256 = hashlib.sha256(normalized_bytes).hexdigest()
 
     state = estimate(events)
     manifest = {
         "schema": BUNDLE_SCHEMA,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "trace_file": TRACE_NAME,
-        "trace_sha256": trace_sha256,
+        "sanitized_raw_trace": {
+            "file": RAW_TRACE_NAME,
+            "sha256": raw_sha256,
+            "events": len(raw_rows),
+        },
+        "normalized_trace": {
+            "file": NORMALIZED_TRACE_NAME,
+            "sha256": normalized_sha256,
+            "events": len(events),
+        },
         "event_diagnostics": diagnostics,
         "organization_state": state,
         "runtime": {
@@ -80,9 +126,9 @@ def create_bundle(db: str | Path | None, directory: str | Path) -> dict[str, Any
         "privacy": {
             "capture_content": os.getenv("ADAPTIVE_EVOLUTION_CAPTURE_CONTENT", "0") == "1",
             "raw_sqlite_included": False,
+            "raw_event_stream_is_pre_sanitized": True,
         },
         "source": {
-            # Avoid persisting an absolute operator path in a portable bundle.
             "database_name": store.path.name,
         },
     }
@@ -94,51 +140,46 @@ def create_bundle(db: str | Path | None, directory: str | Path) -> dict[str, Any
     return {"directory": str(target), "manifest": manifest}
 
 
-def _load_event(row: dict[str, Any]) -> CanonicalEvent:
-    return CanonicalEvent(
-        seq=int(row["seq"]),
-        hook=str(row["hook"]),
-        event_key=str(row["event_key"]),
-        session_id=row.get("session_id"),
-        task_id=row.get("task_id"),
-        turn_id=row.get("turn_id"),
-        agent_id=row.get("agent_id"),
-        parent_agent_id=row.get("parent_agent_id"),
-        kind=str(row["kind"]),
-        data=dict(row.get("data") or {}),
-    )
-
-
 def replay_bundle(directory: str | Path) -> dict[str, Any]:
     root = Path(directory).expanduser()
     manifest = json.loads((root / MANIFEST_NAME).read_text(encoding="utf-8"))
     if manifest.get("schema") != BUNDLE_SCHEMA:
         raise ValueError(f"unsupported bundle schema: {manifest.get('schema')!r}")
-    trace_path = root / str(manifest.get("trace_file") or TRACE_NAME)
-    trace_bytes = trace_path.read_bytes()
-    actual_sha = hashlib.sha256(trace_bytes).hexdigest()
-    expected_sha = manifest.get("trace_sha256")
-    if actual_sha != expected_sha:
+
+    raw_meta = dict(manifest.get("sanitized_raw_trace") or {})
+    normalized_meta = dict(manifest.get("normalized_trace") or {})
+    raw_path = root / str(raw_meta.get("file") or RAW_TRACE_NAME)
+    normalized_path = root / str(normalized_meta.get("file") or NORMALIZED_TRACE_NAME)
+
+    raw_bytes = raw_path.read_bytes()
+    raw_sha = hashlib.sha256(raw_bytes).hexdigest()
+    if raw_sha != raw_meta.get("sha256"):
         raise ValueError(
-            f"trace checksum mismatch: expected {expected_sha}, got {actual_sha}"
+            f"sanitized raw trace checksum mismatch: expected {raw_meta.get('sha256')}, got {raw_sha}"
         )
 
-    events = []
-    for line_number, line in enumerate(trace_bytes.decode("utf-8").splitlines(), 1):
-        if not line.strip():
-            continue
-        try:
-            row = json.loads(line)
-            events.append(_load_event(row))
-        except Exception as exc:
-            raise ValueError(f"invalid normalized event at line {line_number}: {exc}") from exc
+    normalized_bytes = normalized_path.read_bytes()
+    normalized_sha = hashlib.sha256(normalized_bytes).hexdigest()
+    if normalized_sha != normalized_meta.get("sha256"):
+        raise ValueError(
+            f"normalized trace checksum mismatch: expected {normalized_meta.get('sha256')}, got {normalized_sha}"
+        )
 
-    state = estimate(events)
+    raw_rows = _read_jsonl(raw_bytes, "sanitized raw trace")
+    replayed_events, replayed_diag = normalize(raw_rows)
+    replayed_normalized = _encode_normalized(replayed_events)
+    normalization_matches_trace = replayed_normalized == normalized_bytes
+    state = estimate(replayed_events)
+
     return {
         "schema": manifest["schema"],
         "directory": str(root),
-        "events": len(events),
-        "trace_sha256": actual_sha,
+        "raw_events": len(raw_rows),
+        "normalized_events": len(replayed_events),
+        "raw_trace_sha256": raw_sha,
+        "normalized_trace_sha256": normalized_sha,
+        "normalization_matches_trace": normalization_matches_trace,
+        "event_diagnostics": replayed_diag,
         "state": state,
         "matches_manifest_state": state == manifest.get("organization_state"),
     }
