@@ -3,10 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import adaptive_evolution_observer.plugin as plugin_mod
 from adaptive_evolution_observer.estimator import estimate
 from adaptive_evolution_observer.normalizer import normalize
 from adaptive_evolution_observer.plugin import HOOKS, handle_status, register
-from adaptive_evolution_observer.store import EventStore, sanitize
+from adaptive_evolution_observer.store import EventStore, resolve_db_path, sanitize
 
 
 class FakeContext:
@@ -117,6 +118,34 @@ def test_store_roundtrip(tmp_path: Path):
     rows = store.load()
     assert len(rows) == 1
     assert rows[0]["payload"]["session_id"] == "root"
+
+
+def test_default_db_path_respects_hermes_home(monkeypatch, tmp_path: Path):
+    monkeypatch.delenv("ADAPTIVE_EVOLUTION_OBSERVER_DB", raising=False)
+    monkeypatch.delenv("ADAPTIVE_EVOLUTION_DATA_DIR", raising=False)
+    home = tmp_path / "profile-a"
+    monkeypatch.setenv("HERMES_HOME", str(home))
+    assert resolve_db_path() == home / "adaptive-evolution" / "observer.sqlite3"
+
+
+def test_plugin_store_rebinds_when_profile_changes(monkeypatch, tmp_path: Path):
+    monkeypatch.delenv("ADAPTIVE_EVOLUTION_OBSERVER_DB", raising=False)
+    monkeypatch.delenv("ADAPTIVE_EVOLUTION_DATA_DIR", raising=False)
+    plugin_mod._STORE = None
+    plugin_mod._STORE_PATH = None
+    try:
+        home_a = tmp_path / "profile-a"
+        home_b = tmp_path / "profile-b"
+        monkeypatch.setenv("HERMES_HOME", str(home_a))
+        first = plugin_mod._store()
+        monkeypatch.setenv("HERMES_HOME", str(home_b))
+        second = plugin_mod._store()
+        assert first.path != second.path
+        assert first.path == home_a / "adaptive-evolution" / "observer.sqlite3"
+        assert second.path == home_b / "adaptive-evolution" / "observer.sqlite3"
+    finally:
+        plugin_mod._STORE = None
+        plugin_mod._STORE_PATH = None
 
 
 def test_status_limit_validation(monkeypatch, tmp_path: Path):
