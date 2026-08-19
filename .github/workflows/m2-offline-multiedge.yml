@@ -1,0 +1,57 @@
+name: m2-offline-multiedge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/m2-offline-multiedge.yml"
+      - "scripts/check_m2_multiedge_offline.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install pinned Hermes and observer
+        run: |
+          set -e
+          test "$(git -C _hermes rev-parse HEAD)" = "$HERMES_CONTRACT_SHA"
+          python -m pip install -e ./_hermes
+          python -m pip install -e .
+      - name: Run v0.4 multi-edge contract
+        env:
+          ADAPTIVE_EVOLUTION_M2_OFFLINE_RESULT: m2-offline-result.json
+        run: python scripts/check_m2_multiedge_offline.py
+      - name: Publish result branch
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/m2-offline-result.json"
+          cp m2-offline-result.json "$tmp"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan m2-offline-multiedge-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/m2-offline-multiedge/latest
+          cp "$tmp" results/m2-offline-multiedge/latest/summary.json
+          git add results/m2-offline-multiedge/latest/summary.json
+          git commit -m "Record offline M2 multi-edge contract for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:m2-offline-multiedge-results
