@@ -1,6 +1,14 @@
 name: hermes-contract
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "adaptive_evolution_observer/**"
+      - "pyproject.toml"
+      - "plugin.yaml"
+      - "scripts/check_hermes_contract.py"
+      - ".github/workflows/hermes-contract.yml"
   workflow_dispatch:
   schedule:
     - cron: "17 3 * * 1"
