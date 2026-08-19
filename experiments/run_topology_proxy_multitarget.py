@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-from experiments.run_diffusivity_proxy_falsification import (
+from run_diffusivity_proxy_falsification import (
     completed_flow_gap,
     edge_expansion_proxy,
     _orient_from_root,
