@@ -13,6 +13,7 @@ This is the forward-looking roadmap for `hermes-adaptive-evolution`. The project
 7. Rare failures and recovery remain first-class metrics.
 8. Synthetic sample counts never become production thresholds without real-Hermes calibration.
 9. M1/M2 observation is hook-only; measurement should not alter the model-facing tool schema.
+10. Organization topology is not forced into one scalar when falsification supports multiple order parameters.
 
 ## M0 — Reproducible plugin and experiment substrate
 
@@ -24,18 +25,19 @@ Deliverables:
 - deterministic normalizer/replay;
 - portable sanitized capture bundles;
 - unit tests and CI;
-- explicit experiment plan and compatibility contract.
+- explicit experiment plan and compatibility contract;
+- machine-readable CI and experiment result branches.
 
 Exit: repository installs, tests, builds a wheel, and exposes the Hermes plugin entry point.
 
 ## M1 — Real Hermes E2E contract
 
 **Priority:** P0.  
-**Status:** offline real-Hermes path implemented; provider-backed trace still required.
+**Status:** provider-backed local-model path passed; repeatability and broader task coverage remain.
 
-### Implemented offline gate
+### Offline real-Hermes gate — passed
 
-The dedicated contract path now exercises real Hermes code without an external LLM call:
+The dedicated contract path exercises real Hermes code without an external LLM call:
 
 ```text
 real PluginManager discovery
@@ -52,48 +54,65 @@ real PluginManager discovery
   -> E2 corruption experiment
 ```
 
-Only child LLM execution is mocked in that offline fixture.
+### Provider-backed local-model gate — passed for LFM2.5 Q4
 
-### Remaining hard gate
-
-Run a provider-backed real Hermes trace containing:
+A real local model was run through Hermes on the deterministic repair fixture using the official LFM2.5-2.6B Q4_K_M GGUF through Ollama. The run contained:
 
 ```text
-root agent
+root
   -> delegate_task
-  -> child agent
-  -> deterministic failing unittest
-  -> minimal repair
+  -> child
+  -> tool failures
+  -> same-agent recovery
+  -> minimal counter.py repair
   -> passing unittest
-  -> completion
 ```
 
-Use `experiments/E1_REAL_HERMES_RUNBOOK.md` and the deterministic fixture under `experiments/fixtures/e1_repair_project/`.
+The portable capture passed the E1 validator with clean parent/child identity and deterministic replay. This establishes the plugin observation path; it is **not** a general coding-quality benchmark.
 
-Measure actual hook field coverage, duplicate/reorder/drop sensitivity, parent-child identity continuity, observer overhead, and whether a tool error followed by same-agent success is visible without content capture.
+A same-declared-context Qwen3 4B comparison currently fails before delegation with Hermes context-compression behavior. Treat that as a runtime/provider/model-metadata compatibility result until the context path is isolated; do not use it as a quality ranking.
 
-Exit: at least one provider-backed trace passes `experiments/validate_e1_capture.py`, can be bundled/replayed deterministically, and reveals no decision-relevant missing primitive requiring a fork.
+Exit status: the minimum M1 exit condition is met. Keep a provider-backed E1 as a milestone regression gate, not a per-commit test.
 
-Fork gate: consider a core change only after documenting a decision-relevant primitive that cannot be observed or controlled through the public plugin surface and cannot be replaced by an equivalent observable.
+Fork gate: no fork is justified by current evidence. Consider a core change only after documenting a decision-relevant primitive that cannot be observed or controlled through the public plugin surface and cannot be replaced by an equivalent observable.
 
-## M2 — Organization State Estimator v0.1
+## M2 — Organization State Estimator v0.3
 
-**Status:** diagnostic scaffold implemented; real decision utility unproven.
+**Status:** vector topology state implemented; real decision utility still unproven.
 
-Current diagnostics include:
+### Retained diagnostics
 
 1. functional-role posterior/evidence/confidence;
 2. confidence-gated traffic-weighted role mixing;
 3. role-conditioned traffic coverage;
-4. directed interaction diffusivity;
-5. outcome/failure fragility proxy;
-6. conservative identity uncertainty.
+4. outcome/failure fragility proxy;
+5. conservative identity uncertainty.
 
-Next experiments:
-- role-memory/change-point behavior on real task blocks;
-- separate timescales for role, topology, and policy signals;
-- decision usefulness of role mixing/diffusivity relative to context-only baselines;
-- macro-state/Markov falsification before adding higher-order corrections.
+### Topology metric correction
+
+The original start-only directed SLEM-gap `directed_diffusivity` was falsified on delegation-like DAGs and is retained only as a deprecated diagnostic.
+
+Synthetic multi-target falsification supports at least two separate topology observables:
+
+1. **directed traffic breadth** — local fan-out / how broadly sources distribute work;
+2. **completed-flow connectivity** — global bottleneck/connectivity inferred only from relations with both start and stop evidence.
+
+`interaction_completion_coverage` is exposed separately so missing returns cannot be silently treated as completed information paths.
+
+This is intentionally a **vector state**, not a new single magic diffusivity scalar.
+
+### Current hard gate
+
+Run a provider-backed Hermes trace with multiple completed delegation edges and validate that the vector topology state is recoverable without identity ambiguity. The first target is a two-leaf star organization on the deterministic repair fixture.
+
+Then test **decision usefulness**, not just reconstruction:
+- compare context-only routing vs context + topology state;
+- keep task seeds paired;
+- keep task regimes stratified;
+- use real completion/support uncertainty as a gate;
+- evaluate routing regret and rare failure, not topology MSE alone.
+
+Role-memory/change-point and macro-state/Markov falsification remain subsequent M2 experiments.
 
 Exit: at least one estimated state variable improves or safely gates held-out organization decisions relative to a context-only baseline.
 
@@ -108,6 +127,13 @@ expected utility under task-context uncertainty
 - measured reconfiguration cost
 - explicit risk/safety constraints
 ```
+
+Initial template axes should be coarse and observable, for example:
+- one agent vs multiple agents;
+- serial vs parallel delegation;
+- local fan-out/breadth;
+- completed-flow connectivity;
+- reviewer/redundancy presence.
 
 Exit: held-out net utility beats the best global template on a declared task distribution without rare-event regression.
 
@@ -130,6 +156,8 @@ Keep Skills as explicit procedures. Evaluate Skill candidates with narrow benchm
 ## M7 — Teacher and LoRA factory
 
 Training data comes from **verified execution trajectories**, not raw Skill text. Separate clean success, recovery, preference/correction, and failure evidence. Candidate LoRAs require benchmark, Pareto comparison, lineage, canary, and rollback.
+
+For LFM2.5-2.6B, keep deployment quantization separate from training quantization. Compare native/BF16 LoRA, 8-bit loaded LoRA, and 4-bit loaded QLoRA under the same verified-data budget. GGUF Q4 is an inference/deployment artifact, not the training checkpoint. See `experiments/LFM25_ADAPTATION_PLAN.md`.
 
 ## M8 — Autonomous night loop
 
