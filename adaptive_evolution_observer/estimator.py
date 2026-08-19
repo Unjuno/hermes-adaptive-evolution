@@ -39,14 +39,7 @@ def _transition_matrix(counts: np.ndarray) -> np.ndarray:
 
 
 def directed_diffusivity(counts: np.ndarray) -> float | None:
-    """Legacy start-only SLEM gap.
-
-    Kept for backward-compatible diagnostics only. Delegation traffic is often
-    a DAG; converting sinks to self-loops can reverse the intuitive ordering of
-    chain/star topologies. M2 falsification therefore removed this scalar from
-    routing authority in favor of separate traffic-breadth and completed-flow
-    connectivity observables.
-    """
+    """Legacy start-only SLEM gap; diagnostic only."""
     if counts.shape[0] < 2 or float(counts.sum()) <= 0:
         return None
     p = _transition_matrix(counts)
@@ -57,13 +50,7 @@ def directed_diffusivity(counts: np.ndarray) -> float | None:
 
 
 def directed_traffic_breadth(counts: np.ndarray) -> float | None:
-    """Traffic-weighted effective outgoing breadth in [0, 1].
-
-    For each source, exp(Shannon entropy) is the effective number of children
-    receiving traffic. It is normalized by the number of other active
-    interaction agents and then averaged, weighting sources by outgoing traffic.
-    This deliberately measures *local fan-out*, not global bottlenecks.
-    """
+    """Traffic-weighted effective outgoing breadth in [0, 1]."""
     counts = np.asarray(counts, dtype=float)
     total = float(counts.sum())
     if counts.shape[0] < 2 or total <= 0:
@@ -88,12 +75,6 @@ def directed_traffic_breadth(counts: np.ndarray) -> float | None:
 
 
 def _completed_counts(starts: np.ndarray, stops: np.ndarray) -> np.ndarray:
-    """Conservative completed parent->child relation counts.
-
-    A relation is counted only to the extent that both start and stop evidence
-    exist. This prevents a missing stop from being silently interpreted as a
-    completed bidirectional information path.
-    """
     return np.minimum(np.asarray(starts, dtype=float), np.asarray(stops, dtype=float))
 
 
@@ -108,19 +89,15 @@ def interaction_completion_coverage(starts: np.ndarray, stops: np.ndarray) -> fl
 def completed_flow_connectivity(starts: np.ndarray, stops: np.ndarray) -> float | None:
     """Global connectivity of completed interaction relations in [0, 1].
 
-    Completed parent/child evidence is symmetrized because a completed
-    delegation represents an outward assignment plus a return/result path.
-    The observable is one half of normalized-Laplacian algebraic connectivity
-    (lambda_2 in [0, 2]).
-
-    Crucially, the node set is defined by *start evidence*, not by completed
-    edges. If a child was observed to start but its stop is missing, that child
-    remains an isolate in the completed-flow graph and connectivity falls to
-    zero instead of becoming spuriously better because the unsupported node was
-    silently removed.
+    `None` means there is no completed relation evidence at all. Once at least
+    one completion exists, the node set is defined by *start* evidence so a
+    started child with a missing stop remains an isolate and can drive the
+    connectivity estimate to zero rather than disappearing from the graph.
     """
     starts = np.asarray(starts, dtype=float)
     completed = _completed_counts(starts, stops)
+    if float(completed.sum()) <= 0:
+        return None
     start_active = (starts.sum(axis=0) + starts.sum(axis=1)) > 0
     if int(start_active.sum()) < 2:
         return None
@@ -152,32 +129,19 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
     failures: Counter = Counter()
 
     for e in events:
-        if (
-            e.kind == "interaction_start"
-            and e.parent_agent_id
-            and e.agent_id
-            and e.parent_agent_id != e.agent_id
-        ):
+        if e.kind == "interaction_start" and e.parent_agent_id and e.agent_id and e.parent_agent_id != e.agent_id:
             start_edges[idx[e.parent_agent_id], idx[e.agent_id]] += 1.0
             role = e.data.get("role")
             if role and role not in {"leaf", "orchestrator"}:
                 role_counts[e.agent_id][str(role)] += 0.25
-        elif (
-            e.kind == "interaction_stop"
-            and e.parent_agent_id
-            and e.agent_id
-            and e.parent_agent_id != e.agent_id
-        ):
+        elif e.kind == "interaction_stop" and e.parent_agent_id and e.agent_id and e.parent_agent_id != e.agent_id:
             stop_edges[idx[e.parent_agent_id], idx[e.agent_id]] += 1.0
         elif e.kind == "tool_result" and e.agent_id:
             fam = tool_family(e.data.get("tool_name"))
             if fam:
                 role_counts[e.agent_id][fam] += 1.0
             status = str(e.data.get("status") or "").lower()
-            if (
-                status in {"error", "failed", "blocked", "cancelled", "canceled"}
-                or e.data.get("error_type")
-            ):
+            if status in {"error", "failed", "blocked", "cancelled", "canceled"} or e.data.get("error_type"):
                 failures[e.agent_id] += 1
             else:
                 successes[e.agent_id] += 1
@@ -195,10 +159,7 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
         vec = np.array([role_counts[a][r] + alpha for r in ROLE_NAMES], dtype=float)
         p = vec / vec.sum()
         role_posteriors[a] = {r: float(v) for r, v in zip(ROLE_NAMES, p)}
-        entropy = float(
-            -np.sum(p * np.log(np.clip(p, 1e-12, 1.0)))
-            / math.log(len(ROLE_NAMES))
-        )
+        entropy = float(-np.sum(p * np.log(np.clip(p, 1e-12, 1.0))) / math.log(len(ROLE_NAMES)))
         role_entropy[a] = entropy
         role_confidence[a] = 0.0 if evidence <= 0 else float(np.clip(1.0 - entropy, 0.0, 1.0))
 
@@ -224,9 +185,7 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
         if role_conditioned_weight > 0:
             mixing = float(mixing_numerator / role_conditioned_weight)
 
-    role_conditioned_traffic_coverage = (
-        float(role_conditioned_weight / total_edge) if total_edge > 0 else None
-    )
+    role_conditioned_traffic_coverage = float(role_conditioned_weight / total_edge) if total_edge > 0 else None
 
     fragility = {}
     for a in agents:
@@ -271,10 +230,10 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
         "authority": "diagnostic_only",
         "note": (
             "Topology is intentionally vector-valued: directed traffic breadth measures local fan-out, while "
-            "completed-flow connectivity measures global bottlenecks. Missing return evidence is conservative: "
-            "a started child remains in the completed-flow node set and can reduce connectivity rather than vanish. "
-            "The legacy start-only directed_diffusivity was falsified for delegation DAGs and is retained only for "
-            "backward-compatible diagnostics. Role mixing is confidence-weighted and may be null when role evidence "
-            "is insufficient. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks."
+            "completed-flow connectivity measures global bottlenecks. Unknown completed-flow state is None, while "
+            "partial missing return evidence is conservative and can reduce connectivity to zero. The legacy "
+            "start-only directed_diffusivity was falsified for delegation DAGs and is retained only for backward-"
+            "compatible diagnostics. Role mixing is confidence-weighted and may be null when role evidence is "
+            "insufficient. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks."
         ),
     }
