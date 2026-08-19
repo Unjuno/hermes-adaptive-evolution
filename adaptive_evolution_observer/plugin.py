@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 from typing import Any
 
 from .estimator import estimate
 from .normalizer import normalize
-from .store import EventStore
+from .store import EventStore, default_data_dir, resolve_db_path
 
 # Observer hooks only. Directive hooks are intentionally excluded from v0.2 so
 # this slice cannot change execution behavior while M1/M2 contracts are tested.
@@ -33,10 +32,11 @@ _STORE_PATH: str | None = None
 
 def _store() -> EventStore:
     global _STORE, _STORE_PATH
-    path = os.getenv("ADAPTIVE_EVOLUTION_OBSERVER_DB")
-    if _STORE is None or _STORE_PATH != path:
+    path = resolve_db_path()
+    key = str(path)
+    if _STORE is None or _STORE_PATH != key:
         _STORE = EventStore(path)
-        _STORE_PATH = path
+        _STORE_PATH = key
     return _STORE
 
 
@@ -72,8 +72,7 @@ def handle_export(params: dict, **kwargs: Any) -> str:
     del kwargs
     path = params.get("path")
     if not path:
-        data_dir = Path(os.getenv("ADAPTIVE_EVOLUTION_DATA_DIR", Path.home() / ".hermes" / "adaptive-evolution"))
-        path = data_dir / "normalized-events.jsonl"
+        path = default_data_dir() / "normalized-events.jsonl"
     else:
         path = Path(path).expanduser()
     store = _store()
