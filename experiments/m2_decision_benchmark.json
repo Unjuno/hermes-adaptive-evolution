@@ -1,6 +1,13 @@
 {
-  "schema": "adaptive-evolution.m2-decision-benchmark.v0.1",
+  "schema": "adaptive-evolution.m2-decision-benchmark.v0.2",
   "authority": "experiment_design_only",
+  "temporal_causality": {
+    "decision_order": ["pre_state", "template_choice", "task_execution", "outcome", "post_state"],
+    "post_state_may_affect_same_task_choice": false,
+    "post_state_may_affect_future_tasks": true,
+    "cold_start_fallback": "context_only",
+    "sequential_histories_must_remain_within_split": true
+  },
   "routers": {
     "context_only": {
       "features": ["task_context"],
@@ -9,15 +16,20 @@
     "context_plus_observed_state": {
       "features": [
         "task_context",
-        "directed_traffic_breadth",
-        "completed_flow_connectivity",
-        "interaction_completion_coverage",
-        "traffic_weighted_role_mixing",
-        "role_conditioned_traffic_coverage",
-        "fragility",
-        "identity_uncertainty"
+        "pre_state.directed_traffic_breadth",
+        "pre_state.completed_flow_connectivity",
+        "pre_state.interaction_completion_coverage",
+        "pre_state.traffic_weighted_role_mixing",
+        "pre_state.role_conditioned_traffic_coverage",
+        "pre_state.fragility",
+        "pre_state.identity_uncertainty",
+        "training_only_template_summaries"
       ],
-      "forbidden_features": ["directed_diffusivity"],
+      "forbidden_features": [
+        "directed_diffusivity",
+        "same_task_post_state",
+        "final_test_future_state"
+      ],
       "fallback": "context_only"
     }
   },
@@ -58,6 +70,18 @@
     "same_seed_when_supported": true,
     "same_resource_limits": true
   },
+  "record_fields": [
+    "task_id",
+    "fixture_family",
+    "sequence_id",
+    "sequence_index",
+    "split",
+    "task_context",
+    "template",
+    "pre_state",
+    "outcome",
+    "post_state"
+  ],
   "outcomes": [
     "verified_success",
     "quality",
@@ -74,13 +98,17 @@
     "verified_success_rate",
     "terminal_or_unsafe_failure_rate",
     "net_compute_cost",
-    "unsupported_fine_state_use_rate"
+    "unsupported_fine_state_use_rate",
+    "temporal_leakage_violation_rate"
   ],
   "hard_rules": [
     "unknown metrics are incomparable, never zero",
     "legacy directed_diffusivity cannot authorize routing",
+    "same-task post_state cannot be a routing feature",
     "synthetic event counts cannot become production gates",
+    "completion coverage is support metadata, not confidence",
     "final split is fixture-family disjoint",
+    "sequential history cannot cross split boundaries",
     "rare or unsafe regression blocks promotion"
   ]
 }
