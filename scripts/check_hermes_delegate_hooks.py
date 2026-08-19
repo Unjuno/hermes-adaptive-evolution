@@ -68,11 +68,21 @@ def main() -> int:
                 raise SystemExit(
                     f"adaptive-evolution failed to enable: enabled={loaded.enabled} error={loaded.error!r}"
                 )
-            for hook in ("subagent_start", "subagent_stop"):
+            for hook in ("subagent_start", "subagent_stop", "post_tool_call", "api_request_error"):
                 if not manager.has_hook(hook):
                     raise SystemExit(f"real PluginManager has no registered {hook} callback")
 
+            from hermes_cli.lifecycle import invoke_hook
             from tools.delegate_tool import delegate_task
+
+            invoke_hook(
+                "on_session_start",
+                session_id="parent-session",
+                task_id="parent-task",
+                turn_id="parent-turn",
+                model="test-model",
+                platform="cli",
+            )
 
             child = MagicMock()
             child.session_id = "child-session"
@@ -111,18 +121,107 @@ def main() -> int:
             if "error" in result:
                 raise SystemExit(f"delegate_task returned an error: {result['error']}")
 
+            # Exercise additive real-Hermes lifecycle dispatch beyond delegation.
+            # These events intentionally arrive after subagent_stop: the observer
+            # normalizer must correlate by child_session_id independent of order.
+            invoke_hook(
+                "post_tool_call",
+                session_id="child-session",
+                task_id="child-task",
+                turn_id="child-turn-1",
+                tool_call_id="tool-call-1",
+                api_request_id="api-request-1",
+                tool_name="python",
+                args={"code": "print('secret')", "api_key": "super-secret"},
+                result="sensitive tool output",
+                status="success",
+                duration_ms=2,
+            )
+            invoke_hook(
+                "api_request_error",
+                session_id="child-session",
+                task_id="child-task",
+                turn_id="child-turn-2",
+                api_request_id="api-request-2",
+                provider="offline-test",
+                model="test-model",
+                status_code=500,
+                retry_count=1,
+                max_retries=2,
+                retryable=True,
+                reason="synthetic upstream failure",
+                error="sensitive provider error",
+            )
+            invoke_hook(
+                "on_skill_lifecycle",
+                session_id="child-session",
+                task_id="child-task",
+                action="used",
+                skill_name="fixture-skill",
+                provenance="test",
+                use_count=1,
+                reused=False,
+                reuse_after_patch=False,
+            )
+            invoke_hook(
+                "kanban_task_claimed",
+                task_id="kanban-1",
+                profile_name="default",
+                board="fixture",
+                assignee="worker-1",
+                run_id="run-1",
+            )
+            invoke_hook(
+                "kanban_task_completed",
+                task_id="kanban-1",
+                profile_name="default",
+                board="fixture",
+                assignee="worker-1",
+                run_id="run-1",
+                summary="sensitive completion detail",
+            )
+            invoke_hook(
+                "on_session_end",
+                session_id="parent-session",
+                task_id="parent-task",
+                turn_id="parent-turn",
+                completed=True,
+                failed=False,
+                interrupted=False,
+                model="test-model",
+                platform="cli",
+            )
+
             from adaptive_evolution_observer.cli import status
             from adaptive_evolution_observer.store import EventStore
 
             rows = EventStore(db).load()
             hooks = [row["hook"] for row in rows]
-            if "subagent_start" not in hooks or "subagent_stop" not in hooks:
-                raise SystemExit(f"observer did not persist delegation lifecycle hooks: {hooks}")
+            required = {
+                "on_session_start",
+                "subagent_start",
+                "subagent_stop",
+                "post_tool_call",
+                "api_request_error",
+                "on_skill_lifecycle",
+                "kanban_task_claimed",
+                "kanban_task_completed",
+                "on_session_end",
+            }
+            missing = sorted(required - set(hooks))
+            if missing:
+                raise SystemExit(f"observer did not persist required real-Hermes hooks: {missing}; got={hooks}")
+
+            serialized_rows = json.dumps(rows, ensure_ascii=False)
+            if "super-secret" in serialized_rows or "sensitive tool output" in serialized_rows:
+                raise SystemExit("metadata-first recorder leaked intentionally sensitive fixture content")
 
             report = status(db)
             state = report["state"]
             if state["interaction_events"] < 1:
                 raise SystemExit(f"replay did not reconstruct a parent->child interaction: {state}")
+            if state["tool_outcomes"] < 1:
+                raise SystemExit(f"replay did not reconstruct tool outcome evidence: {state}")
             if report["events"]["uncertain_session_events"]:
                 raise SystemExit(
                     "complete offline delegation fixture produced uncertain session identity: "
