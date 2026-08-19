@@ -1,0 +1,55 @@
+name: compare-local-e1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/compare-local-e1.yml"
+      - "experiments/compare_local_e1_models.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Fetch experiment result branches
+        run: |
+          set -e
+          git fetch origin lfm25-provider-e1-results qwen3-4b-e1-96k-results
+          mkdir -p compare-input
+          git show origin/lfm25-provider-e1-results:results/lfm25-provider-e1/latest/status.json > compare-input/lfm-status.json
+          git show origin/lfm25-provider-e1-results:results/lfm25-provider-e1/latest/e1-validation.json > compare-input/lfm-validation.json
+          git show origin/qwen3-4b-e1-96k-results:results/qwen3-4b-e1-96k/latest/status.json > compare-input/qwen-status.json
+          git show origin/qwen3-4b-e1-96k-results:results/qwen3-4b-e1-96k/latest/e1-validation.json > compare-input/qwen-validation.json
+      - name: Compare
+        run: |
+          python experiments/compare_local_e1_models.py \
+            --lfm-status compare-input/lfm-status.json \
+            --lfm-validation compare-input/lfm-validation.json \
+            --baseline-status compare-input/qwen-status.json \
+            --baseline-validation compare-input/qwen-validation.json \
+            --output comparison.json
+      - name: Publish result branch
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/comparison.json"
+          cp comparison.json "$tmp"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan local-e1-comparison-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/local-e1-comparison/latest
+          cp "$tmp" results/local-e1-comparison/latest/summary.json
+          git add results/local-e1-comparison/latest/summary.json
+          git commit -m "Record local E1 contract comparison for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:local-e1-comparison-results
