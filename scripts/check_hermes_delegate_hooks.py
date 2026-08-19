@@ -192,6 +192,7 @@ def main() -> int:
                 platform="cli",
             )
 
+            from adaptive_evolution_observer.bundle import create_bundle
             from adaptive_evolution_observer.cli import status
             from adaptive_evolution_observer.store import EventStore
 
@@ -228,13 +229,25 @@ def main() -> int:
                     f"{report['events']}"
                 )
 
-            print(json.dumps({
+            contract_report = {
                 "result": "compatible",
                 "loaded_plugin_key": loaded.manifest.key or loaded.manifest.name,
                 "captured_hooks": hooks,
                 "event_diagnostics": report["events"],
                 "organization_state": state,
-            }, indent=2, sort_keys=True))
+            }
+
+            artifact_dir = os.getenv("ADAPTIVE_EVOLUTION_CONTRACT_ARTIFACT_DIR")
+            if artifact_dir:
+                capture_dir = Path(artifact_dir).expanduser()
+                capture_dir.parent.mkdir(parents=True, exist_ok=True)
+                create_bundle(db, capture_dir)
+                (capture_dir.parent / "offline-contract-report.json").write_text(
+                    json.dumps(contract_report, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+
+            print(json.dumps(contract_report, indent=2, sort_keys=True))
             return 0
         finally:
             plugins._plugin_manager = original_manager
