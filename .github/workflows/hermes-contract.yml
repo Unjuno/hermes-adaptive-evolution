@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "adaptive_evolution_observer/**"
+      - "experiments/report_hook_coverage.py"
+      - "experiments/run_capture_corruption.py"
       - "pyproject.toml"
       - "plugin.yaml"
       - "scripts/check_hermes_contract.py"
@@ -21,6 +23,8 @@ jobs:
   current-hermes:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      ADAPTIVE_EVOLUTION_CONTRACT_ARTIFACT_DIR: contract-artifact/capture
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -39,3 +43,19 @@ jobs:
         run: python scripts/check_hermes_contract.py
       - name: Validate real Hermes delegation hook path offline
         run: python scripts/check_hermes_delegate_hooks.py
+      - name: Report hook field coverage
+        run: |
+          python experiments/report_hook_coverage.py contract-artifact/capture \
+            --output contract-artifact/hook-coverage.json
+      - name: Exercise corruption/replay robustness on the captured real-Hermes path
+        run: |
+          python experiments/run_capture_corruption.py contract-artifact/capture \
+            --replicates 20 \
+            --output contract-artifact/corruption-summary.json
+      - name: Upload contract and experiment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hermes-contract-capture
+          path: contract-artifact/
+          if-no-files-found: error
+          retention-days: 14
