@@ -1,3 +1,19 @@
 name: adaptive-evolution
 version: "0.2.0"
 description: Experimental Hermes-native organization telemetry and adaptive-system research plugin
+provides_tools:
+  - adaptive_evolution_observer_status
+  - adaptive_evolution_observer_export
+provides_hooks:
+  - on_session_start
+  - on_session_end
+  - on_session_finalize
+  - on_session_reset
+  - post_tool_call
+  - api_request_error
+  - on_skill_lifecycle
+  - subagent_start
+  - subagent_stop
+  - kanban_task_claimed
+  - kanban_task_completed
+  - kanban_task_blocked
