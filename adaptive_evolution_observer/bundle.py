@@ -30,6 +30,7 @@ def _distribution_version(name: str) -> str | None:
 def _event_dict(event: CanonicalEvent) -> dict[str, Any]:
     return {
         "seq": event.seq,
+        "observed_at_ns": event.observed_at_ns,
         "hook": event.hook,
         "event_key": event.event_key,
         "session_id": event.session_id,
@@ -44,7 +45,7 @@ def _event_dict(event: CanonicalEvent) -> dict[str, Any]:
 
 def _raw_row_dict(row: dict[str, Any]) -> dict[str, Any]:
     # EventStore payloads are sanitized before persistence. Exclude DB-local
-    # row ids and pids from the portable artifact; replay only needs ordering,
+    # row ids and pids from the portable artifact; replay only needs timestamp,
     # hook, correlation key, and sanitized payload.
     return {
         "received_at_ns": int(row["received_at_ns"]),
