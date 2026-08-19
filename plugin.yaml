@@ -1,9 +1,6 @@
 name: adaptive-evolution
 version: "0.2.0"
 description: Experimental Hermes-native organization telemetry and adaptive-system research plugin
-provides_tools:
-  - adaptive_evolution_observer_status
-  - adaptive_evolution_observer_export
 provides_hooks:
   - on_session_start
   - on_session_end
