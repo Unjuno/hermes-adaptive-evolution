@@ -176,8 +176,6 @@ jobs:
           if manifest.exists():
               (root / "capture-manifest.json").write_bytes(manifest.read_bytes())
 
-          # Keep only bounded diagnostic tails; never commit the sanitized event
-          # stream itself from CI. These logs exercise synthetic/offline fixtures.
           log_out = root / "logs"
           log_out.mkdir(exist_ok=True)
           for src in sorted((artifact / "logs").glob("*.log")):
@@ -191,12 +189,17 @@ jobs:
         shell: bash
         run: |
           set -e
+          publish_dir="${RUNNER_TEMP}/offline-m1-latest"
+          rm -rf "$publish_dir"
+          mkdir -p "$publish_dir"
+          cp -a results/offline-m1/latest/. "$publish_dir/"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout --orphan experiment-results-tmp
           git rm -rf . >/dev/null 2>&1 || true
-          mkdir -p results/offline-m1
-          git checkout "${GITHUB_SHA}" -- results/offline-m1/latest
+          mkdir -p results/offline-m1/latest
+          cp -a "$publish_dir"/. results/offline-m1/latest/
           git add results/offline-m1/latest
           git commit -m "Record offline M1 experiment for ${GITHUB_SHA::12}"
           git push --force origin HEAD:experiment-results
