@@ -24,18 +24,21 @@ def _number(value: Any) -> float | None:
 
 
 def dominates(a: dict[str, Any], b: dict[str, Any], epsilon: dict[str, float] | None = None) -> bool:
-    """Conservative Pareto dominance: unknown dimensions are incomparable.
+    """Conservative Pareto dominance: one-sided unknowns block dominance.
 
-    Every declared dimension that is known for one candidate must also be known
-    for the other before it participates. At least one participating dimension
-    must improve beyond epsilon, and none may be worse beyond epsilon.
+    If a dimension is known for only one candidate, either value could reverse
+    the ordering, so neither candidate may claim dominance through the remaining
+    dimensions. Dimensions missing for both candidates are ignored. At least one
+    mutually known dimension must improve beyond epsilon and none may be worse.
     """
     epsilon = epsilon or {}
     compared = 0
     strict = False
     for name in MAXIMIZE:
         av, bv = _number(a.get(name)), _number(b.get(name))
-        if av is None or bv is None:
+        if (av is None) != (bv is None):
+            return False
+        if av is None:
             continue
         compared += 1
         e = float(epsilon.get(name, 0.0))
@@ -45,7 +48,9 @@ def dominates(a: dict[str, Any], b: dict[str, Any], epsilon: dict[str, float] | 
             strict = True
     for name in MINIMIZE:
         av, bv = _number(a.get(name)), _number(b.get(name))
-        if av is None or bv is None:
+        if (av is None) != (bv is None):
+            return False
+        if av is None:
             continue
         compared += 1
         e = float(epsilon.get(name, 0.0))
@@ -177,8 +182,9 @@ def evaluate(
         "details": dict(by_router),
         "authority": "routing_evaluation",
         "note": (
-            "Pareto hit rate does not invent utility weights. Scalar regret is reported only where every candidate "
-            "in a paired group carries an explicitly supplied outcome.decision_score."
+            "Pareto hit rate does not invent utility weights. One-sided unknown metrics block dominance. "
+            "Scalar regret is reported only where every candidate in a paired group carries an explicitly supplied "
+            "outcome.decision_score."
         ),
     }
 
