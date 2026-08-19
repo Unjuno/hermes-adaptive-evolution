@@ -32,16 +32,16 @@ def _child_agent(subagent_id: str | None, child_session_id: str | None) -> str |
 
 
 def _session_start_is_root_evidence(payload: dict[str, Any]) -> bool:
-    """Return whether a session-start event may support root identity.
+    """Return whether a session-start event is explicit root evidence.
 
-    A subagent AIAgent is created with ``platform='subagent'``. Even if a
-    runtime path emits ``on_session_start`` for that child, it must never
-    promote the child session to root when the stronger ``subagent_start`` edge
-    was dropped. Missing platform remains weak root evidence for backward
-    compatibility; explicit child evidence always wins.
+    A subagent AIAgent is created with ``platform='subagent'``. Missing
+    platform is also treated as insufficient evidence: backward-compatible
+    payload loss should degrade to an uncertain session rather than inventing a
+    root identity. An explicit ``subagent_start.parent_session_id`` can still
+    establish root identity independently.
     """
     platform = str(payload.get("platform") or "").strip().lower()
-    return platform != "subagent"
+    return bool(platform) and platform != "subagent"
 
 
 def normalize(raw_events: list[dict[str, Any]]) -> tuple[list[CanonicalEvent], dict[str, Any]]:
