@@ -1,0 +1,103 @@
+{
+  "directory": "m2-lfm-artifact/capture",
+  "manifest": {
+    "created_at": "2026-08-19T18:36:12.050964+00:00",
+    "event_diagnostics": {
+      "duplicates_removed": 0,
+      "known_child_sessions": 2,
+      "known_root_sessions": 1,
+      "raw_count": 34,
+      "unattributed_observer_events": 0,
+      "uncertain_session_events": 0,
+      "unique_count": 34
+    },
+    "normalized_trace": {
+      "events": 34,
+      "file": "normalized-events.jsonl",
+      "sha256": "1ceb9d8c3452ebd4aca8cd134dce8a42b25fe4a915aedc04f2bcd5bdd624ed12"
+    },
+    "organization_state": {
+      "agents": 3,
+      "authority": "diagnostic_only",
+      "completed_flow_connectivity": 0.5,
+      "completed_interaction_events": 2,
+      "directed_diffusivity": 0.0,
+      "directed_diffusivity_authority": "deprecated_diagnostic_only",
+      "directed_traffic_breadth": 1.0,
+      "experimental": true,
+      "fragility": {
+        "root:20260819_180611_ee0854": 0.2631578947368421,
+        "subagent:sa-0-2d2f0428": 0.25,
+        "subagent:sa-0-5d01ecb5": 0.5
+      },
+      "interaction_completion_coverage": 1.0,
+      "interaction_events": 2,
+      "interaction_sources": 1,
+      "mean_role_entropy": 0.8583871314912193,
+      "note": "Topology is intentionally vector-valued: directed traffic breadth measures local fan-out, while completed-flow connectivity measures global bottlenecks. The legacy start-only directed_diffusivity was falsified for delegation DAGs and is retained only for backward-compatible diagnostics. Role mixing is confidence-weighted and may be null when role evidence is insufficient. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks.",
+      "role_conditioned_traffic_coverage": 0.020940443494362884,
+      "role_confidence": {
+        "root:20260819_180611_ee0854": 0.15548887858008598,
+        "subagent:sa-0-2d2f0428": 0.09436093777043353,
+        "subagent:sa-0-5d01ecb5": 0.17498878917582283
+      },
+      "role_evidence": {
+        "root:20260819_180611_ee0854": 17.0,
+        "subagent:sa-0-2d2f0428": 2.0,
+        "subagent:sa-0-5d01ecb5": 4.0
+      },
+      "role_posteriors": {
+        "root:20260819_180611_ee0854": {
+          "coordination": 0.23684210526315788,
+          "implementation": 0.39473684210526316,
+          "research": 0.34210526315789475,
+          "verification": 0.02631578947368421
+        },
+        "subagent:sa-0-2d2f0428": {
+          "coordination": 0.125,
+          "implementation": 0.375,
+          "research": 0.375,
+          "verification": 0.125
+        },
+        "subagent:sa-0-5d01ecb5": {
+          "coordination": 0.08333333333333333,
+          "implementation": 0.4166666666666667,
+          "research": 0.4166666666666667,
+          "verification": 0.08333333333333333
+        }
+      },
+      "schema": "adaptive-evolution.organization-state.v0.3",
+      "support": {
+        "agents_with_outcome_evidence": 3,
+        "agents_with_outgoing_interactions": 1,
+        "agents_with_tool_role_evidence": 3,
+        "completed_interaction_count": 2,
+        "interaction_completion_coverage": 1.0,
+        "interaction_count": 2,
+        "role_conditioned_interaction_weight": 0.04188088698872577
+      },
+      "tool_outcomes": 23,
+      "traffic_weighted_role_mixing": 0.6779670136753926
+    },
+    "privacy": {
+      "capture_content": false,
+      "raw_event_stream_is_pre_sanitized": true,
+      "raw_sqlite_included": false
+    },
+    "runtime": {
+      "hermes_agent_version": "0.20.4",
+      "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+      "plugin_version": "0.2.0",
+      "python": "3.13.15"
+    },
+    "sanitized_raw_trace": {
+      "events": 34,
+      "file": "sanitized-raw-events.jsonl",
+      "sha256": "ea56d6d5ea206cae2cc63b66d334d9a1d0e8fa4f484280a7c078f80f3c4500f3"
+    },
+    "schema": "adaptive-evolution.capture-bundle.v0.2",
+    "source": {
+      "database_name": "m2-lfm-observer.sqlite3"
+    }
+  }
+}
