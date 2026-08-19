@@ -8,6 +8,7 @@ from adaptive_evolution_observer.estimator import estimate
 from adaptive_evolution_observer.normalizer import normalize
 
 RAW_NAME = "sanitized-raw-events.jsonl"
+EXPECTED_CONNECTIVITY_METHOD = "unnormalized_algebraic_lambda2_over_n_binary_completed_relations"
 
 
 def load_raw(bundle: Path) -> list[dict]:
@@ -25,7 +26,8 @@ def validate(bundle: Path) -> dict:
     events, diagnostics=normalize(raw)
     state=estimate(events)
     checks={
-        "schema_v03": state.get("schema") == "adaptive-evolution.organization-state.v0.3",
+        "schema_v04": state.get("schema") == "adaptive-evolution.organization-state.v0.4",
+        "connectivity_method_v04": state.get("completed_flow_connectivity_method") == EXPECTED_CONNECTIVITY_METHOD,
         "at_least_three_agents": int(state.get("agents") or 0) >= 3,
         "at_least_two_interactions": int(state.get("interaction_events") or 0) >= 2,
         "at_least_two_completed_interactions": int(state.get("completed_interaction_events") or 0) >= 2,
@@ -37,7 +39,7 @@ def validate(bundle: Path) -> dict:
     }
     passed=all(checks.values())
     return {
-        "schema":"adaptive-evolution.m2-multiedge-validation.v0.1",
+        "schema":"adaptive-evolution.m2-multiedge-validation.v0.2",
         "bundle":str(bundle),
         "passed":passed,
         "checks":checks,
@@ -45,7 +47,7 @@ def validate(bundle: Path) -> dict:
         "organization_state":state,
         "authority":"m2_observability_contract_only",
         "note":(
-            "Passing proves that a real Hermes multi-edge trajectory exposes the vector topology state. "
+            "Passing proves that a real Hermes multi-edge trajectory exposes the v0.4 vector topology state. "
             "It does not prove that these observables improve routing decisions."
         ),
     }
