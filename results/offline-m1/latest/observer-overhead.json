@@ -1,0 +1,40 @@
+{
+  "authority": "benchmark_only",
+  "configuration": {
+    "capture_content_enabled": false,
+    "measured_events": 1000,
+    "synthetic_content_bytes_per_tool_arg_and_result": 1024,
+    "warmup_events": 50
+  },
+  "environment": {
+    "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+    "python": "3.13.15",
+    "sqlite": "3.45.1"
+  },
+  "note": "This isolates observer storage/replay cost; it is not end-to-end Hermes overhead and defines no production threshold.",
+  "replay": {
+    "estimate_total_ms": 3.328312,
+    "estimate_us_per_event": 3.328312,
+    "event_diagnostics": {
+      "duplicates_removed": 0,
+      "known_child_sessions": 0,
+      "known_root_sessions": 0,
+      "raw_count": 1000,
+      "unattributed_observer_events": 0,
+      "uncertain_session_events": 1000,
+      "unique_count": 1000
+    },
+    "normalize_total_ms": 4.550524,
+    "normalize_us_per_event": 4.550524,
+    "organization_state_schema": "adaptive-evolution.organization-state.v0.4"
+  },
+  "schema": "adaptive-evolution.observer-overhead.v0.1",
+  "write": {
+    "max_us": 1319.258,
+    "median_us": 176.622,
+    "p95_us": 449.92609999999996,
+    "p99_us": 535.9496700000001,
+    "throughput_events_per_s": 4362.634518727008,
+    "total_ms": 229.219293
+  }
+}
