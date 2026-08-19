@@ -14,6 +14,7 @@ This is the forward-looking roadmap for `hermes-adaptive-evolution`. The project
 8. Synthetic sample counts never become production thresholds without real-Hermes calibration.
 9. M1/M2 observation is hook-only; measurement should not alter the model-facing tool schema.
 10. Organization topology is not forced into one scalar when falsification supports multiple order parameters.
+11. Same-task post-execution state must never leak into the routing decision that selected that task's organization.
 
 ## M0 — Reproducible plugin and experiment substrate
 
@@ -33,7 +34,7 @@ Exit: repository installs, tests, builds a wheel, and exposes the Hermes plugin 
 ## M1 — Real Hermes E2E contract
 
 **Priority:** P0.  
-**Status:** provider-backed local-model path passed; repeatability and broader task coverage remain.
+**Status:** minimum exit condition passed.
 
 ### Offline real-Hermes gate — passed
 
@@ -72,13 +73,13 @@ The portable capture passed the E1 validator with clean parent/child identity an
 
 A same-declared-context Qwen3 4B comparison currently fails before delegation with Hermes context-compression behavior. Treat that as a runtime/provider/model-metadata compatibility result until the context path is isolated; do not use it as a quality ranking.
 
-Exit status: the minimum M1 exit condition is met. Keep a provider-backed E1 as a milestone regression gate, not a per-commit test.
+The expensive provider M1 workflows have been retired from per-push CI after the milestone result. Their result branches and git history remain as evidence; provider E1 is now a milestone regression gate rather than a daily test.
 
 Fork gate: no fork is justified by current evidence. Consider a core change only after documenting a decision-relevant primitive that cannot be observed or controlled through the public plugin surface and cannot be replaced by an equivalent observable.
 
-## M2 — Organization State Estimator v0.3
+## M2 — Organization State Estimator v0.4
 
-**Status:** vector topology state implemented; real decision utility still unproven.
+**Status:** multi-edge observability semantics passed offline real-Hermes contract; provider-backed multi-edge canary and decision usefulness remain.
 
 ### Retained diagnostics
 
@@ -97,24 +98,42 @@ Synthetic multi-target falsification supports at least two separate topology obs
 1. **directed traffic breadth** — local fan-out / how broadly sources distribute work;
 2. **completed-flow connectivity** — global bottleneck/connectivity inferred only from relations with both start and stop evidence.
 
-`interaction_completion_coverage` is exposed separately so missing returns cannot be silently treated as completed information paths.
+`interaction_completion_coverage` is exposed separately. A dedicated falsification showed that equal completion coverage can yield roughly an order-of-magnitude difference in connectivity error depending on which relation is missing, so coverage is support metadata, **not confidence**.
 
-This is intentionally a **vector state**, not a new single magic diffusivity scalar.
+The first normalized-Laplacian completed-flow metric was also rejected because removing a local return edge could make the scalar improve. v0.4 instead uses binary completed relations and the unnormalized algebraic connectivity
 
-### Current hard gate
+```text
+lambda_2(D - A) / N
+```
 
-Run a provider-backed Hermes trace with multiple completed delegation edges and validate that the vector topology state is recoverable without identity ambiguity. The first target is a two-leaf star organization on the deterministic repair fixture.
+with the node set fixed by start evidence. Across the synthetic metric-selection suite, this candidate preserved missing-edge monotonicity and improved diffusion ranking relative to the rejected normalized metric.
 
-Then test **decision usefulness**, not just reconstruction:
-- compare context-only routing vs context + topology state;
-- keep task seeds paired;
-- keep task regimes stratified;
-- use real completion/support uncertainty as a gate;
-- evaluate routing regret and rare failure, not topology MSE alone.
+This is intentionally a **vector state**, not a new single magic diffusivity scalar. See `docs/ORGANIZATION_STATE_V04.md`.
+
+### Offline real-Hermes multi-edge contract — passed
+
+Two real `delegate_task` lifecycles with mocked child LLM execution produced a root-plus-two-leaf star with:
+
+```text
+interaction starts = 2
+completed interactions = 2
+completion coverage = 1.0
+traffic breadth = 1.0
+completed-flow connectivity = 1/3
+identity uncertainty = 0
+```
+
+The observed values matched the v0.4 analytical expectations exactly.
+
+### Current hard gates
+
+1. **Provider-backed multi-edge canary** — use LFM2.5 Q4 on a two-leaf task and confirm the vector state appears in a real model trajectory.
+2. **Decision usefulness** — compare context-only routing with context + valid *pre-decision* state. Post-state from task `t` may update history only for future tasks; using it to choose the organization that already executed task `t` is forbidden leakage.
+3. Keep task seeds paired, task regimes stratified, support separate from confidence, and evaluate routing regret / rare failure rather than topology MSE alone.
 
 Role-memory/change-point and macro-state/Markov falsification remain subsequent M2 experiments.
 
-Exit: at least one estimated state variable improves or safely gates held-out organization decisions relative to a context-only baseline.
+Exit: at least one estimated state variable improves or safely gates held-out organization decisions relative to a context-only baseline without temporal leakage or rare-event regression.
 
 ## M3 — Finite-template task-conditioned router
 
