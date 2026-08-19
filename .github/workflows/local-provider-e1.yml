@@ -1,0 +1,353 @@
+name: local-provider-e1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/local-provider-e1.yml"
+      - "adaptive_evolution_observer/**"
+      - "experiments/validate_e1_capture.py"
+      - "experiments/report_hook_coverage.py"
+      - "experiments/run_capture_corruption.py"
+      - "experiments/fixtures/e1_repair_project/**"
+      - "plugin.yaml"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  qwen3-local-e1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
+      E1_MODEL: qwen3:4b-instruct
+      E1_CONTEXT: "65536"
+      ADAPTIVE_EVOLUTION_CAPTURE_CONTENT: "0"
+    steps:
+      - name: Checkout adaptive-evolution
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout pinned Hermes source
+        uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install Hermes and observer plugin
+        id: install
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p local-e1-artifact/logs
+          {
+            test "$(git -C _hermes rev-parse HEAD)" = "$HERMES_CONTRACT_SHA"
+            python -m pip install -e ./_hermes
+            python -m pip install -e .
+          } 2>&1 | tee local-e1-artifact/logs/install.log
+
+      - name: Install and start Ollama
+        id: ollama_install
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            curl -fsSL https://ollama.com/install.sh | sh
+            nohup ollama serve > local-e1-artifact/logs/ollama-serve.log 2>&1 &
+            echo $! > local-e1-artifact/ollama.pid
+            for i in $(seq 1 60); do
+              if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then
+                ollama --version
+                exit 0
+              fi
+              sleep 1
+            done
+            echo "Ollama did not become ready" >&2
+            exit 1
+          } 2>&1 | tee local-e1-artifact/logs/ollama-install.log
+
+      - name: Pull tool-capable local model
+        id: model_pull
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            ollama pull "$E1_MODEL"
+            ollama show "$E1_MODEL"
+          } 2>&1 | tee local-e1-artifact/logs/model-pull.log
+
+      - name: Configure isolated Hermes profile
+        id: configure
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -e
+          export HERMES_HOME="${RUNNER_TEMP}/hermes-local-e1"
+          mkdir -p "$HERMES_HOME"
+          cat > "$HERMES_HOME/config.yaml" <<EOF
+          model:
+            default: "$E1_MODEL"
+            provider: custom
+            base_url: "http://127.0.0.1:11434/v1"
+            context_length: $E1_CONTEXT
+            ollama_num_ctx: $E1_CONTEXT
+            max_tokens: 4096
+            reasoning:
+              enabled: false
+          plugins:
+            enabled:
+              - adaptive-evolution
+          delegation:
+            max_concurrent_children: 1
+            subagent_auto_approve: false
+          EOF
+          cat "$HERMES_HOME/config.yaml" > local-e1-artifact/config-redacted.yaml
+          echo "HERMES_HOME=$HERMES_HOME" >> "$GITHUB_ENV"
+          echo "ADAPTIVE_EVOLUTION_OBSERVER_DB=${RUNNER_TEMP}/local-e1-observer.sqlite3" >> "$GITHUB_ENV"
+
+      - name: Verify deterministic failing baseline
+        id: baseline
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          cd experiments/fixtures/e1_repair_project
+          if python -m unittest -q > "${GITHUB_WORKSPACE}/local-e1-artifact/logs/baseline-test.log" 2>&1; then
+            echo "fixture baseline unexpectedly passed" >&2
+            exit 1
+          fi
+          echo "expected failing baseline observed"
+
+      - name: Run provider-backed Hermes E1
+        id: hermes_run
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          prompt='This is an E1 observability fixture. Use delegate_task exactly once with a leaf subagent. Ask the child to reproduce the failing unittest before editing, fix the root cause with the smallest change in counter.py only, run python -m unittest -q after the patch, and return the evidence. Do not modify the tests. After the child returns, inspect the result and report whether the test transitioned from failing to passing.'
+          cd experiments/fixtures/e1_repair_project
+          timeout 900s hermes -t terminal,file,delegation chat \
+            -q "$prompt" -Q --max-turns 16 --source adaptive-evolution-e1 \
+            > "${GITHUB_WORKSPACE}/local-e1-artifact/hermes-output.txt" \
+            2> "${GITHUB_WORKSPACE}/local-e1-artifact/logs/hermes-run.log"
+
+      - name: Verify repair outcome
+        id: repair_verify
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          cd experiments/fixtures/e1_repair_project
+          python -m unittest -q 2>&1 | tee "${GITHUB_WORKSPACE}/local-e1-artifact/logs/final-test.log"
+          git diff -- counter.py test_counter.py > "${GITHUB_WORKSPACE}/local-e1-artifact/fixture.diff"
+          if git diff --name-only -- . | grep -v '^counter.py$' | grep -q .; then
+            echo "fixture changed files other than counter.py" >&2
+            git diff --name-only -- . >&2
+            exit 1
+          fi
+
+      - name: Create portable capture bundle
+        id: bundle
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          if [ ! -f "$ADAPTIVE_EVOLUTION_OBSERVER_DB" ]; then
+            echo "observer database missing" >&2
+            exit 1
+          fi
+          adaptive-evolution-observer --db "$ADAPTIVE_EVOLUTION_OBSERVER_DB" \
+            bundle local-e1-artifact/capture \
+            2>&1 | tee local-e1-artifact/logs/bundle.log
+
+      - name: Validate provider-backed E1 capture
+        id: e1_validate
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python experiments/validate_e1_capture.py local-e1-artifact/capture \
+            --output local-e1-artifact/e1-validation.json \
+            2>&1 | tee local-e1-artifact/logs/e1-validation.log
+
+      - name: Report hook field coverage
+        id: hook_coverage
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python experiments/report_hook_coverage.py local-e1-artifact/capture \
+            --output local-e1-artifact/hook-coverage.json \
+            2>&1 | tee local-e1-artifact/logs/hook-coverage.log
+
+      - name: Run corruption/replay sweep
+        id: corruption
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python experiments/run_capture_corruption.py local-e1-artifact/capture \
+            --replicates 20 \
+            --output local-e1-artifact/corruption-summary.json \
+            2>&1 | tee local-e1-artifact/logs/corruption.log
+
+      - name: Build machine-readable local E1 result
+        id: summarize
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          OLLAMA_INSTALL: ${{ steps.ollama_install.outcome }}
+          MODEL_PULL: ${{ steps.model_pull.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          BASELINE: ${{ steps.baseline.outcome }}
+          HERMES_RUN: ${{ steps.hermes_run.outcome }}
+          REPAIR_VERIFY: ${{ steps.repair_verify.outcome }}
+          BUNDLE: ${{ steps.bundle.outcome }}
+          E1_VALIDATE: ${{ steps.e1_validate.outcome }}
+          HOOK_COVERAGE: ${{ steps.hook_coverage.outcome }}
+          CORRUPTION: ${{ steps.corruption.outcome }}
+        shell: bash
+        run: |
+          mkdir -p results/local-provider-e1/latest
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          src = Path("local-e1-artifact")
+          dst = Path("results/local-provider-e1/latest")
+          outcomes = {
+              "install": os.environ["INSTALL"],
+              "ollama_install": os.environ["OLLAMA_INSTALL"],
+              "model_pull": os.environ["MODEL_PULL"],
+              "configure": os.environ["CONFIGURE"],
+              "baseline": os.environ["BASELINE"],
+              "hermes_run": os.environ["HERMES_RUN"],
+              "repair_verify": os.environ["REPAIR_VERIFY"],
+              "bundle": os.environ["BUNDLE"],
+              "e1_validate": os.environ["E1_VALIDATE"],
+              "hook_coverage": os.environ["HOOK_COVERAGE"],
+              "corruption": os.environ["CORRUPTION"],
+          }
+          critical = ["install", "ollama_install", "model_pull", "configure", "baseline", "hermes_run", "repair_verify", "bundle", "e1_validate"]
+          status = {
+              "schema": "adaptive-evolution.local-provider-e1-result.v0.1",
+              "created_at": datetime.now(timezone.utc).isoformat(),
+              "source_sha": os.environ["GITHUB_SHA"],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "hermes_contract_sha": os.environ["HERMES_CONTRACT_SHA"],
+              "provider": "ollama-local",
+              "model": os.environ["E1_MODEL"],
+              "context_length": int(os.environ["E1_CONTEXT"]),
+              "external_api_credentials_used": False,
+              "outcomes": outcomes,
+              "critical_gate_passed": all(outcomes[k] == "success" for k in critical),
+              "authority": "provider_backed_e1_contract",
+              "note": "This gate exercises a real local model through Hermes; it is not a coding-quality benchmark or M2 routing gate.",
+          }
+          (dst / "status.json").write_text(json.dumps(status, indent=2, sort_keys=True) + "\n")
+
+          for name in ("e1-validation.json", "hook-coverage.json", "fixture.diff"):
+              p = src / name
+              if p.exists():
+                  (dst / name).write_bytes(p.read_bytes())
+          manifest = src / "capture" / "manifest.json"
+          if manifest.exists():
+              (dst / "capture-manifest.json").write_bytes(manifest.read_bytes())
+          corr = src / "corruption-summary.json"
+          if corr.exists():
+              data = json.loads(corr.read_text())
+              compact = {
+                  "schema": data.get("schema"),
+                  "baseline": data.get("baseline"),
+                  "summary": data.get("summary"),
+                  "authority": data.get("authority"),
+                  "note": data.get("note"),
+              }
+              (dst / "corruption-compact.json").write_text(json.dumps(compact, indent=2, sort_keys=True) + "\n")
+
+          logs = dst / "logs"
+          logs.mkdir(exist_ok=True)
+          for p in sorted((src / "logs").glob("*.log")):
+              lines = p.read_text(errors="replace").splitlines()
+              (logs / p.name).write_text("\n".join(lines[-160:]) + "\n")
+          out = src / "hermes-output.txt"
+          if out.exists():
+              text = out.read_text(errors="replace")
+              (dst / "hermes-output-tail.txt").write_text(text[-4000:])
+          PY
+
+      - name: Publish local E1 experiment result branch
+        id: publish
+        if: always()
+        shell: bash
+        run: |
+          set -e
+          publish_dir="${RUNNER_TEMP}/local-provider-e1-latest"
+          rm -rf "$publish_dir"
+          mkdir -p "$publish_dir"
+          cp -a results/local-provider-e1/latest/. "$publish_dir/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan local-provider-e1-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/local-provider-e1/latest
+          cp -a "$publish_dir"/. results/local-provider-e1/latest/
+          git add results/local-provider-e1/latest
+          git commit -m "Record local provider E1 for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:local-provider-e1-results
+
+      - name: Upload full local E1 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-provider-e1
+          path: local-e1-artifact/
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Enforce provider-backed E1 gate
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          OLLAMA_INSTALL: ${{ steps.ollama_install.outcome }}
+          MODEL_PULL: ${{ steps.model_pull.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          BASELINE: ${{ steps.baseline.outcome }}
+          HERMES_RUN: ${{ steps.hermes_run.outcome }}
+          REPAIR_VERIFY: ${{ steps.repair_verify.outcome }}
+          BUNDLE: ${{ steps.bundle.outcome }}
+          E1_VALIDATE: ${{ steps.e1_validate.outcome }}
+          PUBLISH: ${{ steps.publish.outcome }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          outcomes = {k.lower(): v for k, v in os.environ.items() if k in {
+              "INSTALL", "OLLAMA_INSTALL", "MODEL_PULL", "CONFIGURE", "BASELINE",
+              "HERMES_RUN", "REPAIR_VERIFY", "BUNDLE", "E1_VALIDATE", "PUBLISH"
+          }}
+          failed = [k for k, v in outcomes.items() if v != "success"]
+          if failed:
+              raise SystemExit(f"provider-backed E1 gate failed: {failed}; outcomes={outcomes}")
+          print("provider-backed E1 gate passed")
+          PY
