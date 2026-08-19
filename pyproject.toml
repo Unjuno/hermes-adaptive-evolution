@@ -11,7 +11,7 @@ requires-python = ">=3.11,<3.14"
 license = "Apache-2.0"
 authors = [{name = "Unjuno"}]
 dependencies = [
-  "numpy>=2.0,<3",
+  "numpy>=1.26,<3",
 ]
 
 [project.optional-dependencies]
