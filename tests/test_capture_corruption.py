@@ -11,6 +11,15 @@ def _bundle(tmp_path: Path) -> Path:
     db = tmp_path / "observer.sqlite3"
     store = EventStore(db)
     store.append("on_session_start", {"session_id": "root", "platform": "cli"})
+    for i in range(5):
+        store.append("post_tool_call", {
+            "session_id": "root",
+            "task_id": "task-root",
+            "turn_id": f"rt-{i}",
+            "tool_call_id": f"root-tc-{i}",
+            "tool_name": "terminal",
+            "status": "success",
+        })
     store.append("subagent_start", {
         "parent_session_id": "root",
         "parent_turn_id": "t1",
@@ -54,6 +63,7 @@ def test_full_reorder_is_semantically_invariant(tmp_path: Path):
     assert group["metrics"]["interaction_event_delta"]["max"] == 0.0
     assert group["metrics"]["tool_outcome_delta"]["max"] == 0.0
     assert group["metrics"]["role_mixing_abs_error"]["max"] == 0.0
+    assert group["metrics"]["role_conditioned_traffic_coverage_abs_error"]["max"] == 0.0
 
 
 def test_duplicate_experiment_reports_deduplicated_state(tmp_path: Path):
