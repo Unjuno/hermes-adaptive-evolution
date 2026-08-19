@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "adaptive_evolution_observer/**"
+      - "experiments/benchmark_observer_overhead.py"
       - "experiments/report_hook_coverage.py"
       - "experiments/run_capture_corruption.py"
       - "pyproject.toml"
@@ -52,6 +53,12 @@ jobs:
           python experiments/run_capture_corruption.py contract-artifact/capture \
             --replicates 20 \
             --output contract-artifact/corruption-summary.json
+      - name: Benchmark isolated observer overhead
+        run: |
+          python experiments/benchmark_observer_overhead.py \
+            --events 1000 \
+            --payload-bytes 1024 \
+            --output contract-artifact/observer-overhead.json
       - name: Upload contract and experiment artifact
         uses: actions/upload-artifact@v4
         with:
