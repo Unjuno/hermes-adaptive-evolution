@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hermes-adaptive-evolution"
+version = "0.2.0"
+description = "Research framework and Hermes Agent plugin for adaptive multi-agent organization, probabilistic interaction modeling, and self-evolution."
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = "Apache-2.0"
+authors = [{name = "Unjuno"}]
+dependencies = [
+  "numpy>=2.0,<3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.entry-points."hermes_agent.plugins"]
+adaptive-evolution = "adaptive_evolution_observer"
+
+[tool.setuptools]
+packages = ["adaptive_evolution_observer"]
+
+[tool.setuptools.package-data]
+adaptive_evolution_observer = ["compat/*.json"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
