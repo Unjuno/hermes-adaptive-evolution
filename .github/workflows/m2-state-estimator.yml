@@ -7,6 +7,8 @@ on:
       - ".github/workflows/m2-state-estimator.yml"
       - "adaptive_evolution_observer/**"
       - "experiments/run_directed_topology_metric_falsification.py"
+      - "experiments/run_capture_corruption.py"
+      - "tests/**"
   workflow_dispatch:
 
 permissions:
@@ -24,8 +26,14 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - name: Install project
-        run: python -m pip install -e .
+      - name: Install project and dev dependencies
+        run: python -m pip install -e '.[dev]'
+      - name: Run full observer regression suite
+        run: python -m pytest
+      - name: Compile observer and experiments
+        run: |
+          python -m compileall -q adaptive_evolution_observer __init__.py
+          python -m py_compile experiments/run_directed_topology_metric_falsification.py experiments/run_capture_corruption.py
       - name: Run falsification
         run: |
           mkdir -p m2-artifact
