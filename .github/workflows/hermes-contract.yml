@@ -18,7 +18,7 @@ on:
     - cron: "17 3 * * 1"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   current-hermes:
@@ -28,41 +28,217 @@ jobs:
       ADAPTIVE_EVOLUTION_CONTRACT_ARTIFACT_DIR: contract-artifact/capture
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
           cache: pip
+
       - name: Install pinned Hermes contract target and directory-plugin dependencies
+        id: install_hermes
+        continue-on-error: true
+        shell: bash
         run: |
-          python -m pip install 'hermes-agent==0.20.4'
-          python -m pip install 'numpy>=1.26,<3'
+          set -o pipefail
+          mkdir -p contract-artifact/logs
+          {
+            python -m pip install 'hermes-agent==0.20.4'
+            python -m pip install 'numpy>=1.26,<3'
+          } 2>&1 | tee contract-artifact/logs/install-hermes.log
+
       - name: Validate Hermes directory-plugin path
-        run: hermes plugins doctor . --ci
+        id: doctor
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          hermes plugins doctor . --ci 2>&1 | tee contract-artifact/logs/plugin-doctor.log
+
       - name: Install plugin as a distribution
-        run: python -m pip install -e .
+        id: install_plugin
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m pip install -e . 2>&1 | tee contract-artifact/logs/install-plugin.log
+
       - name: Validate Hermes pip-plugin contract
-        run: python scripts/check_hermes_contract.py
+        id: pip_contract
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/check_hermes_contract.py 2>&1 | tee contract-artifact/logs/pip-contract.log
+
       - name: Validate real Hermes delegation hook path offline
-        run: python scripts/check_hermes_delegate_hooks.py
+        id: delegate_contract
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/check_hermes_delegate_hooks.py 2>&1 | tee contract-artifact/logs/delegate-contract.log
+
       - name: Report hook field coverage
+        id: hook_coverage
+        continue-on-error: true
+        shell: bash
         run: |
+          set -o pipefail
           python experiments/report_hook_coverage.py contract-artifact/capture \
-            --output contract-artifact/hook-coverage.json
+            --output contract-artifact/hook-coverage.json \
+            2>&1 | tee contract-artifact/logs/hook-coverage.log
+
       - name: Exercise corruption/replay robustness on the captured real-Hermes path
+        id: corruption
+        continue-on-error: true
+        shell: bash
         run: |
+          set -o pipefail
           python experiments/run_capture_corruption.py contract-artifact/capture \
             --replicates 20 \
-            --output contract-artifact/corruption-summary.json
+            --output contract-artifact/corruption-summary.json \
+            2>&1 | tee contract-artifact/logs/corruption.log
+
       - name: Benchmark isolated observer overhead
+        id: overhead
+        continue-on-error: true
+        shell: bash
         run: |
+          set -o pipefail
           python experiments/benchmark_observer_overhead.py \
             --events 1000 \
             --payload-bytes 1024 \
-            --output contract-artifact/observer-overhead.json
+            --output contract-artifact/observer-overhead.json \
+            2>&1 | tee contract-artifact/logs/observer-overhead.log
+
+      - name: Build machine-readable experiment result
+        id: summarize
+        if: always()
+        env:
+          INSTALL_HERMES: ${{ steps.install_hermes.outcome }}
+          DOCTOR: ${{ steps.doctor.outcome }}
+          INSTALL_PLUGIN: ${{ steps.install_plugin.outcome }}
+          PIP_CONTRACT: ${{ steps.pip_contract.outcome }}
+          DELEGATE_CONTRACT: ${{ steps.delegate_contract.outcome }}
+          HOOK_COVERAGE: ${{ steps.hook_coverage.outcome }}
+          CORRUPTION: ${{ steps.corruption.outcome }}
+          OVERHEAD: ${{ steps.overhead.outcome }}
+        shell: bash
+        run: |
+          mkdir -p results/offline-m1/latest
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root = Path("results/offline-m1/latest")
+          artifact = Path("contract-artifact")
+          outcomes = {
+              "install_hermes": os.environ["INSTALL_HERMES"],
+              "plugin_doctor": os.environ["DOCTOR"],
+              "install_plugin": os.environ["INSTALL_PLUGIN"],
+              "pip_contract": os.environ["PIP_CONTRACT"],
+              "delegate_contract": os.environ["DELEGATE_CONTRACT"],
+              "hook_coverage": os.environ["HOOK_COVERAGE"],
+              "corruption": os.environ["CORRUPTION"],
+              "overhead": os.environ["OVERHEAD"],
+          }
+          critical = [
+              "install_hermes", "plugin_doctor", "install_plugin",
+              "pip_contract", "delegate_contract", "hook_coverage",
+              "corruption", "overhead",
+          ]
+          status = {
+              "schema": "adaptive-evolution.offline-m1-result.v0.1",
+              "source_sha": os.environ["GITHUB_SHA"],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "created_at": datetime.now(timezone.utc).isoformat(),
+              "outcomes": outcomes,
+              "critical_gate_passed": all(outcomes[k] == "success" for k in critical),
+              "authority": "offline_contract_only",
+              "note": "This is an offline real-Hermes contract experiment, not the provider-backed E1 gate.",
+          }
+          (root / "status.json").write_text(json.dumps(status, indent=2, sort_keys=True) + "\n")
+
+          for name in (
+              "offline-contract-report.json",
+              "hook-coverage.json",
+              "corruption-summary.json",
+              "observer-overhead.json",
+          ):
+              src = artifact / name
+              if src.exists():
+                  (root / name).write_bytes(src.read_bytes())
+          manifest = artifact / "capture" / "manifest.json"
+          if manifest.exists():
+              (root / "capture-manifest.json").write_bytes(manifest.read_bytes())
+
+          # Keep only bounded diagnostic tails; never commit the sanitized event
+          # stream itself from CI. These logs exercise synthetic/offline fixtures.
+          log_out = root / "logs"
+          log_out.mkdir(exist_ok=True)
+          for src in sorted((artifact / "logs").glob("*.log")):
+              lines = src.read_text(errors="replace").splitlines()
+              (log_out / src.name).write_text("\n".join(lines[-120:]) + "\n")
+          PY
+
+      - name: Publish experiment result branch
+        id: publish_results
+        if: always()
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan experiment-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/offline-m1
+          git checkout "${GITHUB_SHA}" -- results/offline-m1/latest
+          git add results/offline-m1/latest
+          git commit -m "Record offline M1 experiment for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:experiment-results
+
       - name: Upload contract and experiment artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: hermes-contract-capture
           path: contract-artifact/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
+
+      - name: Enforce offline M1 gate
+        if: always()
+        env:
+          INSTALL_HERMES: ${{ steps.install_hermes.outcome }}
+          DOCTOR: ${{ steps.doctor.outcome }}
+          INSTALL_PLUGIN: ${{ steps.install_plugin.outcome }}
+          PIP_CONTRACT: ${{ steps.pip_contract.outcome }}
+          DELEGATE_CONTRACT: ${{ steps.delegate_contract.outcome }}
+          HOOK_COVERAGE: ${{ steps.hook_coverage.outcome }}
+          CORRUPTION: ${{ steps.corruption.outcome }}
+          OVERHEAD: ${{ steps.overhead.outcome }}
+          PUBLISH_RESULTS: ${{ steps.publish_results.outcome }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          outcomes = {
+              "install_hermes": os.environ["INSTALL_HERMES"],
+              "plugin_doctor": os.environ["DOCTOR"],
+              "install_plugin": os.environ["INSTALL_PLUGIN"],
+              "pip_contract": os.environ["PIP_CONTRACT"],
+              "delegate_contract": os.environ["DELEGATE_CONTRACT"],
+              "hook_coverage": os.environ["HOOK_COVERAGE"],
+              "corruption": os.environ["CORRUPTION"],
+              "overhead": os.environ["OVERHEAD"],
+              "publish_results": os.environ["PUBLISH_RESULTS"],
+          }
+          failed = [k for k, v in outcomes.items() if v != "success"]
+          if failed:
+              raise SystemExit(f"offline M1 gate failed: {failed}; outcomes={outcomes}")
+          print("offline M1 gate passed")
+          PY
