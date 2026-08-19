@@ -1,0 +1,37 @@
+{
+  "authority": "synthetic_support_falsification_only",
+  "baseline": {
+    "completed_flow_connectivity": 0.06277186767309861,
+    "completion_coverage": 1.0,
+    "started_relations": 22
+  },
+  "conclusion": {
+    "connectivity_error_ratio": 32928079544.741066,
+    "coverage_alone_falsified_as_confidence": true,
+    "implication": "Completion coverage is support metadata, not a calibrated confidence score. Which relation is missing matters; routing gates must keep topology value and support separate.",
+    "same_completion_coverage": true
+  },
+  "scenarios": [
+    {
+      "absolute_connectivity_error": 0.032928079544741064,
+      "completed_flow_connectivity": 0.02984378812835755,
+      "completion_coverage": 0.9545454545454546,
+      "missing_edge": [
+        0,
+        5
+      ],
+      "scenario": "missing_bridge_return"
+    },
+    {
+      "absolute_connectivity_error": 2.7755575615628914e-17,
+      "completed_flow_connectivity": 0.06277186767309864,
+      "completion_coverage": 0.9545454545454546,
+      "missing_edge": [
+        2,
+        3
+      ],
+      "scenario": "missing_local_return"
+    }
+  ],
+  "schema": "adaptive-evolution.completion-support-ambiguity.v0.1"
+}
