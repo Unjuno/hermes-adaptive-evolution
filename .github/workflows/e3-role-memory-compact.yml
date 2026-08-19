@@ -1,0 +1,68 @@
+name: e3-role-memory-compact
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/e3-role-memory-compact.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Fetch full E3 result
+        run: |
+          git fetch origin e3-role-memory-results
+          git show origin/e3-role-memory-results:results/e3-role-memory/latest/summary.json > full.json
+      - name: Compact decision fields
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('full.json').read_text())
+          keep_methods={'lifetime','rolling_20','rolling_50','rolling_100','exp_20','exp_50','exp_100','adaptive_js_0.05'}
+          rows=[]
+          for item in d['aggregate']:
+              if item['method'] not in keep_methods: continue
+              m=item['metrics']
+              rows.append({
+                  'noise':item['noise'],'method':item['method'],'runs':item['runs'],
+                  'pre_accuracy':m['pre_change_accuracy']['mean'],
+                  'stable_accuracy_after_change':m['stable_accuracy_after_change']['mean'],
+                  'changed_accuracy_first20':m['changed_accuracy_first20']['mean'],
+                  'changed_accuracy_late':m['changed_accuracy_late']['mean'],
+                  'recovery_latency':m['recovery_latency_to_90pct_5round_mean']['mean'],
+                  'never_recovered_rate':m['never_recovered_rate'],
+                  'pre_nll':m['pre_change_nll']['mean'],'post_nll':m['post_change_nll']['mean'],
+              })
+          compact={
+              'schema':'adaptive-evolution.role-memory-selection-compact.v0.1',
+              'configuration':d['configuration'],
+              'pareto_methods':d['pareto_methods'],
+              'selected_methods':rows,
+              'authority':d['authority'],
+              'note':d['note'],
+          }
+          Path('compact.json').write_text(json.dumps(compact,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(compact,indent=2,sort_keys=True))
+          PY
+      - name: Publish compact result
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/compact.json"; cp compact.json "$tmp"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan e3-role-memory-compact-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/e3-role-memory-compact/latest
+          cp "$tmp" results/e3-role-memory-compact/latest/summary.json
+          git add results/e3-role-memory-compact/latest/summary.json
+          git commit -m "Record compact E3 role-memory result for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:e3-role-memory-compact-results
