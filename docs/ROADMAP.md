@@ -12,50 +12,88 @@ This is the forward-looking roadmap for `hermes-adaptive-evolution`. The project
 6. Candidate comparisons should be paired and task-stratified when possible.
 7. Rare failures and recovery remain first-class metrics.
 8. Synthetic sample counts never become production thresholds without real-Hermes calibration.
+9. M1/M2 observation is hook-only; measurement should not alter the model-facing tool schema.
 
 ## M0 — Reproducible plugin and experiment substrate
 
-**Status:** active / substantially complete.
+**Status:** implemented; continue regression hardening.
 
 Deliverables:
 - installable Hermes plugin;
 - metadata-first event recorder;
 - deterministic normalizer/replay;
+- portable sanitized capture bundles;
 - unit tests and CI;
-- explicit hypothesis/experiment ledger.
+- explicit experiment plan and compatibility contract.
 
 Exit: repository installs, tests, builds a wheel, and exposes the Hermes plugin entry point.
 
 ## M1 — Real Hermes E2E contract
 
-**Priority:** P0.
+**Priority:** P0.  
+**Status:** offline real-Hermes path implemented; provider-backed trace still required.
 
-Run a real Hermes trace containing:
+### Implemented offline gate
+
+The dedicated contract path now exercises real Hermes code without an external LLM call:
+
+```text
+real PluginManager discovery
+  -> directory-plugin doctor
+  -> pip entry-point discovery
+  -> real delegate_task lifecycle
+  -> real terminal tool error
+  -> real terminal tool recovery
+  -> session/API/skill/Kanban lifecycle dispatch
+  -> observer SQLite
+  -> capture bundle
+  -> replay
+  -> E1 field coverage
+  -> E2 corruption experiment
+```
+
+Only child LLM execution is mocked in that offline fixture.
+
+### Remaining hard gate
+
+Run a provider-backed real Hermes trace containing:
 
 ```text
 root agent
   -> delegate_task
   -> child agent
-  -> tool success/failure
-  -> recovery
+  -> deterministic failing unittest
+  -> minimal repair
+  -> passing unittest
   -> completion
 ```
 
-Measure actual hook field coverage, duplicate/reorder/drop behavior, parent-child identity continuity, and observer overhead.
+Use `experiments/E1_REAL_HERMES_RUNBOOK.md` and the deterministic fixture under `experiments/fixtures/e1_repair_project/`.
 
-Exit: at least one real trace can be captured, normalized, exported, and replayed deterministically without a Hermes fork.
+Measure actual hook field coverage, duplicate/reorder/drop sensitivity, parent-child identity continuity, observer overhead, and whether a tool error followed by same-agent success is visible without content capture.
 
-Fork gate: consider a core change only after documenting a decision-relevant primitive that cannot be observed or controlled through the public plugin surface.
+Exit: at least one provider-backed trace passes `experiments/validate_e1_capture.py`, can be bundled/replayed deterministically, and reveals no decision-relevant missing primitive requiring a fork.
+
+Fork gate: consider a core change only after documenting a decision-relevant primitive that cannot be observed or controlled through the public plugin surface and cannot be replaced by an equivalent observable.
 
 ## M2 — Organization State Estimator v0.1
 
-Estimate observable organization state from real telemetry:
+**Status:** diagnostic scaffold implemented; real decision utility unproven.
 
-1. functional-role posterior and drift;
-2. traffic-weighted role mixing;
-3. directed interaction diffusivity/closure;
-4. outcome/recovery fragility proxies;
-5. local/higher-order residual structure only when justified.
+Current diagnostics include:
+
+1. functional-role posterior/evidence/confidence;
+2. confidence-gated traffic-weighted role mixing;
+3. role-conditioned traffic coverage;
+4. directed interaction diffusivity;
+5. outcome/failure fragility proxy;
+6. conservative identity uncertainty.
+
+Next experiments:
+- role-memory/change-point behavior on real task blocks;
+- separate timescales for role, topology, and policy signals;
+- decision usefulness of role mixing/diffusivity relative to context-only baselines;
+- macro-state/Markov falsification before adding higher-order corrections.
 
 Exit: at least one estimated state variable improves or safely gates held-out organization decisions relative to a context-only baseline.
 
