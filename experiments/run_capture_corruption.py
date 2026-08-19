@@ -105,6 +105,7 @@ def compare_state(
         "interaction_event_delta": int(candidate.get("interaction_events", 0)) - int(baseline.get("interaction_events", 0)),
         "tool_outcome_delta": int(candidate.get("tool_outcomes", 0)) - int(baseline.get("tool_outcomes", 0)),
         "role_mixing_abs_error": _abs_error(candidate.get("traffic_weighted_role_mixing"), baseline.get("traffic_weighted_role_mixing")),
+        "role_conditioned_traffic_coverage_abs_error": _abs_error(candidate.get("role_conditioned_traffic_coverage"), baseline.get("role_conditioned_traffic_coverage")),
         "diffusivity_abs_error": _abs_error(candidate.get("directed_diffusivity"), baseline.get("directed_diffusivity")),
         "mean_role_entropy_abs_error": _abs_error(candidate.get("mean_role_entropy"), baseline.get("mean_role_entropy")),
         "fragility_mae": _fragility_mae(baseline, candidate),
