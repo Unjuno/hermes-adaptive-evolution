@@ -4,16 +4,39 @@ The M2 estimator is useful only if its observables improve a downstream organiza
 
 ## Question
 
-Does adding observed organization state improve held-out organization selection over a task-context-only router?
+Does adding *pre-decision* observed organization state improve held-out organization selection over a task-context-only router?
 
 The first comparison is:
 
 ```text
 Router A: task context only
-Router B: task context + observed topology/support state
+Router B: task context + pre-decision organization state
 ```
 
 Do not compare against an oracle hidden graph in the primary metric.
+
+## Temporal-causality rule — no post-task leakage
+
+A task's own execution trace cannot be used to choose the organization that already executed that task.
+
+Every benchmark record therefore separates:
+
+```text
+pre_state
+  -> router chooses template
+  -> task executes
+  -> outcome + post_state
+  -> post_state may update history for FUTURE tasks only
+```
+
+`post_state` from task `t` is forbidden as a feature for the decision at task `t`.
+
+This creates two legitimate benchmark modes:
+
+1. **cold start** — no previous live organization state exists; Router B must fall back to task context plus training-only template/history summaries;
+2. **sequential routing** — state from completed tasks `<= t-1` may inform whether to keep or change organization for task `t`.
+
+Any evaluator that joins a candidate's post-execution state back onto its own routing row is invalid.
 
 ## Initial safe template library
 
@@ -78,16 +101,17 @@ Rare/safety regressions are hard constraints, not small negative utility terms.
 
 ## Observed M2 state
 
-Router B may use only values available from the observer:
+Router B may use only state available **before** the decision:
 
 - task/context features available to Router A;
-- `directed_traffic_breadth`;
-- `completed_flow_connectivity`;
-- `interaction_completion_coverage`;
+- previous/current `directed_traffic_breadth`;
+- previous/current `completed_flow_connectivity`;
+- `interaction_completion_coverage` support;
 - confidence-gated role mixing;
 - role-conditioned traffic coverage;
 - fragility/outcome support;
-- identity uncertainty/support diagnostics.
+- identity uncertainty/support diagnostics;
+- training-only template summaries computed without final-test leakage.
 
 The legacy `directed_diffusivity` is forbidden as routing authority.
 
@@ -99,7 +123,7 @@ Do not invent a synthetic event-count threshold. A state dimension can be:
 - `diagnostic_only`;
 - `eligible_for_validation` after real data supports it.
 
-If support is insufficient, Router B must fall back to Router A for that dimension.
+If support is insufficient, Router B must fall back to Router A for that dimension. Completion coverage is support metadata, not a confidence probability.
 
 ## Splits
 
@@ -109,7 +133,7 @@ Use three disjoint blocks:
 2. router/model selection;
 3. final test.
 
-Split by **task fixture/family**, not by repeated runs of the same fixture, to avoid trajectory leakage.
+Split by **task fixture/family**, not by repeated runs of the same fixture, to avoid trajectory leakage. Sequential histories must be reset or kept wholly inside one split; a final-test task must not inherit state learned from a discovery/selection execution of the same fixture family.
 
 ## Primary metrics
 
@@ -117,7 +141,8 @@ Split by **task fixture/family**, not by repeated runs of the same fixture, to a
 2. verified success rate;
 3. terminal/unsafe failure rate;
 4. net wall-clock/compute cost;
-5. frequency of unsupported fine-state use (must be zero).
+5. frequency of unsupported fine-state use (must be zero);
+6. temporal-leakage violations (must be zero).
 
 Secondary:
 
@@ -129,10 +154,11 @@ Secondary:
 
 M2 is supported only if, on an independent final-test block:
 
-- context + observed state reduces routing regret or safely abstains more effectively than context-only;
+- context + valid pre-decision state reduces routing regret or safely abstains more effectively than context-only;
 - no rare/safety regression is introduced;
 - improvement persists across multiple task regimes;
 - unsupported state never becomes an implicit zero/default feature;
+- no post-task state is used for the task that produced it;
 - results are not driven by one template or one fixture family.
 
 A lower topology-prediction MSE without lower decision loss does **not** pass M2.
@@ -147,7 +173,8 @@ Use fake/deterministic provider responses only to validate:
 - paired snapshot reset;
 - metric collection;
 - observer replay;
-- split isolation.
+- split isolation;
+- pre/post-state temporal ordering and leakage rejection.
 
 Do not use CI CPU model timings as evidence for RTX/local deployment performance.
 
