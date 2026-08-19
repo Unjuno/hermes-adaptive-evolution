@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .bundle import create_bundle, replay_bundle
 from .estimator import estimate
 from .normalizer import normalize
 from .store import EventStore
@@ -44,7 +45,7 @@ def export(db: str | Path | None, path: str | Path) -> dict[str, Any]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="adaptive-evolution-observer")
-    parser.add_argument("--db", help="Observer SQLite path. Uses the plugin default when omitted.")
+    parser.add_argument("--db", help="Observer SQLite path. Uses the active Hermes profile default when omitted.")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_status = sub.add_parser("status", help="Print normalized diagnostics and organization state as JSON.")
@@ -52,6 +53,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_export = sub.add_parser("export", help="Export normalized/deduplicated events as JSONL.")
     p_export.add_argument("path", help="Destination JSONL path.")
+
+    p_bundle = sub.add_parser("bundle", help="Create a checksummed, metadata-first portable capture bundle.")
+    p_bundle.add_argument("directory", help="Destination directory for manifest.json and normalized-events.jsonl.")
+
+    p_replay = sub.add_parser("replay", help="Verify and replay a portable capture bundle without SQLite.")
+    p_replay.add_argument("directory", help="Capture bundle directory.")
     return parser
 
 
@@ -61,8 +68,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.limit is not None and args.limit < 1:
             raise SystemExit("--limit must be >= 1")
         result = status(args.db, args.limit)
-    else:
+    elif args.command == "export":
         result = export(args.db, args.path)
+    elif args.command == "bundle":
+        result = create_bundle(args.db, args.directory)
+    else:
+        result = replay_bundle(args.directory)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
     return 0
 
