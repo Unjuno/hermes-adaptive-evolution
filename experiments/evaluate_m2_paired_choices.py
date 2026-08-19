@@ -6,7 +6,10 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from validate_m2_benchmark_records import load_jsonl, validate_records
+try:
+    from .validate_m2_benchmark_records import load_jsonl, validate_records
+except ImportError:  # direct `python experiments/...py` execution
+    from validate_m2_benchmark_records import load_jsonl, validate_records
 
 MAXIMIZE = ("verified_success", "quality", "recovery_success")
 MINIMIZE = ("terminal_failure", "unsafe_or_scope_violation", "wall_seconds", "reconfiguration_cost")
