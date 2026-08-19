@@ -99,17 +99,25 @@ def compare_state(
     candidate: dict[str, Any], candidate_diag: dict[str, Any],
 ) -> dict[str, Any]:
     baseline_unique = max(1, int(baseline_diag.get("unique_count") or 0))
-    return {
+    topology_fields = (
+        "interaction_branching_entropy",
+        "interaction_reciprocity",
+        "recurrent_core_fraction",
+        "recurrent_core_mixing_gap",
+    )
+    out = {
         "normalized_count_ratio": float(candidate_diag.get("unique_count", 0)) / baseline_unique,
         "uncertain_session_events_delta": int(candidate_diag.get("uncertain_session_events", 0)) - int(baseline_diag.get("uncertain_session_events", 0)),
         "interaction_event_delta": int(candidate.get("interaction_events", 0)) - int(baseline.get("interaction_events", 0)),
         "tool_outcome_delta": int(candidate.get("tool_outcomes", 0)) - int(baseline.get("tool_outcomes", 0)),
         "role_mixing_abs_error": _abs_error(candidate.get("traffic_weighted_role_mixing"), baseline.get("traffic_weighted_role_mixing")),
         "role_conditioned_traffic_coverage_abs_error": _abs_error(candidate.get("role_conditioned_traffic_coverage"), baseline.get("role_conditioned_traffic_coverage")),
-        "diffusivity_abs_error": _abs_error(candidate.get("directed_diffusivity"), baseline.get("directed_diffusivity")),
         "mean_role_entropy_abs_error": _abs_error(candidate.get("mean_role_entropy"), baseline.get("mean_role_entropy")),
         "fragility_mae": _fragility_mae(baseline, candidate),
     }
+    for field in topology_fields:
+        out[f"{field}_abs_error"] = _abs_error(candidate.get(field), baseline.get(field))
+    return out
 
 
 def _quantiles(values: list[float]) -> dict[str, float] | None:
@@ -185,7 +193,7 @@ def run(bundle: str | Path, *, replicates: int, seed: int) -> dict[str, Any]:
                 })
 
     return {
-        "schema": "adaptive-evolution.capture-corruption.v0.1",
+        "schema": "adaptive-evolution.capture-corruption.v0.2",
         "bundle": str(Path(bundle).expanduser()),
         "seed": seed,
         "replicates": replicates,
