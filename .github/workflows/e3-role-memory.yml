@@ -1,0 +1,38 @@
+name: e3-role-memory
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/e3-role-memory.yml"
+      - "experiments/run_role_memory_selection.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  role-memory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13"}
+      - run: python -m pip install -e .
+      - name: Run role-memory experiment
+        run: python experiments/run_role_memory_selection.py --output role-memory.json >/dev/null
+      - name: Publish result branch
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/role-memory.json"; cp role-memory.json "$tmp"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan e3-role-memory-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/e3-role-memory/latest
+          cp "$tmp" results/e3-role-memory/latest/summary.json
+          git add results/e3-role-memory/latest/summary.json
+          git commit -m "Record E3 role memory experiment for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:e3-role-memory-results
