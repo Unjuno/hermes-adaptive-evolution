@@ -1,0 +1,280 @@
+name: m2-lfm25-multiedge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/m2-lfm25-multiedge.yml"
+      - "experiments/validate_m2_multiedge_capture.py"
+      - "experiments/fixtures/e1_repair_project/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  m2-multiedge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
+      M2_MODEL: hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M
+      M2_CONTEXT: "98304"
+      M2_MAX_TOKENS: "2048"
+      ADAPTIVE_EVOLUTION_CAPTURE_CONTENT: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install Hermes and observer
+        id: install
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p m2-lfm-artifact/logs
+          {
+            test "$(git -C _hermes rev-parse HEAD)" = "$HERMES_CONTRACT_SHA"
+            python -m pip install -e ./_hermes
+            python -m pip install -e .
+          } 2>&1 | tee m2-lfm-artifact/logs/install.log
+
+      - name: Start Ollama
+        id: ollama_install
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            curl -fsSL https://ollama.com/install.sh | sh
+            OLLAMA_CONTEXT_LENGTH="$M2_CONTEXT" OLLAMA_NUM_PARALLEL=1 OLLAMA_MAX_LOADED_MODELS=1 \
+              nohup ollama serve > m2-lfm-artifact/logs/ollama-serve.log 2>&1 &
+            for i in $(seq 1 60); do
+              if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then exit 0; fi
+              sleep 1
+            done
+            exit 1
+          } 2>&1 | tee m2-lfm-artifact/logs/ollama-install.log
+
+      - name: Pull and preload official LFM2.5 Q4
+        id: model_preload
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          ollama pull "$M2_MODEL" 2>&1 | tee m2-lfm-artifact/logs/model-pull.log
+          python - <<'PY' 2>&1 | tee m2-lfm-artifact/logs/model-preload.log
+          import json, os, urllib.request
+          model=os.environ['M2_MODEL']; ctx=int(os.environ['M2_CONTEXT'])
+          payload=json.dumps({'model':model,'messages':[{'role':'user','content':'Reply with OK.'}], 'stream':False,'keep_alive':'30m','options':{'num_ctx':ctx,'temperature':0.0}}).encode()
+          req=urllib.request.Request('http://127.0.0.1:11434/api/chat',data=payload,headers={'Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=900) as r: body=json.load(r)
+          print('preload model:',body.get('model'))
+          with urllib.request.urlopen('http://127.0.0.1:11434/api/ps',timeout=30) as r: ps=json.load(r)
+          print(json.dumps(ps,indent=2,sort_keys=True))
+          models=ps.get('models') or []
+          if not models: raise SystemExit('no loaded model')
+          runtime_ctx=int(models[0].get('context_length') or 0)
+          if runtime_ctx < ctx: raise SystemExit(f'runtime context too small: {runtime_ctx} < {ctx}')
+          PY
+
+      - name: Configure isolated Hermes profile
+        id: configure
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -e
+          export HERMES_HOME="${RUNNER_TEMP}/hermes-m2-lfm"
+          mkdir -p "$HERMES_HOME"
+          cat > "$HERMES_HOME/config.yaml" <<EOF
+          model:
+            default: "$M2_MODEL"
+            provider: custom
+            base_url: "http://127.0.0.1:11434/v1"
+            context_length: $M2_CONTEXT
+            ollama_num_ctx: $M2_CONTEXT
+            max_tokens: $M2_MAX_TOKENS
+            reasoning:
+              enabled: false
+          terminal:
+            cwd: "${GITHUB_WORKSPACE}/experiments/fixtures/e1_repair_project"
+          plugins:
+            enabled:
+              - adaptive-evolution
+          delegation:
+            max_concurrent_children: 1
+            subagent_auto_approve: false
+          EOF
+          echo "HERMES_HOME=$HERMES_HOME" >> "$GITHUB_ENV"
+          echo "ADAPTIVE_EVOLUTION_OBSERVER_DB=${RUNNER_TEMP}/m2-lfm-observer.sqlite3" >> "$GITHUB_ENV"
+
+      - name: Verify failing baseline
+        id: baseline
+        continue-on-error: true
+        shell: bash
+        run: |
+          cd experiments/fixtures/e1_repair_project
+          ! python -m unittest -q > "${GITHUB_WORKSPACE}/m2-lfm-artifact/logs/baseline.log" 2>&1
+
+      - name: Run two-leaf Hermes organization
+        id: hermes_run
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          prompt='This is an M2 organization-observability fixture. Use delegate_task exactly twice, sequentially, with two different leaf subagents. First delegate a diagnosis-only task: reproduce the failing unittest, inspect counter.py and test_counter.py, do not edit any file, and report the exact root cause. Wait for that result. Then delegate a second leaf task: reproduce the failure, fix only counter.py with the smallest correct change, run python -m unittest -q, and return evidence. Do not edit tests. After both children return, run python -m unittest -q yourself and report the final result.'
+          cd experiments/fixtures/e1_repair_project
+          start="$(date +%s)"
+          timeout 1800s hermes -t terminal,file,delegation chat \
+            -q "$prompt" -Q --max-turns 24 --source adaptive-evolution-m2-multiedge \
+            > "${GITHUB_WORKSPACE}/m2-lfm-artifact/hermes-output.txt" \
+            2> "${GITHUB_WORKSPACE}/m2-lfm-artifact/logs/hermes-run.log"
+          rc=$?; end="$(date +%s)"
+          echo "wall_seconds=$((end-start))" > "${GITHUB_WORKSPACE}/m2-lfm-artifact/hermes-timing.txt"
+          exit "$rc"
+
+      - name: Verify repair result
+        id: repair_verify
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          cd experiments/fixtures/e1_repair_project
+          python -m unittest -q 2>&1 | tee "${GITHUB_WORKSPACE}/m2-lfm-artifact/logs/final-test.log"
+          git diff -- counter.py test_counter.py > "${GITHUB_WORKSPACE}/m2-lfm-artifact/fixture.diff"
+          changed="$(git diff --name-only --relative -- .)"
+          test "$changed" = "counter.py"
+
+      - name: Bundle observer trace
+        id: bundle
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          test -f "$ADAPTIVE_EVOLUTION_OBSERVER_DB"
+          adaptive-evolution-observer --db "$ADAPTIVE_EVOLUTION_OBSERVER_DB" bundle m2-lfm-artifact/capture \
+            2>&1 | tee m2-lfm-artifact/logs/bundle.log
+
+      - name: Validate multi-edge topology state
+        id: m2_validate
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          python experiments/validate_m2_multiedge_capture.py m2-lfm-artifact/capture \
+            --output m2-lfm-artifact/m2-validation.json \
+            2>&1 | tee m2-lfm-artifact/logs/m2-validation.log
+
+      - name: Corruption sweep on vector topology state
+        id: corruption
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          python experiments/run_capture_corruption.py m2-lfm-artifact/capture \
+            --replicates 20 --output m2-lfm-artifact/corruption-summary.json \
+            2>&1 | tee m2-lfm-artifact/logs/corruption.log
+
+      - name: Build machine-readable result
+        id: summarize
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          OLLAMA_INSTALL: ${{ steps.ollama_install.outcome }}
+          MODEL_PRELOAD: ${{ steps.model_preload.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          BASELINE: ${{ steps.baseline.outcome }}
+          HERMES_RUN: ${{ steps.hermes_run.outcome }}
+          REPAIR_VERIFY: ${{ steps.repair_verify.outcome }}
+          BUNDLE: ${{ steps.bundle.outcome }}
+          M2_VALIDATE: ${{ steps.m2_validate.outcome }}
+          CORRUPTION: ${{ steps.corruption.outcome }}
+        shell: bash
+        run: |
+          mkdir -p results/m2-lfm25-multiedge/latest
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          src=Path('m2-lfm-artifact'); dst=Path('results/m2-lfm25-multiedge/latest')
+          names=('INSTALL','OLLAMA_INSTALL','MODEL_PRELOAD','CONFIGURE','BASELINE','HERMES_RUN','REPAIR_VERIFY','BUNDLE','M2_VALIDATE','CORRUPTION')
+          outcomes={n.lower():os.environ[n] for n in names}
+          critical=('install','ollama_install','model_preload','configure','baseline','hermes_run','repair_verify','bundle','m2_validate')
+          status={
+            'schema':'adaptive-evolution.m2-lfm25-multiedge-result.v0.1',
+            'created_at':datetime.now(timezone.utc).isoformat(),'source_sha':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],
+            'hermes_contract_sha':os.environ['HERMES_CONTRACT_SHA'],'provider':'ollama-local','model':os.environ['M2_MODEL'],
+            'context_length':int(os.environ['M2_CONTEXT']),'max_tokens':int(os.environ['M2_MAX_TOKENS']),
+            'outcomes':outcomes,'critical_gate_passed':all(outcomes[k]=='success' for k in critical),
+            'authority':'m2_observability_contract_only',
+            'note':'This gate tests recoverability of vector topology state from a real multi-edge Hermes run; it does not prove routing utility.'}
+          timing=src/'hermes-timing.txt'
+          if timing.exists():
+            try: status['hermes_wall_seconds']=int(timing.read_text().strip().split('=',1)[1])
+            except Exception: pass
+          (dst/'status.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n')
+          for name in ('m2-validation.json','fixture.diff'):
+            p=src/name
+            if p.exists(): (dst/name).write_bytes(p.read_bytes())
+          corr=src/'corruption-summary.json'
+          if corr.exists():
+            d=json.loads(corr.read_text()); compact={k:d.get(k) for k in ('schema','baseline','summary','authority','note')}
+            (dst/'corruption-compact.json').write_text(json.dumps(compact,indent=2,sort_keys=True)+'\n')
+          logs=dst/'logs'; logs.mkdir(exist_ok=True)
+          for p in sorted((src/'logs').glob('*.log')):
+            lines=p.read_text(errors='replace').splitlines(); (logs/p.name).write_text('\n'.join(lines[-180:])+'\n')
+          out=src/'hermes-output.txt'
+          if out.exists(): (dst/'hermes-output-tail.txt').write_text(out.read_text(errors='replace')[-5000:])
+          PY
+
+      - name: Publish result branch
+        id: publish
+        if: always()
+        shell: bash
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/m2-lfm-result"; mkdir -p "$tmp"
+          cp -a results/m2-lfm25-multiedge/latest/. "$tmp/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan m2-lfm-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/m2-lfm25-multiedge/latest
+          cp -a "$tmp"/. results/m2-lfm25-multiedge/latest/
+          git add results/m2-lfm25-multiedge/latest
+          git commit -m "Record M2 LFM2.5 multi-edge run for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:m2-lfm25-multiedge-results
+
+      - name: Enforce M2 gate
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          OLLAMA_INSTALL: ${{ steps.ollama_install.outcome }}
+          MODEL_PRELOAD: ${{ steps.model_preload.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          BASELINE: ${{ steps.baseline.outcome }}
+          HERMES_RUN: ${{ steps.hermes_run.outcome }}
+          REPAIR_VERIFY: ${{ steps.repair_verify.outcome }}
+          BUNDLE: ${{ steps.bundle.outcome }}
+          M2_VALIDATE: ${{ steps.m2_validate.outcome }}
+          PUBLISH: ${{ steps.publish.outcome }}
+        run: |
+          python - <<'PY'
+          import os
+          names=('INSTALL','OLLAMA_INSTALL','MODEL_PRELOAD','CONFIGURE','BASELINE','HERMES_RUN','REPAIR_VERIFY','BUNDLE','M2_VALIDATE','PUBLISH')
+          failed=[n.lower() for n in names if os.environ[n]!='success']
+          if failed: raise SystemExit(f'M2 LFM2.5 multi-edge gate failed: {failed}')
+          print('M2 LFM2.5 multi-edge gate passed')
+          PY
