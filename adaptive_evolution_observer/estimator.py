@@ -110,17 +110,22 @@ def completed_flow_connectivity(starts: np.ndarray, stops: np.ndarray) -> float 
 
     Completed parent/child evidence is symmetrized because a completed
     delegation represents an outward assignment plus a return/result path.
-    The observable is one half of the normalized-Laplacian algebraic
-    connectivity (lambda_2 in [0, 2]). Isolated non-interaction agents are
-    excluded; disconnected active components correctly return zero.
+    The observable is one half of normalized-Laplacian algebraic connectivity
+    (lambda_2 in [0, 2]).
+
+    Crucially, the node set is defined by *start evidence*, not by completed
+    edges. If a child was observed to start but its stop is missing, that child
+    remains an isolate in the completed-flow graph and connectivity falls to
+    zero instead of becoming spuriously better because the unsupported node was
+    silently removed.
     """
+    starts = np.asarray(starts, dtype=float)
     completed = _completed_counts(starts, stops)
-    sym = completed + completed.T
-    degree = sym.sum(axis=1)
-    active = degree > 0
-    if int(active.sum()) < 2:
+    start_active = (starts.sum(axis=0) + starts.sum(axis=1)) > 0
+    if int(start_active.sum()) < 2:
         return None
-    a = sym[np.ix_(active, active)]
+    sym = completed + completed.T
+    a = sym[np.ix_(start_active, start_active)]
     degree = a.sum(axis=1)
     if np.any(degree <= 0):
         return 0.0
@@ -163,7 +168,6 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
             and e.agent_id
             and e.parent_agent_id != e.agent_id
         ):
-            # Store the relation in the same parent->child orientation as start.
             stop_edges[idx[e.parent_agent_id], idx[e.agent_id]] += 1.0
         elif e.kind == "tool_result" and e.agent_id:
             fam = tool_family(e.data.get("tool_name"))
@@ -233,6 +237,7 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
     interaction_sources = int(np.sum(start_edges.sum(axis=1) > 0)) if len(agents) else 0
     completed_edges = _completed_counts(start_edges, stop_edges)
     completed_count = int(completed_edges.sum())
+    completion_coverage = interaction_completion_coverage(start_edges, stop_edges)
     legacy_gap = directed_diffusivity(start_edges)
     return {
         "schema": "adaptive-evolution.organization-state.v0.3",
@@ -246,8 +251,7 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
         "role_conditioned_traffic_coverage": role_conditioned_traffic_coverage,
         "directed_traffic_breadth": directed_traffic_breadth(start_edges),
         "completed_flow_connectivity": completed_flow_connectivity(start_edges, stop_edges),
-        "interaction_completion_coverage": interaction_completion_coverage(start_edges, stop_edges),
-        # Backward-compatible diagnostic only. Do not use as routing authority.
+        "interaction_completion_coverage": completion_coverage,
         "directed_diffusivity": legacy_gap,
         "directed_diffusivity_authority": "deprecated_diagnostic_only",
         "mean_role_entropy": float(np.mean(list(role_entropy.values()))) if role_entropy else None,
@@ -258,7 +262,7 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
         "support": {
             "interaction_count": int(total_edge),
             "completed_interaction_count": completed_count,
-            "interaction_completion_coverage": interaction_completion_coverage(start_edges, stop_edges),
+            "interaction_completion_coverage": completion_coverage,
             "role_conditioned_interaction_weight": float(role_conditioned_weight),
             "agents_with_outgoing_interactions": interaction_sources,
             "agents_with_tool_role_evidence": sum(1 for a in agents if role_evidence[a] > 0),
@@ -267,9 +271,10 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
         "authority": "diagnostic_only",
         "note": (
             "Topology is intentionally vector-valued: directed traffic breadth measures local fan-out, while "
-            "completed-flow connectivity measures global bottlenecks. The legacy start-only directed_diffusivity "
-            "was falsified for delegation DAGs and is retained only for backward-compatible diagnostics. "
-            "Role mixing is confidence-weighted and may be null when role evidence is insufficient. "
-            "No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks."
+            "completed-flow connectivity measures global bottlenecks. Missing return evidence is conservative: "
+            "a started child remains in the completed-flow node set and can reduce connectivity rather than vanish. "
+            "The legacy start-only directed_diffusivity was falsified for delegation DAGs and is retained only for "
+            "backward-compatible diagnostics. Role mixing is confidence-weighted and may be null when role evidence "
+            "is insufficient. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks."
         ),
     }
