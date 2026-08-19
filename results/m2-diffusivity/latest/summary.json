@@ -1,0 +1,49 @@
+{
+  "authority": "synthetic_proxy_falsification_only",
+  "decision": "replace_current_as_m2_authority",
+  "falsified_runs": 5,
+  "mean_rank_correlation": {
+    "completed_flow_gap": 0.8967991173966026,
+    "current_directed_gap": 0.4175587829553239,
+    "edge_expansion_proxy": 0.9779817398738739
+  },
+  "run_count": 5,
+  "runs": [
+    {
+      "completed_rank": 0.883045879559151,
+      "current_falsified": true,
+      "current_rank": 0.34026492931828045,
+      "expansion_rank": 0.9762852338096981,
+      "seed": 101
+    },
+    {
+      "completed_rank": 0.8935450721237918,
+      "current_falsified": true,
+      "current_rank": 0.42747382421632063,
+      "expansion_rank": 0.9759612048921745,
+      "seed": 17
+    },
+    {
+      "completed_rank": 0.8927609598056089,
+      "current_falsified": true,
+      "current_rank": 0.35920487814367996,
+      "expansion_rank": 0.9786385308470238,
+      "seed": 29
+    },
+    {
+      "completed_rank": 0.9176415796491968,
+      "current_falsified": true,
+      "current_rank": 0.5261456190824398,
+      "expansion_rank": 0.9819338356868814,
+      "seed": 43
+    },
+    {
+      "completed_rank": 0.8970020958452642,
+      "current_falsified": true,
+      "current_rank": 0.43470466401589836,
+      "expansion_rank": 0.9770898941335918,
+      "seed": 71
+    }
+  ],
+  "schema": "adaptive-evolution.diffusivity-proxy-aggregate.v0.1"
+}

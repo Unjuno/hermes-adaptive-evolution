@@ -1,0 +1,738 @@
+{
+  "conclusion": {
+    "current_metric_falsified": true,
+    "named_cases": {
+      "complete": {
+        "completed_flow_gap": 1.1428571428571423,
+        "current_directed_gap": 1.0,
+        "edge_expansion_proxy": 1.0,
+        "edges": 28,
+        "name": "complete",
+        "spread_fraction": 0.9727864583333333
+      },
+      "path": {
+        "completed_flow_gap": 0.0990311320975809,
+        "current_directed_gap": 1.0,
+        "edge_expansion_proxy": 0.2285714285714286,
+        "edges": 7,
+        "name": "path",
+        "spread_fraction": 0.32955729166666664
+      },
+      "ring": {
+        "completed_flow_gap": 0.2928932188134526,
+        "current_directed_gap": 1.0,
+        "edge_expansion_proxy": 0.2857142857142857,
+        "edges": 8,
+        "name": "ring",
+        "spread_fraction": 0.37135416666666665
+      },
+      "star": {
+        "completed_flow_gap": 1.0,
+        "current_directed_gap": 0.0,
+        "edge_expansion_proxy": 0.16,
+        "edges": 7,
+        "name": "star",
+        "spread_fraction": 0.45169270833333336
+      }
+    },
+    "warning": "This experiment tests topology proxies against a synthetic SI diffusion target. It does not authorize a production routing threshold."
+  },
+  "correlations": {
+    "completed_flow_gap": {
+      "pearson": 0.874057630397434,
+      "rank": 0.8927609598056089
+    },
+    "current_directed_gap": {
+      "pearson": 0.354182498552379,
+      "rank": 0.35920487814367996
+    },
+    "edge_expansion_proxy": {
+      "pearson": 0.955833530502593,
+      "rank": 0.9786385308470238
+    }
+  },
+  "nodes": 8,
+  "random_cases": 80,
+  "replicates_per_start": 120,
+  "rows": [
+    {
+      "completed_flow_gap": 0.0990311320975809,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.2285714285714286,
+      "edges": 7,
+      "name": "path",
+      "spread_fraction": 0.32955729166666664
+    },
+    {
+      "completed_flow_gap": 1.0,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.16,
+      "edges": 7,
+      "name": "star",
+      "spread_fraction": 0.45169270833333336
+    },
+    {
+      "completed_flow_gap": 0.2928932188134526,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.2857142857142857,
+      "edges": 8,
+      "name": "ring",
+      "spread_fraction": 0.37135416666666665
+    },
+    {
+      "completed_flow_gap": 1.1428571428571423,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 1.0,
+      "edges": 28,
+      "name": "complete",
+      "spread_fraction": 0.9727864583333333
+    },
+    {
+      "completed_flow_gap": 0.3419902017610208,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.30476190476190484,
+      "edges": 10,
+      "name": "random-000",
+      "spread_fraction": 0.4881510416666667
+    },
+    {
+      "completed_flow_gap": 0.17733561199196385,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.19875776397515527,
+      "edges": 7,
+      "name": "random-001",
+      "spread_fraction": 0.35833333333333334
+    },
+    {
+      "completed_flow_gap": 0.7702274154191644,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.7570977917981072,
+      "edges": 22,
+      "name": "random-002",
+      "spread_fraction": 0.9096354166666667
+    },
+    {
+      "completed_flow_gap": 0.6151951248997751,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.42857142857142855,
+      "edges": 13,
+      "name": "random-003",
+      "spread_fraction": 0.63828125
+    },
+    {
+      "completed_flow_gap": 0.7022371698126687,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.5194805194805195,
+      "edges": 16,
+      "name": "random-004",
+      "spread_fraction": 0.751171875
+    },
+    {
+      "completed_flow_gap": 0.5067597483615083,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.387409200968523,
+      "edges": 12,
+      "name": "random-005",
+      "spread_fraction": 0.5951822916666667
+    },
+    {
+      "completed_flow_gap": 0.6834523278007165,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.5811138014527845,
+      "edges": 17,
+      "name": "random-006",
+      "spread_fraction": 0.7893229166666667
+    },
+    {
+      "completed_flow_gap": 0.22903191014109836,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.2981366459627329,
+      "edges": 10,
+      "name": "random-007",
+      "spread_fraction": 0.45950520833333336
+    },
+    {
+      "completed_flow_gap": 0.23715643956724097,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.3516483516483517,
+      "edges": 11,
+      "name": "random-008",
+      "spread_fraction": 0.5131510416666667
+    },
+    {
+      "completed_flow_gap": 0.4866209904096498,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.4232804232804233,
+      "edges": 13,
+      "name": "random-009",
+      "spread_fraction": 0.605078125
+    },
+    {
+      "completed_flow_gap": 0.6022356660706973,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.42328042328042326,
+      "edges": 16,
+      "name": "random-010",
+      "spread_fraction": 0.7157552083333333
+    },
+    {
+      "completed_flow_gap": 0.5374760566816896,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.4367606915377617,
+      "edges": 13,
+      "name": "random-011",
+      "spread_fraction": 0.6305989583333333
+    },
+    {
+      "completed_flow_gap": 0.7130016725360068,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.7027818448023426,
+      "edges": 21,
+      "name": "random-012",
+      "spread_fraction": 0.872265625
+    },
+    {
+      "completed_flow_gap": 0.545243598701715,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.31027795733678093,
+      "edges": 13,
+      "name": "random-013",
+      "spread_fraction": 0.609375
+    },
+    {
+      "completed_flow_gap": 0.5821258242099692,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.4511278195488722,
+      "edges": 14,
+      "name": "random-014",
+      "spread_fraction": 0.6774739583333333
+    },
+    {
+      "completed_flow_gap": 0.18350341907227363,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.19047619047619047,
+      "edges": 7,
+      "name": "random-015",
+      "spread_fraction": 0.36627604166666666
+    },
+    {
+      "completed_flow_gap": 0.16009414364736382,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.27988338192419826,
+      "edges": 9,
+      "name": "random-016",
+      "spread_fraction": 0.423828125
+    },
+    {
+      "completed_flow_gap": 0.6946315546168564,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.5933250927070458,
+      "edges": 18,
+      "name": "random-017",
+      "spread_fraction": 0.8125
+    },
+    {
+      "completed_flow_gap": 0.6339106406434208,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.489795918367347,
+      "edges": 15,
+      "name": "random-018",
+      "spread_fraction": 0.712109375
+    },
+    {
+      "completed_flow_gap": 0.7875384103672499,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.5667060212514758,
+      "edges": 17,
+      "name": "random-019",
+      "spread_fraction": 0.7877604166666666
+    },
+    {
+      "completed_flow_gap": 0.458959363548605,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.5234460196292258,
+      "edges": 16,
+      "name": "random-020",
+      "spread_fraction": 0.7377604166666667
+    },
+    {
+      "completed_flow_gap": 0.5723142055314995,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.4259094942324756,
+      "edges": 14,
+      "name": "random-021",
+      "spread_fraction": 0.678125
+    },
+    {
+      "completed_flow_gap": 0.554788815608143,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.4423963133640553,
+      "edges": 13,
+      "name": "random-022",
+      "spread_fraction": 0.634375
+    },
+    {
+      "completed_flow_gap": 0.6121298696403489,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.38308060654429366,
+      "edges": 14,
+      "name": "random-023",
+      "spread_fraction": 0.6622395833333333
+    },
+    {
+      "completed_flow_gap": 0.4878926464502778,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.4761904761904762,
+      "edges": 15,
+      "name": "random-024",
+      "spread_fraction": 0.7024739583333334
+    },
+    {
+      "completed_flow_gap": 0.12084713039410437,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.2857142857142857,
+      "edges": 9,
+      "name": "random-025",
+      "spread_fraction": 0.4100260416666667
+    },
+    {
+      "completed_flow_gap": 0.6957346816253934,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.47290640394088673,
+      "edges": 14,
+      "name": "random-026",
+      "spread_fraction": 0.6950520833333333
+    },
+    {
+      "completed_flow_gap": 0.4615416122064696,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.326530612244898,
+      "edges": 11,
+      "name": "random-027",
+      "spread_fraction": 0.5446614583333333
+    },
+    {
+      "completed_flow_gap": 0.26295058299943075,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.24060150375939848,
+      "edges": 9,
+      "name": "random-028",
+      "spread_fraction": 0.45026041666666666
+    },
+    {
+      "completed_flow_gap": 0.319872991091053,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.326530612244898,
+      "edges": 11,
+      "name": "random-029",
+      "spread_fraction": 0.5203125
+    },
+    {
+      "completed_flow_gap": 0.8010405690294031,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.7283763277693475,
+      "edges": 22,
+      "name": "random-030",
+      "spread_fraction": 0.8951822916666666
+    },
+    {
+      "completed_flow_gap": 0.23240812075600198,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.26373626373626374,
+      "edges": 9,
+      "name": "random-031",
+      "spread_fraction": 0.437109375
+    },
+    {
+      "completed_flow_gap": 0.24535616999607068,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.23645320197044337,
+      "edges": 9,
+      "name": "random-032",
+      "spread_fraction": 0.44453125
+    },
+    {
+      "completed_flow_gap": 0.17808020231298574,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.30476190476190484,
+      "edges": 10,
+      "name": "random-033",
+      "spread_fraction": 0.4546875
+    },
+    {
+      "completed_flow_gap": 0.5748579315330451,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.5620608899297425,
+      "edges": 16,
+      "name": "random-034",
+      "spread_fraction": 0.741015625
+    },
+    {
+      "completed_flow_gap": 0.5746060137759694,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.4863221884498481,
+      "edges": 16,
+      "name": "random-035",
+      "spread_fraction": 0.7455729166666667
+    },
+    {
+      "completed_flow_gap": 0.7282505586444729,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.6233766233766234,
+      "edges": 18,
+      "name": "random-036",
+      "spread_fraction": 0.81875
+    },
+    {
+      "completed_flow_gap": 0.8333333333333338,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.6779661016949152,
+      "edges": 21,
+      "name": "random-037",
+      "spread_fraction": 0.8842447916666667
+    },
+    {
+      "completed_flow_gap": 0.29289321881345254,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.24060150375939848,
+      "edges": 8,
+      "name": "random-038",
+      "spread_fraction": 0.3985677083333333
+    },
+    {
+      "completed_flow_gap": 0.7280413858066684,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.5504587155963303,
+      "edges": 18,
+      "name": "random-039",
+      "spread_fraction": 0.8001302083333334
+    },
+    {
+      "completed_flow_gap": 0.6468112831574204,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.5762304921968787,
+      "edges": 18,
+      "name": "random-040",
+      "spread_fraction": 0.796875
+    },
+    {
+      "completed_flow_gap": 0.6829294283379019,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.6177606177606176,
+      "edges": 18,
+      "name": "random-041",
+      "spread_fraction": 0.813671875
+    },
+    {
+      "completed_flow_gap": 0.5347358131082924,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.5005213764337852,
+      "edges": 15,
+      "name": "random-042",
+      "spread_fraction": 0.7141927083333334
+    },
+    {
+      "completed_flow_gap": 0.6749578125347585,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.5985037406483791,
+      "edges": 18,
+      "name": "random-043",
+      "spread_fraction": 0.8122395833333333
+    },
+    {
+      "completed_flow_gap": 0.8508688184590547,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.7027818448023426,
+      "edges": 21,
+      "name": "random-044",
+      "spread_fraction": 0.8828125
+    },
+    {
+      "completed_flow_gap": 0.29289321881345276,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.2587601078167116,
+      "edges": 9,
+      "name": "random-045",
+      "spread_fraction": 0.4420572916666667
+    },
+    {
+      "completed_flow_gap": 0.29106665100382406,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.2857142857142857,
+      "edges": 9,
+      "name": "random-046",
+      "spread_fraction": 0.44921875
+    },
+    {
+      "completed_flow_gap": 0.8377116988074484,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.729483282674772,
+      "edges": 21,
+      "name": "random-047",
+      "spread_fraction": 0.8897135416666667
+    },
+    {
+      "completed_flow_gap": 0.43110522444734256,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.3609022556390978,
+      "edges": 12,
+      "name": "random-048",
+      "spread_fraction": 0.590625
+    },
+    {
+      "completed_flow_gap": 0.5156360456678044,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.2857142857142857,
+      "edges": 11,
+      "name": "random-049",
+      "spread_fraction": 0.5333333333333333
+    },
+    {
+      "completed_flow_gap": 0.3633033288912198,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.3609022556390978,
+      "edges": 12,
+      "name": "random-050",
+      "spread_fraction": 0.568359375
+    },
+    {
+      "completed_flow_gap": 0.5684979606657344,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.5079365079365079,
+      "edges": 16,
+      "name": "random-051",
+      "spread_fraction": 0.7427083333333333
+    },
+    {
+      "completed_flow_gap": 0.21826404002942837,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.20168067226890757,
+      "edges": 7,
+      "name": "random-052",
+      "spread_fraction": 0.34817708333333336
+    },
+    {
+      "completed_flow_gap": 0.5928346637946733,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.39408866995073893,
+      "edges": 14,
+      "name": "random-053",
+      "spread_fraction": 0.6684895833333333
+    },
+    {
+      "completed_flow_gap": 0.42339021327360865,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.3666921313980138,
+      "edges": 13,
+      "name": "random-054",
+      "spread_fraction": 0.615234375
+    },
+    {
+      "completed_flow_gap": 0.5014060614964323,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.35346097201767307,
+      "edges": 13,
+      "name": "random-055",
+      "spread_fraction": 0.60703125
+    },
+    {
+      "completed_flow_gap": 0.7955656532839164,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.6997084548104956,
+      "edges": 20,
+      "name": "random-056",
+      "spread_fraction": 0.8634114583333333
+    },
+    {
+      "completed_flow_gap": 0.5041940664910828,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.4933196300102775,
+      "edges": 15,
+      "name": "random-057",
+      "spread_fraction": 0.7091145833333333
+    },
+    {
+      "completed_flow_gap": 0.6648947947668415,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.606826801517067,
+      "edges": 18,
+      "name": "random-058",
+      "spread_fraction": 0.809375
+    },
+    {
+      "completed_flow_gap": 0.35139926301872115,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.25396825396825395,
+      "edges": 10,
+      "name": "random-059",
+      "spread_fraction": 0.4876302083333333
+    },
+    {
+      "completed_flow_gap": 0.6172678631722976,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.5194805194805194,
+      "edges": 15,
+      "name": "random-060",
+      "spread_fraction": 0.7270833333333333
+    },
+    {
+      "completed_flow_gap": 0.5766242695205372,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.5620608899297425,
+      "edges": 16,
+      "name": "random-061",
+      "spread_fraction": 0.7553385416666667
+    },
+    {
+      "completed_flow_gap": 0.5648289180348007,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.4554079696394687,
+      "edges": 15,
+      "name": "random-062",
+      "spread_fraction": 0.7106770833333333
+    },
+    {
+      "completed_flow_gap": 0.6005796629578476,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.5333333333333334,
+      "edges": 17,
+      "name": "random-063",
+      "spread_fraction": 0.76015625
+    },
+    {
+      "completed_flow_gap": 0.17023714272997362,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.2857142857142857,
+      "edges": 10,
+      "name": "random-064",
+      "spread_fraction": 0.46627604166666664
+    },
+    {
+      "completed_flow_gap": 0.27952136753668855,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.326530612244898,
+      "edges": 11,
+      "name": "random-065",
+      "spread_fraction": 0.5239583333333333
+    },
+    {
+      "completed_flow_gap": 0.8069268599517582,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.7704654895666131,
+      "edges": 22,
+      "name": "random-066",
+      "spread_fraction": 0.9036458333333334
+    },
+    {
+      "completed_flow_gap": 0.42658788168868755,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.4155844155844156,
+      "edges": 12,
+      "name": "random-067",
+      "spread_fraction": 0.5830729166666667
+    },
+    {
+      "completed_flow_gap": 0.5284399047035909,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.48289738430583506,
+      "edges": 14,
+      "name": "random-068",
+      "spread_fraction": 0.6842447916666666
+    },
+    {
+      "completed_flow_gap": 0.7021218411697198,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.6469002695417789,
+      "edges": 19,
+      "name": "random-069",
+      "spread_fraction": 0.8373697916666667
+    },
+    {
+      "completed_flow_gap": 0.6903788950735691,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.5194805194805195,
+      "edges": 15,
+      "name": "random-070",
+      "spread_fraction": 0.7166666666666667
+    },
+    {
+      "completed_flow_gap": 0.4821099624144913,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.3767660910518053,
+      "edges": 13,
+      "name": "random-071",
+      "spread_fraction": 0.6272135416666667
+    },
+    {
+      "completed_flow_gap": 0.6541821545360418,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.5042016806722689,
+      "edges": 17,
+      "name": "random-072",
+      "spread_fraction": 0.7591145833333334
+    },
+    {
+      "completed_flow_gap": 0.4387594583204658,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.5194805194805195,
+      "edges": 15,
+      "name": "random-073",
+      "spread_fraction": 0.7037760416666666
+    },
+    {
+      "completed_flow_gap": 0.29727036983776445,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.30476190476190473,
+      "edges": 10,
+      "name": "random-074",
+      "spread_fraction": 0.47994791666666664
+    },
+    {
+      "completed_flow_gap": 0.7395311864192373,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.6997084548104956,
+      "edges": 20,
+      "name": "random-075",
+      "spread_fraction": 0.8717447916666666
+    },
+    {
+      "completed_flow_gap": 0.2339555568810222,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.30476190476190473,
+      "edges": 9,
+      "name": "random-076",
+      "spread_fraction": 0.4278645833333333
+    },
+    {
+      "completed_flow_gap": 0.6454342371741191,
+      "current_directed_gap": 1.0,
+      "edge_expansion_proxy": 0.6015037593984962,
+      "edges": 18,
+      "name": "random-077",
+      "spread_fraction": 0.8134114583333333
+    },
+    {
+      "completed_flow_gap": 0.5527864045000423,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.32345013477088946,
+      "edges": 12,
+      "name": "random-078",
+      "spread_fraction": 0.5907552083333333
+    },
+    {
+      "completed_flow_gap": 0.25597735097073,
+      "current_directed_gap": 0.0,
+      "edge_expansion_proxy": 0.31893687707641194,
+      "edges": 11,
+      "name": "random-079",
+      "spread_fraction": 0.5330729166666667
+    }
+  ],
+  "schema": "adaptive-evolution.diffusivity-proxy-falsification.v0.1",
+  "seed": 29,
+  "target": {
+    "infection_probability": 0.25,
+    "process": "SI",
+    "steps": 4
+  }
+}
