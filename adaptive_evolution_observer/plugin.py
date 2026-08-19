@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any
 
-from .estimator import estimate
-from .normalizer import normalize
-from .store import EventStore, default_data_dir, resolve_db_path
-from .window import select_recent
+from .store import EventStore, resolve_db_path
 
-# Observer hooks only. Directive hooks are intentionally excluded from v0.2 so
-# this slice cannot change execution behavior while M1/M2 contracts are tested.
+# M1/M2 is deliberately a pure observer. Registering model-facing tools would
+# change the agent's tool schema and make the measurement system part of the
+# behavior being measured. Analysis/export lives in the external CLI instead.
 HOOKS = (
     "on_session_start",
     "on_session_end",
@@ -45,62 +41,9 @@ def _record(hook: str, **kwargs: Any) -> None:
     try:
         _store().append(hook, kwargs)
     except Exception:
-        # Hermes itself already isolates hook failures; keep this plugin
-        # fail-open as an observer even when its storage is unavailable.
+        # Hermes itself isolates hook failures; remain fail-open even when the
+        # observer's local storage is unavailable.
         return
-
-
-def _status_payload(limit: int | None = None) -> dict[str, Any]:
-    store = _store()
-    raw = store.load()
-    canonical, diag = normalize(raw)
-    selected, window = select_recent(canonical, limit)
-    state = estimate(selected)
-    return {
-        "events": diag,
-        "window": window,
-        "state": state,
-        "database": str(store.path),
-    }
-
-
-def handle_status(params: dict, **kwargs: Any) -> str:
-    del kwargs
-    limit = params.get("limit")
-    if limit is not None:
-        try:
-            limit = max(1, min(int(limit), 50000))
-        except (TypeError, ValueError):
-            return json.dumps({"success": False, "error": "limit must be an integer"})
-    return json.dumps({"success": True, **_status_payload(limit)}, ensure_ascii=False)
-
-
-def handle_export(params: dict, **kwargs: Any) -> str:
-    del kwargs
-    path = params.get("path")
-    if not path:
-        path = default_data_dir() / "normalized-events.jsonl"
-    else:
-        path = Path(path).expanduser()
-    store = _store()
-    canonical, diag = normalize(store.load())
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        for e in canonical:
-            f.write(json.dumps({
-                "seq": e.seq,
-                "observed_at_ns": e.observed_at_ns,
-                "hook": e.hook,
-                "event_key": e.event_key,
-                "session_id": e.session_id,
-                "task_id": e.task_id,
-                "turn_id": e.turn_id,
-                "agent_id": e.agent_id,
-                "parent_agent_id": e.parent_agent_id,
-                "kind": e.kind,
-                "data": e.data,
-            }, ensure_ascii=False, sort_keys=True) + "\n")
-    return json.dumps({"success": True, "path": str(path), "events": diag}, ensure_ascii=False)
 
 
 def register(ctx) -> None:
@@ -108,39 +51,3 @@ def register(ctx) -> None:
         def callback(_hook=hook, **kwargs):
             _record(_hook, **kwargs)
         ctx.register_hook(hook, callback)
-
-    ctx.register_tool(
-        name="adaptive_evolution_observer_status",
-        toolset="adaptive_evolution",
-        schema={
-            "name": "adaptive_evolution_observer_status",
-            "description": "Return experimental organization-state telemetry inferred from Hermes observer hooks.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "limit": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 50000,
-                        "description": "Estimate state on the most recent N normalized events while preserving full-history identity correlation.",
-                    }
-                },
-            },
-        },
-        handler=handle_status,
-        description="Inspect experimental adaptive-evolution organization state.",
-    )
-    ctx.register_tool(
-        name="adaptive_evolution_observer_export",
-        toolset="adaptive_evolution",
-        schema={
-            "name": "adaptive_evolution_observer_export",
-            "description": "Export deduplicated normalized observer events as JSONL.",
-            "parameters": {
-                "type": "object",
-                "properties": {"path": {"type": "string"}},
-            },
-        },
-        handler=handle_export,
-        description="Export normalized adaptive-evolution observer events.",
-    )
