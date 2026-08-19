@@ -152,13 +152,39 @@ def test_explicit_subagent_start_overrides_session_start_hint():
     assert diag["known_root_sessions"] == 1
 
 
-def test_estimator_produces_diagnostic_state():
+def test_estimator_does_not_turn_missing_role_evidence_into_mixing_signal():
     events, _ = normalize(_rows())
     state = estimate(events)
     assert state["authority"] == "diagnostic_only"
     assert state["agents"] >= 2
     assert state["interaction_events"] == 1
+    assert state["traffic_weighted_role_mixing"] is None
+    assert state["role_conditioned_traffic_coverage"] == 0.0
+    assert state["role_confidence"]["root:root"] == 0.0
+
+
+def test_role_mixing_appears_only_when_both_sides_have_role_evidence():
+    rows = _rows() + [
+        {
+            "id": 4,
+            "received_at_ns": 4,
+            "hook": "post_tool_call",
+            "event_key": "root-tool",
+            "payload": {
+                "session_id": "root",
+                "turn_id": "rt1",
+                "tool_call_id": "rtc1",
+                "tool_name": "python",
+                "status": "success",
+            },
+        }
+    ]
+    events, _ = normalize(rows)
+    state = estimate(events)
     assert state["traffic_weighted_role_mixing"] is not None
+    assert state["role_conditioned_traffic_coverage"] > 0.0
+    assert state["role_confidence"]["root:root"] > 0.0
+    assert state["role_confidence"]["subagent:sub1"] > 0.0
 
 
 def test_store_roundtrip(tmp_path: Path):
