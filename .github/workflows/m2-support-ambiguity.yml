@@ -1,0 +1,38 @@
+name: m2-support-ambiguity
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/m2-support-ambiguity.yml"
+      - "experiments/run_completion_support_ambiguity.py"
+      - "adaptive_evolution_observer/estimator.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.13"}
+      - run: python -m pip install -e .
+      - run: python experiments/run_completion_support_ambiguity.py --output result.json
+      - name: Publish result
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/m2-support.json"; cp result.json "$tmp"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan m2-support-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/m2-support-ambiguity/latest
+          cp "$tmp" results/m2-support-ambiguity/latest/summary.json
+          git add results/m2-support-ambiguity/latest/summary.json
+          git commit -m "Record M2 support ambiguity test for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:m2-support-ambiguity-results
