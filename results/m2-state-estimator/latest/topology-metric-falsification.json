@@ -1,0 +1,51 @@
+{
+  "authority": "synthetic_counterexample_only",
+  "checks": {
+    "acyclic_graphs_have_no_recurrent_gap": true,
+    "bidirectional_ring_more_reciprocal_than_cycle": true,
+    "complete_graph_branches_more_than_cycle": true,
+    "legacy_chain_exceeds_star": true,
+    "recurrent_graphs_have_full_recurrent_core": true,
+    "star_branches_more_than_chain": true
+  },
+  "conclusion": "A single raw row-stochastic SLEM gap is not a safe Hermes delegation diffusivity metric. Separate fan-out, reciprocity/recurrent support, and recurrent-core mixing; return null when recurrence is unsupported.",
+  "passed": true,
+  "rows": {
+    "bidirectional_ring": {
+      "branching_entropy": 0.5,
+      "legacy_directed_diffusivity": 0.19098300562505277,
+      "reciprocity": 1.0,
+      "recurrent_core_fraction": 1.0,
+      "recurrent_core_mixing_gap": 0.3454915028125264
+    },
+    "chain": {
+      "branching_entropy": 0.0,
+      "legacy_directed_diffusivity": 1.0,
+      "reciprocity": 0.0,
+      "recurrent_core_fraction": 0.0,
+      "recurrent_core_mixing_gap": null
+    },
+    "complete_uniform": {
+      "branching_entropy": 1.0,
+      "legacy_directed_diffusivity": 0.75,
+      "reciprocity": 1.0,
+      "recurrent_core_fraction": 1.0,
+      "recurrent_core_mixing_gap": 0.625
+    },
+    "directed_cycle": {
+      "branching_entropy": 0.0,
+      "legacy_directed_diffusivity": 0.0,
+      "reciprocity": 0.0,
+      "recurrent_core_fraction": 1.0,
+      "recurrent_core_mixing_gap": 0.19098300562505255
+    },
+    "star_out": {
+      "branching_entropy": 1.0,
+      "legacy_directed_diffusivity": 0.0,
+      "reciprocity": 0.0,
+      "recurrent_core_fraction": 0.0,
+      "recurrent_core_mixing_gap": null
+    }
+  },
+  "schema": "adaptive-evolution.directed-topology-falsification.v0.1"
+}
