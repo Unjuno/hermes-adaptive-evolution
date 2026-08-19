@@ -1,0 +1,83 @@
+name: m2-topology-multitarget
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/m2-topology-multitarget.yml"
+      - "experiments/run_topology_proxy_multitarget.py"
+      - "experiments/run_diffusivity_proxy_falsification.py"
+      - "adaptive_evolution_observer/estimator.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -e .
+      - name: Run seeds
+        run: |
+          set -e
+          mkdir -p m2-multitarget-artifact
+          for seed in 23 47 83 131 197; do
+            python experiments/run_topology_proxy_multitarget.py \
+              --seed "$seed" --replicates 3000 \
+              --output "m2-multitarget-artifact/seed-${seed}.json" >/dev/null
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          runs=[]
+          for p in sorted(Path('m2-multitarget-artifact').glob('seed-*.json')):
+              d=json.loads(p.read_text())
+              c=d['conclusion']
+              runs.append({
+                  'seed':d['seed'],
+                  'degree_blind':c['degree_proxy_blind_by_construction'],
+                  'reach_corr':c['completed_flow_gap_vs_cross_reach_corr'],
+                  'consensus_corr':c['completed_flow_gap_vs_consensus_speed_corr'],
+                  'retain_vector_state':c['retain_vector_state'],
+              })
+          summary={
+              'schema':'adaptive-evolution.topology-proxy-multitarget-aggregate.v0.1',
+              'runs':runs,
+              'run_count':len(runs),
+              'vector_state_support_count':sum(bool(r['retain_vector_state']) for r in runs),
+              'mean_reach_corr':sum(r['reach_corr'] for r in runs)/len(runs),
+              'mean_consensus_corr':sum(r['consensus_corr'] for r in runs)/len(runs),
+              'decision':'retain_multiple_topology_order_parameters' if sum(bool(r['retain_vector_state']) for r in runs)>=4 else 'needs_more_tests',
+              'authority':'synthetic_multitarget_falsification_only',
+          }
+          Path('m2-multitarget-artifact/summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(summary,indent=2,sort_keys=True))
+          PY
+      - name: Publish results
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/m2-multitarget"
+          mkdir -p "$tmp"
+          cp -a m2-multitarget-artifact/. "$tmp/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan m2-topology-multitarget-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/m2-topology-multitarget/latest
+          cp -a "$tmp"/. results/m2-topology-multitarget/latest/
+          git add results/m2-topology-multitarget/latest
+          git commit -m "Record M2 topology multi-target test for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:m2-topology-multitarget-results
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m2-topology-multitarget
+          path: m2-multitarget-artifact/
+          retention-days: 7
