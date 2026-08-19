@@ -86,14 +86,56 @@ or move all adaptive-evolution data with:
 export ADAPTIVE_EVOLUTION_DATA_DIR=/path/to/data-dir
 ```
 
-## Offline capture inspection
+## Capture and replay workflow
 
-After a Hermes run, inspect or export the observer database without asking the agent to execute any plugin tool:
+After a Hermes run, inspect the observer database without asking the observed agent to call an analysis tool:
 
 ```bash
 adaptive-evolution-observer --db "$HERMES_HOME/adaptive-evolution/observer.sqlite3" status
+```
+
+A plain normalized JSONL export is available when that is all you need:
+
+```bash
 adaptive-evolution-observer --db "$HERMES_HOME/adaptive-evolution/observer.sqlite3" export ./trace.jsonl
 ```
+
+For experiments, prefer a **capture bundle**:
+
+```bash
+adaptive-evolution-observer --db "$HERMES_HOME/adaptive-evolution/observer.sqlite3" bundle ./capture-001
+adaptive-evolution-observer replay ./capture-001
+```
+
+Bundle schema `adaptive-evolution.capture-bundle.v0.2` contains:
+
+```text
+capture-001/
+├── manifest.json
+├── sanitized-raw-events.jsonl
+└── normalized-events.jsonl
+```
+
+The raw stream in the bundle is already sanitized before leaving SQLite. Both event streams have SHA-256 checksums, the raw SQLite database is not included, and replay verifies that re-normalization and organization state still match the manifest.
+
+### E2 corruption experiments
+
+Once a real Hermes capture exists, use the same immutable sanitized event stream to measure robustness against telemetry corruption:
+
+```bash
+python experiments/run_capture_corruption.py ./capture-001 \
+  --replicates 50 \
+  --output ./capture-001-corruption.json
+```
+
+Current scenarios include:
+
+- 1/5/10% duplicate injection;
+- 1/5/10% event drop;
+- full event reorder;
+- 1/5/10% optional correlation-ID stripping.
+
+The experiment reports distributions of identity uncertainty, normalized event loss, interaction-count error, role-mixing error, diffusivity error, role-entropy error, and fragility error. These results are explicitly `experiment_only`; no synthetic or single-capture threshold enables organization reconfiguration.
 
 This separation is deliberate: the system being observed does not need to participate in analysis of its own telemetry.
 
@@ -123,6 +165,8 @@ hermes plugins doctor . --ci
 python scripts/check_hermes_contract.py
 python scripts/check_hermes_delegate_hooks.py
 ```
+
+The dedicated `hermes-contract` workflow runs the directory-plugin contract before installing this repository as a Python distribution, then validates the pip entry point and an offline real-Hermes `delegate_task` lifecycle.
 
 ## License
 
