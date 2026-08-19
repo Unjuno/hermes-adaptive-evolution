@@ -29,7 +29,7 @@ jobs:
       - name: Compile
         run: python -m compileall -q adaptive_evolution_observer __init__.py
       - name: Build wheel
-        run: python -m pip wheel --no-deps --no-build-isolation . -w dist
+        run: python -m pip wheel --no-deps . -w dist
 
   publish-ci-result:
     if: always() && github.event_name == 'push'
