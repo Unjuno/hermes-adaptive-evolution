@@ -50,7 +50,10 @@ def directed_diffusivity(counts: np.ndarray) -> float | None:
 
 def estimate(events: Iterable[CanonicalEvent]) -> dict:
     events = list(events)
-    agents = sorted({e.agent_id for e in events if e.agent_id} | {e.parent_agent_id for e in events if e.parent_agent_id})
+    agents = sorted(
+        {e.agent_id for e in events if e.agent_id}
+        | {e.parent_agent_id for e in events if e.parent_agent_id}
+    )
     idx = {a: i for i, a in enumerate(agents)}
     edges = np.zeros((len(agents), len(agents)), dtype=float)
     role_counts: dict[str, Counter] = defaultdict(Counter)
@@ -58,7 +61,12 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
     failures: Counter = Counter()
 
     for e in events:
-        if e.kind == "interaction_start" and e.parent_agent_id and e.agent_id and e.parent_agent_id != e.agent_id:
+        if (
+            e.kind == "interaction_start"
+            and e.parent_agent_id
+            and e.agent_id
+            and e.parent_agent_id != e.agent_id
+        ):
             edges[idx[e.parent_agent_id], idx[e.agent_id]] += 1.0
             role = e.data.get("role")
             if role and role not in {"leaf", "orchestrator"}:
@@ -68,7 +76,10 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
             if fam:
                 role_counts[e.agent_id][fam] += 1.0
             status = str(e.data.get("status") or "").lower()
-            if status in {"error", "failed", "blocked", "cancelled", "canceled"} or e.data.get("error_type"):
+            if (
+                status in {"error", "failed", "blocked", "cancelled", "canceled"}
+                or e.data.get("error_type")
+            ):
                 failures[e.agent_id] += 1
             else:
                 successes[e.agent_id] += 1
@@ -77,26 +88,49 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
 
     role_posteriors: dict[str, dict[str, float]] = {}
     role_entropy: dict[str, float] = {}
+    role_confidence: dict[str, float] = {}
+    role_evidence: dict[str, float] = {}
     alpha = 0.5
     for a in agents:
+        evidence = float(sum(role_counts[a].values()))
+        role_evidence[a] = evidence
         vec = np.array([role_counts[a][r] + alpha for r in ROLE_NAMES], dtype=float)
         p = vec / vec.sum()
         role_posteriors[a] = {r: float(v) for r, v in zip(ROLE_NAMES, p)}
-        role_entropy[a] = float(-np.sum(p * np.log(np.clip(p, 1e-12, 1.0))) / math.log(len(ROLE_NAMES)))
+        entropy = float(
+            -np.sum(p * np.log(np.clip(p, 1e-12, 1.0)))
+            / math.log(len(ROLE_NAMES))
+        )
+        role_entropy[a] = entropy
+        # Confidence is intentionally zero without any role evidence. Entropy
+        # then discounts ambiguous posteriors as evidence accumulates.
+        role_confidence[a] = 0.0 if evidence <= 0 else float(np.clip(1.0 - entropy, 0.0, 1.0))
 
     total_edge = float(edges.sum())
     mixing = None
+    role_conditioned_weight = 0.0
+    mixing_numerator = 0.0
     if total_edge > 0:
-        cross = 0.0
         for i, ai in enumerate(agents):
             pi = np.array([role_posteriors[ai][r] for r in ROLE_NAMES])
+            ci = role_confidence[ai]
             for j, aj in enumerate(agents):
-                c = edges[i, j]
+                c = float(edges[i, j])
                 if c <= 0:
                     continue
+                cj = role_confidence[aj]
+                confidence_weight = c * ci * cj
+                if confidence_weight <= 0:
+                    continue
                 pj = np.array([role_posteriors[aj][r] for r in ROLE_NAMES])
-                cross += c * (1.0 - float(np.dot(pi, pj)))
-        mixing = float(cross / total_edge)
+                mixing_numerator += confidence_weight * (1.0 - float(np.dot(pi, pj)))
+                role_conditioned_weight += confidence_weight
+        if role_conditioned_weight > 0:
+            mixing = float(mixing_numerator / role_conditioned_weight)
+
+    role_conditioned_traffic_coverage = (
+        float(role_conditioned_weight / total_edge) if total_edge > 0 else None
+    )
 
     fragility = {}
     for a in agents:
@@ -106,23 +140,30 @@ def estimate(events: Iterable[CanonicalEvent]) -> dict:
 
     interaction_sources = int(np.sum(edges.sum(axis=1) > 0)) if len(agents) else 0
     return {
-        "schema": "adaptive-evolution.organization-state.v0.1",
+        "schema": "adaptive-evolution.organization-state.v0.2",
         "experimental": True,
         "agents": len(agents),
         "interaction_events": int(total_edge),
         "interaction_sources": interaction_sources,
         "tool_outcomes": int(sum(successes.values()) + sum(failures.values())),
         "traffic_weighted_role_mixing": mixing,
+        "role_conditioned_traffic_coverage": role_conditioned_traffic_coverage,
         "directed_diffusivity": directed_diffusivity(edges),
         "mean_role_entropy": float(np.mean(list(role_entropy.values()))) if role_entropy else None,
         "role_posteriors": role_posteriors,
+        "role_confidence": role_confidence,
+        "role_evidence": role_evidence,
         "fragility": fragility,
         "support": {
             "interaction_count": int(total_edge),
+            "role_conditioned_interaction_weight": float(role_conditioned_weight),
             "agents_with_outgoing_interactions": interaction_sources,
-            "agents_with_tool_role_evidence": sum(1 for a in agents if sum(role_counts[a].values()) > 0),
+            "agents_with_tool_role_evidence": sum(1 for a in agents if role_evidence[a] > 0),
             "agents_with_outcome_evidence": sum(1 for a in agents if successes[a] + failures[a] > 0),
         },
         "authority": "diagnostic_only",
-        "note": "No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks.",
+        "note": (
+            "Role mixing is confidence-weighted and may be null when role evidence is insufficient. "
+            "No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks."
+        ),
     }
