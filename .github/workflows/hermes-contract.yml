@@ -8,6 +8,7 @@ on:
       - "pyproject.toml"
       - "plugin.yaml"
       - "scripts/check_hermes_contract.py"
+      - "scripts/check_hermes_delegate_hooks.py"
       - ".github/workflows/hermes-contract.yml"
   workflow_dispatch:
   schedule:
@@ -34,3 +35,5 @@ jobs:
         run: hermes plugins doctor . --ci
       - name: Validate Hermes pip-plugin contract
         run: python scripts/check_hermes_contract.py
+      - name: Validate real Hermes delegation hook path offline
+        run: python scripts/check_hermes_delegate_hooks.py
