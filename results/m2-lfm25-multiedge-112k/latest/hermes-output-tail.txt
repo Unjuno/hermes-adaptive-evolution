@@ -1,0 +1,2 @@
+  ⚠ tirith security scanner enabled but not available — command scanning will use pattern matching only
+Context length exceeded (161 tokens). Cannot compress further.
