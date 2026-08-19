@@ -9,6 +9,8 @@ from adaptive_evolution_observer.bundle import replay_bundle
 
 NORMALIZED_NAME = "normalized-events.jsonl"
 MANIFEST_NAME = "manifest.json"
+SUCCESS_STATUSES = frozenset({"ok", "success"})
+FAILURE_STATUSES = frozenset({"error", "failed", "blocked", "cancelled", "canceled"})
 
 
 def _load_events(bundle: Path) -> list[dict[str, Any]]:
@@ -23,6 +25,10 @@ def _load_events(bundle: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def _tool_status(event: dict[str, Any]) -> str:
+    return str((event.get("data") or {}).get("status") or "").strip().lower()
+
+
 def validate(bundle: str | Path) -> dict[str, Any]:
     root = Path(bundle).expanduser()
     replay = replay_bundle(root)
@@ -34,12 +40,13 @@ def validate(bundle: str | Path) -> dict[str, Any]:
     tool_events = [event for event in events if event.get("kind") == "tool_result"]
     errors = [
         event for event in tool_events
-        if str((event.get("data") or {}).get("status") or "").lower() == "error"
+        if _tool_status(event) in FAILURE_STATUSES
         or (event.get("data") or {}).get("error_type")
     ]
     successes = [
         event for event in tool_events
-        if str((event.get("data") or {}).get("status") or "").lower() == "success"
+        if _tool_status(event) in SUCCESS_STATUSES
+        and not (event.get("data") or {}).get("error_type")
     ]
 
     recovered_pairs = []
@@ -88,6 +95,10 @@ def validate(bundle: str | Path) -> dict[str, Any]:
             "tool_errors": len(errors),
             "tool_successes": len(successes),
             "same_agent_failure_recovery_pairs": len(recovered_pairs),
+        },
+        "recognized_tool_statuses": {
+            "success": sorted(SUCCESS_STATUSES),
+            "failure": sorted(FAILURE_STATUSES),
         },
         "recovered_pairs": recovered_pairs,
         "runtime": manifest.get("runtime"),
