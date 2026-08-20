@@ -1,0 +1,247 @@
+name: p0c-v3-runtime-closure
+
+on:
+  push:
+    branches:
+      - experiment/p0-runtime-closure
+    paths:
+      - ".github/workflows/p0c-v3-runtime-closure.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  runtime-closure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
+      MODEL: hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M
+      CONTEXT: "98304"
+      MAX_TOKENS: "128"
+      API_SERVER_KEY: p0c-v3-local-key
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Publish live locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          orig="$GITHUB_SHA"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan p0c-v3-live-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/p0c-v3/live
+          printf '{"run_id":"%s","source_sha":"%s","event":"%s"}\n' "$GITHUB_RUN_ID" "$orig" "$GITHUB_EVENT_NAME" > results/p0c-v3/live/status.json
+          git add results/p0c-v3/live/status.json
+          git commit -m "Publish P0c-v3 live run ${GITHUB_RUN_ID}"
+          git push --force origin HEAD:p0c-v3-live
+          git checkout --force "$orig"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install pinned Hermes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C _hermes rev-parse HEAD)" = "$HERMES_CONTRACT_SHA"
+          python -m pip install -e ./_hermes
+          hermes --version || true
+
+      - name: Start controlled Ollama
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p0c-v3/logs p0c-v3/result
+          curl -fsSL https://ollama.com/install.sh | sh
+          sudo systemctl stop ollama.service || true
+          sudo systemctl disable ollama.service || true
+          sudo pkill -x ollama || true
+          for i in $(seq 1 30); do
+            if ! curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+            echo "old Ollama listener still active" >&2
+            exit 1
+          fi
+          env OLLAMA_CONTEXT_LENGTH="$CONTEXT" OLLAMA_NUM_PARALLEL=1 OLLAMA_MAX_LOADED_MODELS=1 nohup ollama serve > p0c-v3/logs/ollama-serve.log 2>&1 &
+          echo $! > p0c-v3/ollama.pid
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+          kill -0 "$(cat p0c-v3/ollama.pid)"
+          ollama --version | tee p0c-v3/logs/ollama-version.txt
+
+      - name: Pull model and verify context
+        shell: bash
+        run: |
+          set -euo pipefail
+          ollama pull "$MODEL"
+          python - <<'PY'
+          import json, os, urllib.request
+          model=os.environ['MODEL']; target=int(os.environ['CONTEXT'])
+          body=json.dumps({'model':model,'messages':[{'role':'user','content':'Reply exactly OK.'}],'stream':False,'max_tokens':8,'temperature':0.0}).encode()
+          req=urllib.request.Request('http://127.0.0.1:11434/v1/chat/completions',data=body,headers={'Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=900) as r:
+              print(r.read().decode())
+          with urllib.request.urlopen('http://127.0.0.1:11434/api/ps',timeout=30) as r:
+              ps=json.load(r)
+          got=int((ps.get('models') or [{}])[0].get('context_length') or 0)
+          open('p0c-v3/effective-context.txt','w').write(str(got)+'\n')
+          if got < target: raise SystemExit(f'effective context {got} < {target}')
+          PY
+
+      - name: Configure Hermes canonical home
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.hermes"
+          cat > "$HOME/.hermes/config.yaml" <<EOF
+          model:
+            default: "$MODEL"
+            provider: custom
+            base_url: "http://127.0.0.1:11434/v1"
+            context_length: $CONTEXT
+            ollama_num_ctx: $CONTEXT
+            max_tokens: $MAX_TOKENS
+            reasoning:
+              enabled: false
+          toolsets:
+            - terminal
+            - delegation
+          terminal:
+            cwd: "${GITHUB_WORKSPACE}"
+          delegation:
+            max_concurrent_children: 1
+            subagent_auto_approve: false
+            max_iterations: 8
+            child_timeout_seconds: 300
+          EOF
+          cat > "$HOME/.hermes/.env" <<EOF
+          API_SERVER_ENABLED=true
+          API_SERVER_KEY=$API_SERVER_KEY
+          EOF
+
+      - name: Start gateway and gate health
+        shell: bash
+        run: |
+          set -euo pipefail
+          env API_SERVER_ENABLED=true API_SERVER_KEY="$API_SERVER_KEY" nohup hermes gateway > p0c-v3/logs/gateway.log 2>&1 &
+          echo $! > p0c-v3/gateway.pid
+          ready=0
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8642/health > p0c-v3/logs/health.json 2>/dev/null; then ready=1; break; fi
+            if ! kill -0 "$(cat p0c-v3/gateway.pid)" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then cat p0c-v3/logs/gateway.log >&2 || true; exit 1; fi
+          kill -0 "$(cat p0c-v3/gateway.pid)"
+
+      - name: Gate capabilities
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o p0c-v3/logs/capabilities.json -w '%{http_code}' -H "Authorization: Bearer $API_SERVER_KEY" http://127.0.0.1:8642/v1/capabilities)
+          echo "$code" > p0c-v3/capabilities-http.txt
+          test "$code" = 200
+
+      - name: Gate Runs API root execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, time, urllib.request
+          from pathlib import Path
+          base='http://127.0.0.1:8642'; key=os.environ['API_SERVER_KEY']; out=Path('p0c-v3')
+          def req(path,method='GET',body=None,timeout=60):
+              data=None if body is None else json.dumps(body).encode(); h={'Authorization':f'Bearer {key}'}
+              if data is not None: h['Content-Type']='application/json'
+              r=urllib.request.Request(base+path,data=data,headers=h,method=method)
+              with urllib.request.urlopen(r,timeout=timeout) as resp:
+                  raw=resp.read().decode(); return resp.status,json.loads(raw) if raw.strip() else {}
+          code,started=req('/v1/runs','POST',{'input':'Reply exactly OK. Do not call any tool.','session_id':'p0c-v3-root'})
+          if code!=202: raise SystemExit(f'start HTTP {code}')
+          rid=started.get('run_id'); assert rid
+          transitions=[]; last=None; terminal=None; deadline=time.time()+420
+          while time.time()<deadline:
+              _,state=req(f'/v1/runs/{rid}',timeout=30); s=state.get('status')
+              if s!=last: transitions.append({'status':s,'state':state}); last=s
+              if s in {'completed','failed','cancelled'}: terminal=state; break
+              time.sleep(1)
+          result={'run_id':rid,'started':started,'transitions':transitions,'terminal':terminal}
+          (out/'root-smoke.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          if not terminal or terminal.get('status')!='completed': raise SystemExit(f'not completed: {terminal}')
+          text=json.dumps(terminal,ensure_ascii=False)
+          if 'OK' not in text: raise SystemExit('OK not found in terminal payload')
+          PY
+
+      - name: Evaluate
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path('p0c-v3'); root={}
+          try: root=json.loads((p/'root-smoke.json').read_text())
+          except Exception: pass
+          def txt(name):
+              q=p/name; return q.read_text(errors='replace') if q.exists() else ''
+          ctx=None
+          try: ctx=int(txt('effective-context.txt').strip())
+          except: pass
+          cap=None
+          try: cap=int(txt('capabilities-http.txt').strip())
+          except: pass
+          terminal=(root.get('terminal') or {}).get('status')
+          passed=(ctx is not None and ctx>=int(os.environ['CONTEXT']) and (p/'logs/health.json').exists() and cap==200 and terminal=='completed' and 'OK' in json.dumps(root.get('terminal') or {}))
+          s={'schema':'adaptive-evolution.p0c-v3.v0.1','run_id':os.environ['GITHUB_RUN_ID'],'source_sha':os.environ['GITHUB_SHA'],'effective_context':ctx,'health':(p/'logs/health.json').exists(),'capabilities_http':cap,'root_run_id':root.get('run_id'),'terminal_status':terminal,'passed':passed,'classification':'runtime_contract_closed' if passed else 'runtime_contract_open','gateway_tail':txt('logs/gateway.log')[-4000:]}
+          (p/'result'/'status.json').write_text(json.dumps(s,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(s,indent=2,sort_keys=True))
+          PY
+
+      - name: Publish result branch
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="${RUNNER_TEMP}/p0c-v3-result"
+          rm -rf "$tmp"; mkdir -p "$tmp"
+          cp -a p0c-v3/result/. "$tmp/" || true
+          printf '%s\n' "${GITHUB_RUN_ID}" > "$tmp/run-id.txt"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan p0c-v3-result-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/p0c-v3
+          cp -a "$tmp/." results/p0c-v3/
+          git add results/p0c-v3
+          git commit -m "Publish P0c-v3 result ${GITHUB_RUN_ID}"
+          git push --force origin HEAD:p0c-v3-result
+
+      - name: Stop services
+        if: always()
+        shell: bash
+        run: |
+          if test -f p0c-v3/gateway.pid; then kill "$(cat p0c-v3/gateway.pid)" || true; fi
+          if test -f p0c-v3/ollama.pid; then kill "$(cat p0c-v3/ollama.pid)" || true; fi
