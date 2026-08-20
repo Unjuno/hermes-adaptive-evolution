@@ -1,0 +1,83 @@
+{
+  "created_at": "2026-08-20T03:56:27.809832+00:00",
+  "event_diagnostics": {
+    "duplicates_removed": 0,
+    "known_child_sessions": 0,
+    "known_root_sessions": 1,
+    "raw_count": 3,
+    "unattributed_observer_events": 0,
+    "uncertain_session_events": 0,
+    "unique_count": 3
+  },
+  "normalized_trace": {
+    "events": 3,
+    "file": "normalized-events.jsonl",
+    "sha256": "709f2c3e6297c54f32a95db3e5ea5ecc424de23be3baf3c3352fd0e25e2ee3d2"
+  },
+  "organization_state": {
+    "agents": 1,
+    "authority": "diagnostic_only",
+    "completed_flow_connectivity": null,
+    "completed_flow_connectivity_method": "unnormalized_algebraic_lambda2_over_n_binary_completed_relations",
+    "completed_interaction_events": 0,
+    "directed_diffusivity": null,
+    "directed_diffusivity_authority": "deprecated_diagnostic_only",
+    "directed_traffic_breadth": null,
+    "experimental": true,
+    "fragility": {
+      "root:20260820_035552_dbd594": 0.6666666666666666
+    },
+    "interaction_completion_coverage": null,
+    "interaction_events": 0,
+    "interaction_sources": 0,
+    "mean_role_entropy": 1.0,
+    "note": "Topology is intentionally vector-valued: directed traffic breadth measures local fan-out, while completed-flow connectivity measures global bottlenecks. v0.4 uses monotone unnormalized algebraic connectivity on binary completed relations so additional completed-edge evidence cannot worsen the connectivity value for a fixed node set. Completion coverage remains support metadata, not confidence. The legacy start-only directed_diffusivity is retained only for backward-compatible diagnostics. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks.",
+    "role_conditioned_traffic_coverage": null,
+    "role_confidence": {
+      "root:20260820_035552_dbd594": 0.0
+    },
+    "role_evidence": {
+      "root:20260820_035552_dbd594": 0.0
+    },
+    "role_posteriors": {
+      "root:20260820_035552_dbd594": {
+        "coordination": 0.25,
+        "implementation": 0.25,
+        "research": 0.25,
+        "verification": 0.25
+      }
+    },
+    "schema": "adaptive-evolution.organization-state.v0.4",
+    "support": {
+      "agents_with_outcome_evidence": 1,
+      "agents_with_outgoing_interactions": 0,
+      "agents_with_tool_role_evidence": 0,
+      "completed_interaction_count": 0,
+      "interaction_completion_coverage": null,
+      "interaction_count": 0,
+      "role_conditioned_interaction_weight": 0.0
+    },
+    "tool_outcomes": 1,
+    "traffic_weighted_role_mixing": null
+  },
+  "privacy": {
+    "capture_content": false,
+    "raw_event_stream_is_pre_sanitized": true,
+    "raw_sqlite_included": false
+  },
+  "runtime": {
+    "hermes_agent_version": "0.20.4",
+    "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+    "plugin_version": "0.2.0",
+    "python": "3.13.15"
+  },
+  "sanitized_raw_trace": {
+    "events": 3,
+    "file": "sanitized-raw-events.jsonl",
+    "sha256": "3a89adaf1d8c0314cf94275e7175e64780255c80f47a036098ec4e3cd8c12127"
+  },
+  "schema": "adaptive-evolution.capture-bundle.v0.2",
+  "source": {
+    "database_name": "lfm25-e1-observer.sqlite3"
+  }
+}
