@@ -1,0 +1,95 @@
+{
+  "directory": "context-ab/capture",
+  "manifest": {
+    "created_at": "2026-08-20T09:40:11.813074+00:00",
+    "event_diagnostics": {
+      "duplicates_removed": 0,
+      "known_child_sessions": 1,
+      "known_root_sessions": 1,
+      "raw_count": 21,
+      "unattributed_observer_events": 0,
+      "uncertain_session_events": 0,
+      "unique_count": 21
+    },
+    "normalized_trace": {
+      "events": 21,
+      "file": "normalized-events.jsonl",
+      "sha256": "fde909005f949e2cf760b7bc1994ae1457601ada03ac9466a7d730c39b4bd851"
+    },
+    "organization_state": {
+      "agents": 2,
+      "authority": "diagnostic_only",
+      "completed_flow_connectivity": null,
+      "completed_flow_connectivity_method": "unnormalized_algebraic_lambda2_over_n_binary_completed_relations",
+      "completed_interaction_events": 0,
+      "directed_diffusivity": 1.0,
+      "directed_diffusivity_authority": "deprecated_diagnostic_only",
+      "directed_traffic_breadth": 1.0,
+      "experimental": true,
+      "fragility": {
+        "root:20260820_092104_c5870d": 0.1,
+        "subagent:sa-0-111d1767": 0.6666666666666666
+      },
+      "interaction_completion_coverage": 0.0,
+      "interaction_events": 1,
+      "interaction_sources": 1,
+      "mean_role_entropy": 0.4404418795649469,
+      "note": "Topology is intentionally vector-valued: directed traffic breadth measures local fan-out, while completed-flow connectivity measures global bottlenecks. v0.4 uses monotone unnormalized algebraic connectivity on binary completed relations so additional completed-edge evidence cannot worsen the connectivity value for a fixed node set. Completion coverage remains support metadata, not confidence. The legacy start-only directed_diffusivity is retained only for backward-compatible diagnostics. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks.",
+      "role_conditioned_traffic_coverage": 0.312828082974164,
+      "role_confidence": {
+        "root:20260820_092104_c5870d": 0.5762076600877131,
+        "subagent:sa-0-111d1767": 0.5429085807823932
+      },
+      "role_evidence": {
+        "root:20260820_092104_c5870d": 8.0,
+        "subagent:sa-0-111d1767": 7.0
+      },
+      "role_posteriors": {
+        "root:20260820_092104_c5870d": {
+          "coordination": 0.85,
+          "implementation": 0.05,
+          "research": 0.05,
+          "verification": 0.05
+        },
+        "subagent:sa-0-111d1767": {
+          "coordination": 0.05555555555555555,
+          "implementation": 0.8333333333333334,
+          "research": 0.05555555555555555,
+          "verification": 0.05555555555555555
+        }
+      },
+      "schema": "adaptive-evolution.organization-state.v0.4",
+      "support": {
+        "agents_with_outcome_evidence": 2,
+        "agents_with_outgoing_interactions": 1,
+        "agents_with_tool_role_evidence": 2,
+        "completed_interaction_count": 0,
+        "interaction_completion_coverage": 0.0,
+        "interaction_count": 1,
+        "role_conditioned_interaction_weight": 0.312828082974164
+      },
+      "tool_outcomes": 15,
+      "traffic_weighted_role_mixing": 0.9055555555555556
+    },
+    "privacy": {
+      "capture_content": false,
+      "raw_event_stream_is_pre_sanitized": true,
+      "raw_sqlite_included": false
+    },
+    "runtime": {
+      "hermes_agent_version": "0.20.4",
+      "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+      "plugin_version": "0.2.0",
+      "python": "3.13.15"
+    },
+    "sanitized_raw_trace": {
+      "events": 21,
+      "file": "sanitized-raw-events.jsonl",
+      "sha256": "962fb5c319841a0b5c54d02d49400cc95671f0930e93fd0e655bcfcdc344cec1"
+    },
+    "schema": "adaptive-evolution.capture-bundle.v0.2",
+    "source": {
+      "database_name": "context-ab.sqlite3"
+    }
+  }
+}

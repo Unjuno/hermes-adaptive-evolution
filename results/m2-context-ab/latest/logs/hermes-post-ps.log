@@ -1,0 +1,23 @@
+{
+  "models": [
+    {
+      "context_length": 98304,
+      "details": {
+        "families": [
+          "lfm2"
+        ],
+        "family": "lfm2",
+        "format": "gguf",
+        "parameter_size": "2.7B",
+        "parent_model": "",
+        "quantization_level": "unknown"
+      },
+      "digest": "26d07caa2ddb76ed45e54f71deb656b7ff5b9c8978feabfa84407d69022c9198",
+      "expires_at": "2026-08-20T09:45:11.090958186Z",
+      "model": "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M",
+      "name": "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M",
+      "size": 4243188611,
+      "size_vram": 1698336604
+    }
+  ]
+}

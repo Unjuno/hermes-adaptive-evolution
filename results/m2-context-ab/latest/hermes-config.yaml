@@ -1,0 +1,17 @@
+model:
+  default: "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M"
+  provider: custom
+  base_url: "http://127.0.0.1:11434/v1"
+  context_length: 98304
+  ollama_num_ctx: 98304
+  max_tokens: 1024
+  reasoning:
+    enabled: false
+terminal:
+  cwd: "/home/runner/work/hermes-adaptive-evolution/hermes-adaptive-evolution"
+plugins:
+  enabled:
+    - adaptive-evolution
+delegation:
+  max_concurrent_children: 1
+  subagent_auto_approve: false
