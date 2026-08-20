@@ -1,0 +1,144 @@
+name: p0c-v4a-api-server-readiness
+
+on:
+  push:
+    branches:
+      - experiment/p0-runtime-closure
+    paths:
+      - ".github/workflows/p0c-v4a-api-server-readiness.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  api-server-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
+      API_SERVER_KEY: p0c-v4a-local-key
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Publish live locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          orig="$GITHUB_SHA"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan p0c-v4a-live-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/p0c-v4a/live
+          printf '{"run_id":"%s","source_sha":"%s"}\n' "$GITHUB_RUN_ID" "$orig" > results/p0c-v4a/live/status.json
+          git add results/p0c-v4a/live/status.json
+          git commit -m "Publish P0c-v4a live run ${GITHUB_RUN_ID}"
+          git push --force origin HEAD:p0c-v4a-live
+          git checkout --force "$orig"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Hermes plus API dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C _hermes rev-parse HEAD)" = "$HERMES_CONTRACT_SHA"
+          python -m pip install -e ./_hermes
+          python -m pip install 'aiohttp>=3.9,<4'
+          python - <<'PY'
+          import aiohttp
+          print('aiohttp', aiohttp.__version__)
+          PY
+
+      - name: Configure canonical Hermes home
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.hermes" p0c-v4a/logs p0c-v4a/result
+          cat > "$HOME/.hermes/config.yaml" <<'EOF'
+          model:
+            default: "dummy-model"
+            provider: custom
+            base_url: "http://127.0.0.1:9/v1"
+            max_tokens: 8
+          EOF
+          cat > "$HOME/.hermes/.env" <<EOF
+          API_SERVER_ENABLED=true
+          API_SERVER_KEY=$API_SERVER_KEY
+          EOF
+
+      - name: Start gateway and probe API server
+        id: probe
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          env API_SERVER_ENABLED=true API_SERVER_KEY="$API_SERVER_KEY" nohup hermes gateway > p0c-v4a/logs/gateway.log 2>&1 &
+          echo $! > p0c-v4a/gateway.pid
+          health=000
+          for i in $(seq 1 60); do
+            health=$(curl -sS -o p0c-v4a/logs/health.json -w '%{http_code}' http://127.0.0.1:8642/health || true)
+            if [ "$health" = 200 ]; then break; fi
+            if ! kill -0 "$(cat p0c-v4a/gateway.pid)" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          echo "$health" > p0c-v4a/health-http.txt
+          cap=$(curl -sS -o p0c-v4a/logs/capabilities.json -w '%{http_code}' -H "Authorization: Bearer $API_SERVER_KEY" http://127.0.0.1:8642/v1/capabilities || true)
+          echo "$cap" > p0c-v4a/capabilities-http.txt
+          test "$health" = 200
+          test "$cap" = 200
+          kill -0 "$(cat p0c-v4a/gateway.pid)"
+
+      - name: Evaluate and publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path('p0c-v4a')
+          def readint(name):
+              try:return int((p/name).read_text().strip())
+              except:return None
+          def read(name):
+              q=p/name
+              return q.read_text(errors='replace') if q.exists() else ''
+          h=readint('health-http.txt'); c=readint('capabilities-http.txt')
+          passed=(h==200 and c==200)
+          s={'schema':'adaptive-evolution.p0c-v4a.v0.1','run_id':os.environ['GITHUB_RUN_ID'],'source_sha':os.environ['GITHUB_SHA'],'health_http':h,'capabilities_http':c,'passed':passed,'classification':'api_server_ready' if passed else 'api_server_not_ready','gateway_tail':read('logs/gateway.log')[-5000:]}
+          (p/'result'/'status.json').write_text(json.dumps(s,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(s,indent=2,sort_keys=True))
+          PY
+          tmp="${RUNNER_TEMP}/p0c-v4a-result"
+          rm -rf "$tmp"; mkdir -p "$tmp"
+          cp -a p0c-v4a/result/. "$tmp/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan p0c-v4a-result-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/p0c-v4a
+          cp -a "$tmp/." results/p0c-v4a/
+          git add results/p0c-v4a
+          git commit -m "Publish P0c-v4a result ${GITHUB_RUN_ID}"
+          git push --force origin HEAD:p0c-v4a-result
+
+      - name: Stop gateway
+        if: always()
+        shell: bash
+        run: |
+          if test -f p0c-v4a/gateway.pid; then kill "$(cat p0c-v4a/gateway.pid)" || true; fi
