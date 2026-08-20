@@ -1,0 +1,338 @@
+name: m2-lfm25-runtime-isolation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/m2-lfm25-runtime-isolation.yml"
+      - "adaptive_evolution_observer/**"
+      - "experiments/validate_m2_multiedge_capture.py"
+      - "plugin.yaml"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  runtime-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
+      MODEL: hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M
+      CONTEXT: "98304"
+      MAX_TOKENS: "1024"
+      ADAPTIVE_EVOLUTION_CAPTURE_CONTENT: "0"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install pinned Hermes and observer
+        id: install
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p runtime-isolation/logs
+          {
+            test "$(git -C _hermes rev-parse HEAD)" = "$HERMES_CONTRACT_SHA"
+            python -m pip install -e ./_hermes
+            python -m pip install -e .
+          } 2>&1 | tee runtime-isolation/logs/install.log
+
+      - name: Start Ollama
+        id: ollama
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            curl -fsSL https://ollama.com/install.sh | sh
+            OLLAMA_CONTEXT_LENGTH="$CONTEXT" OLLAMA_NUM_PARALLEL=1 OLLAMA_MAX_LOADED_MODELS=1 \
+              nohup ollama serve > runtime-isolation/logs/ollama-serve.log 2>&1 &
+            for i in $(seq 1 60); do
+              if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then
+                ollama --version
+                exit 0
+              fi
+              sleep 1
+            done
+            echo "Ollama did not become ready" >&2
+            exit 1
+          } 2>&1 | tee runtime-isolation/logs/ollama-install.log
+
+      - name: Pull and preload LFM2.5 Q4
+        id: preload
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          ollama pull "$MODEL" 2>&1 | tee runtime-isolation/logs/model-pull.log
+          python - <<'PY' 2>&1 | tee runtime-isolation/logs/model-preload.log
+          import json, os, urllib.request
+          model=os.environ['MODEL']; ctx=int(os.environ['CONTEXT'])
+          payload=json.dumps({
+              'model':model,
+              'messages':[{'role':'user','content':'Reply with OK.'}],
+              'stream':False,
+              'keep_alive':'30m',
+              'options':{'num_ctx':ctx,'temperature':0.0},
+          }).encode()
+          req=urllib.request.Request(
+              'http://127.0.0.1:11434/api/chat',
+              data=payload,
+              headers={'Content-Type':'application/json'},
+          )
+          with urllib.request.urlopen(req,timeout=900) as r:
+              body=json.load(r)
+          print('preload model:', body.get('model'))
+          with urllib.request.urlopen('http://127.0.0.1:11434/api/ps',timeout=30) as r:
+              ps=json.load(r)
+          print(json.dumps(ps,indent=2,sort_keys=True))
+          models=ps.get('models') or []
+          if not models:
+              raise SystemExit('no loaded model')
+          runtime_ctx=int(models[0].get('context_length') or 0)
+          if runtime_ctx < ctx:
+              raise SystemExit(f'runtime context too small: {runtime_ctx} < {ctx}')
+          print('verified runtime context:', runtime_ctx)
+          PY
+
+      - name: Configure isolated Hermes profile
+        id: configure
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -e
+          export HERMES_HOME="${RUNNER_TEMP}/hermes-runtime-isolation"
+          mkdir -p "$HERMES_HOME"
+          cat > "$HERMES_HOME/config.yaml" <<EOF
+          model:
+            default: "$MODEL"
+            provider: custom
+            base_url: "http://127.0.0.1:11434/v1"
+            context_length: $CONTEXT
+            ollama_num_ctx: $CONTEXT
+            max_tokens: $MAX_TOKENS
+            reasoning:
+              enabled: false
+          terminal:
+            cwd: "${GITHUB_WORKSPACE}"
+          plugins:
+            enabled:
+              - adaptive-evolution
+          delegation:
+            max_concurrent_children: 1
+            subagent_auto_approve: false
+          EOF
+          echo "HERMES_HOME=$HERMES_HOME" >> "$GITHUB_ENV"
+          echo "ADAPTIVE_EVOLUTION_OBSERVER_DB=${RUNNER_TEMP}/runtime-isolation.sqlite3" >> "$GITHUB_ENV"
+
+      - name: Run minimal two-leaf organization
+        id: hermes_run
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          prompt='Runtime isolation experiment. Use delegate_task exactly twice, sequentially, with two different leaf subagents. First child: use the terminal exactly once to run python -c "print(\"LEAF_A_OK\")" and return only the observed marker. Do not inspect files and do not edit anything. Wait for that child to return. Second child: use the terminal exactly once to run python -c "print(\"LEAF_B_OK\")" and return only the observed marker. Do not inspect files and do not edit anything. Wait for that child to return. After both children return, use the terminal exactly once to run python -c "print(\"ROOT_OK\")" and then answer ROOT_OK. Do not use pytest. Do not modify files. Do not perform any task beyond these three marker commands.'
+          start="$(date +%s)"
+          set +e
+          timeout 1200s hermes -t terminal,delegation chat \
+            -q "$prompt" -Q --max-turns 10 --source adaptive-evolution-m2-runtime-isolation \
+            > runtime-isolation/hermes-output.txt \
+            2> runtime-isolation/logs/hermes-run.log
+          rc=$?
+          set -e
+          end="$(date +%s)"
+          echo "$rc" > runtime-isolation/hermes-rc.txt
+          echo "wall_seconds=$((end-start))" > runtime-isolation/hermes-timing.txt
+          exit "$rc"
+
+      - name: Bundle observer trace
+        id: bundle
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          test -f "$ADAPTIVE_EVOLUTION_OBSERVER_DB"
+          adaptive-evolution-observer --db "$ADAPTIVE_EVOLUTION_OBSERVER_DB" \
+            bundle runtime-isolation/capture \
+            2>&1 | tee runtime-isolation/logs/bundle.log
+
+      - name: Validate two-edge observation
+        id: validate
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python experiments/validate_m2_multiedge_capture.py runtime-isolation/capture \
+            --output runtime-isolation/m2-validation.json \
+            2>&1 | tee runtime-isolation/logs/m2-validation.log
+
+      - name: Summarize isolation result
+        id: summarize
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          OLLAMA: ${{ steps.ollama.outcome }}
+          PRELOAD: ${{ steps.preload.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          HERMES_RUN: ${{ steps.hermes_run.outcome }}
+          BUNDLE: ${{ steps.bundle.outcome }}
+          VALIDATE: ${{ steps.validate.outcome }}
+        shell: bash
+        run: |
+          mkdir -p result
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root=Path('runtime-isolation')
+          outcomes={
+              'install':os.environ['INSTALL'],
+              'ollama':os.environ['OLLAMA'],
+              'preload':os.environ['PRELOAD'],
+              'configure':os.environ['CONFIGURE'],
+              'hermes_run':os.environ['HERMES_RUN'],
+              'bundle':os.environ['BUNDLE'],
+              'validate':os.environ['VALIDATE'],
+          }
+          texts=[]
+          for p in [root/'hermes-output.txt', root/'logs'/'hermes-run.log']:
+              if p.exists():
+                  texts.append(p.read_text(errors='replace'))
+          combined='\n'.join(texts)
+          context_error='Context length exceeded' in combined or 'context length exceeded' in combined.lower()
+          timed_out=False
+          rc=None
+          rc_path=root/'hermes-rc.txt'
+          if rc_path.exists():
+              try:
+                  rc=int(rc_path.read_text().strip())
+                  timed_out=(rc==124)
+              except Exception:
+                  pass
+          validation=None
+          vp=root/'m2-validation.json'
+          if vp.exists():
+              try:
+                  validation=json.loads(vp.read_text())
+              except Exception:
+                  validation=None
+          validate_pass=bool(validation and validation.get('passed'))
+          hermes_success=outcomes['hermes_run']=='success'
+          if hermes_success and validate_pass:
+              classification='two_leaf_clean_exit'
+          elif validate_pass and context_error:
+              classification='observability_pass_context_exit_failure'
+          elif validate_pass:
+              classification='observability_pass_noncontext_exit_failure'
+          elif context_error:
+              classification='context_failure_before_valid_multiedge'
+          elif timed_out:
+              classification='timeout_before_valid_multiedge'
+          else:
+              classification='unresolved_runtime_failure'
+          status={
+              'schema':'adaptive-evolution.m2-runtime-isolation.v0.1',
+              'created_at':datetime.now(timezone.utc).isoformat(),
+              'source_sha':os.environ['GITHUB_SHA'],
+              'run_id':os.environ['GITHUB_RUN_ID'],
+              'hermes_contract_sha':os.environ['HERMES_CONTRACT_SHA'],
+              'provider':'ollama-local',
+              'model':os.environ['MODEL'],
+              'context_length':int(os.environ['CONTEXT']),
+              'max_tokens':int(os.environ['MAX_TOKENS']),
+              'prompt_class':'minimal_two_leaf_marker_only',
+              'outcomes':outcomes,
+              'hermes_exit_code':rc,
+              'context_error_detected':context_error,
+              'timeout_detected':timed_out,
+              'multi_edge_validation_passed':validate_pass,
+              'classification':classification,
+              'authority':'runtime_isolation_experiment_only',
+              'decision_rule':{
+                  'two_leaf_clean_exit':'Two-leaf delegation is not sufficient by itself to reproduce the prior failure; long task trajectory/context growth becomes the leading explanation.',
+                  'observability_pass_context_exit_failure':'Observer reconstructs the two edges, but Hermes still fails on context/finalization after successful delegation.',
+                  'observability_pass_noncontext_exit_failure':'Observer reconstructs the two edges; investigate subagent lifecycle/finalization rather than topology observability.',
+                  'context_failure_before_valid_multiedge':'Context handling fails even on the minimal trajectory; isolate Hermes/provider context accounting next.',
+                  'timeout_before_valid_multiedge':'Minimal task still hangs; isolate delegation lifecycle/process tracking next.',
+                  'unresolved_runtime_failure':'Infrastructure succeeded but the minimal runtime failed before a valid diagnosis; inspect bounded logs.'
+              }[classification],
+              'note':'Historical control: the same LFM2.5 Q4 model previously passed a one-leaf E1 run at declared context 98304. This experiment asks whether adding a second minimal sequential leaf alone reproduces the M2 failure.'
+          }
+          timing=root/'hermes-timing.txt'
+          if timing.exists():
+              try:
+                  status['hermes_wall_seconds']=int(timing.read_text().strip().split('=',1)[1])
+              except Exception:
+                  pass
+          Path('result/status.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n')
+          if vp.exists():
+              Path('result/m2-validation.json').write_bytes(vp.read_bytes())
+          logs=Path('result/logs'); logs.mkdir(exist_ok=True)
+          for p in sorted((root/'logs').glob('*.log')):
+              lines=p.read_text(errors='replace').splitlines()
+              (logs/p.name).write_text('\n'.join(lines[-160:])+'\n')
+          out=root/'hermes-output.txt'
+          if out.exists():
+              Path('result/hermes-output-tail.txt').write_text(out.read_text(errors='replace')[-5000:])
+          print(json.dumps(status,indent=2,sort_keys=True))
+          PY
+
+      - name: Publish result branch
+        id: publish
+        if: always()
+        shell: bash
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/runtime-isolation-result"
+          mkdir -p "$tmp"
+          cp -a result/. "$tmp/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan m2-runtime-isolation-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/m2-runtime-isolation/latest
+          cp -a "$tmp"/. results/m2-runtime-isolation/latest/
+          git add results/m2-runtime-isolation/latest
+          git commit -m "Record M2 runtime isolation for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:m2-runtime-isolation-results
+
+      - name: Enforce experiment infrastructure
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          OLLAMA: ${{ steps.ollama.outcome }}
+          PRELOAD: ${{ steps.preload.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          PUBLISH: ${{ steps.publish.outcome }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          names=('INSTALL','OLLAMA','PRELOAD','CONFIGURE','PUBLISH')
+          failed=[n.lower() for n in names if os.environ[n] != 'success']
+          if failed:
+              raise SystemExit(f'runtime-isolation infrastructure failed: {failed}')
+          print('runtime-isolation infrastructure passed; experimental outcome is stored separately')
+          PY
