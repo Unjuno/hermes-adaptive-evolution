@@ -1,0 +1,348 @@
+name: p0c-contract-sequential-runs
+
+on:
+  push:
+    branches:
+      - experiment/p0-runtime-closure
+    paths:
+      - ".github/workflows/p0c-contract-sequential-runs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  contract-sequential:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
+      MODEL: hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M
+      CONTEXT: "98304"
+      MAX_TOKENS: "256"
+      API_SERVER_KEY: p0c-local-key
+      CHILD_MAX_ITERATIONS: "8"
+      CHILD_TIMEOUT_SECONDS: "300"
+      ADAPTIVE_EVOLUTION_CAPTURE_CONTENT: "0"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Publish live run locator
+        shell: bash
+        run: |
+          set -e
+          orig="$GITHUB_SHA"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan p0c-contract-live-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/p0c-contract-sequential/live
+          printf '{"run_id":"%s","source_sha":"%s","event":"%s"}\n' "$GITHUB_RUN_ID" "$orig" "$GITHUB_EVENT_NAME" > results/p0c-contract-sequential/live/status.json
+          git add -- results/p0c-contract-sequential/live/status.json
+          git commit -m "Publish P0c live run ${GITHUB_RUN_ID}"
+          git push --force origin HEAD:p0c-contract-sequential-live
+          git checkout --force "$orig"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install Hermes and observer
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C _hermes rev-parse HEAD)" = "$HERMES_CONTRACT_SHA"
+          python -m pip install -e ./_hermes
+          python -m pip install -e .
+
+      - name: Start controlled Ollama
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p0c/logs
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama --version | tee p0c/logs/ollama-version.txt
+          sudo systemctl stop ollama.service || true
+          sudo systemctl disable ollama.service || true
+          sudo pkill -x ollama || true
+          for i in $(seq 1 30); do
+            if ! curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+            echo "old Ollama listener still active" >&2
+            exit 1
+          fi
+          env OLLAMA_CONTEXT_LENGTH="$CONTEXT" OLLAMA_NUM_PARALLEL=1 OLLAMA_MAX_LOADED_MODELS=1 nohup ollama serve > p0c/logs/ollama-serve.log 2>&1 &
+          echo $! > p0c/ollama.pid
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+          kill -0 "$(cat p0c/ollama.pid)"
+
+      - name: Pull model and verify route context
+        shell: bash
+        run: |
+          set -euo pipefail
+          ollama pull "$MODEL"
+          python - <<'PY'
+          import json, os, urllib.request
+          model=os.environ['MODEL']; ctx=int(os.environ['CONTEXT'])
+          data=json.dumps({'model':model,'messages':[{'role':'user','content':'Reply exactly OK.'}], 'stream':False,'max_tokens':8,'temperature':0.0}).encode()
+          req=urllib.request.Request('http://127.0.0.1:11434/v1/chat/completions',data=data,headers={'Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=900) as r: print(r.read().decode())
+          with urllib.request.urlopen('http://127.0.0.1:11434/api/ps',timeout=30) as r: ps=json.load(r)
+          got=int((ps.get('models') or [{}])[0].get('context_length') or 0)
+          open('p0c/route-context.txt','w').write(f'{got}\n')
+          if got < ctx: raise SystemExit(f'context {got} < {ctx}')
+          PY
+
+      - name: Configure Hermes gateway profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          export HERMES_HOME="${RUNNER_TEMP}/hermes-p0c"
+          mkdir -p "$HERMES_HOME"
+          cat > "$HERMES_HOME/config.yaml" <<EOF
+          model:
+            default: "$MODEL"
+            provider: custom
+            base_url: "http://127.0.0.1:11434/v1"
+            context_length: $CONTEXT
+            ollama_num_ctx: $CONTEXT
+            max_tokens: $MAX_TOKENS
+            reasoning:
+              enabled: false
+          toolsets:
+            - terminal
+            - delegation
+          terminal:
+            cwd: "${GITHUB_WORKSPACE}"
+          plugins:
+            enabled:
+              - adaptive-evolution
+          delegation:
+            max_concurrent_children: 1
+            subagent_auto_approve: false
+            max_iterations: $CHILD_MAX_ITERATIONS
+            child_timeout_seconds: $CHILD_TIMEOUT_SECONDS
+          EOF
+          cat > "$HERMES_HOME/.env" <<EOF
+          API_SERVER_ENABLED=true
+          API_SERVER_KEY=$API_SERVER_KEY
+          EOF
+          echo "HERMES_HOME=$HERMES_HOME" >> "$GITHUB_ENV"
+          echo "ADAPTIVE_EVOLUTION_OBSERVER_DB=${RUNNER_TEMP}/p0c.sqlite3" >> "$GITHUB_ENV"
+
+      - name: Start Hermes gateway API server
+        shell: bash
+        run: |
+          set -euo pipefail
+          env HERMES_HOME="$HERMES_HOME" ADAPTIVE_EVOLUTION_OBSERVER_DB="$ADAPTIVE_EVOLUTION_OBSERVER_DB" nohup hermes gateway > p0c/logs/gateway.log 2>&1 &
+          echo $! > p0c/gateway.pid
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8642/health >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8642/health | tee p0c/logs/gateway-health.json
+          kill -0 "$(cat p0c/gateway.pid)"
+
+      - name: Run contract-compliant sequential delegation
+        id: harness
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee p0c/logs/harness.log
+          import json, os, time, urllib.error, urllib.request
+          from pathlib import Path
+
+          BASE='http://127.0.0.1:8642'
+          KEY=os.environ['API_SERVER_KEY']
+          SESSION='p0c-sequential-session'
+          out=Path('p0c'); events_dir=out/'events'; events_dir.mkdir(exist_ok=True)
+
+          def request(path, *, method='GET', body=None, timeout=60):
+              data=None if body is None else json.dumps(body).encode()
+              headers={'Authorization':f'Bearer {KEY}'}
+              if data is not None: headers['Content-Type']='application/json'
+              req=urllib.request.Request(BASE+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(req,timeout=timeout) as r:
+                  raw=r.read().decode()
+              return json.loads(raw) if raw.strip() else {}
+
+          def start_run(prompt):
+              r=request('/v1/runs',method='POST',body={'input':prompt,'session_id':SESSION},timeout=60)
+              rid=r['run_id']
+              return rid,r
+
+          def wait_run(rid, limit=360):
+              deadline=time.time()+limit
+              last=None
+              while time.time()<deadline:
+                  last=request(f'/v1/runs/{rid}',timeout=30)
+                  if last.get('status') in {'completed','failed','cancelled'}:
+                      return last
+                  time.sleep(1)
+              raise TimeoutError(f'run {rid} did not reach terminal state; last={last}')
+
+          def wait_subagent_complete(rid, limit=360):
+              deadline=time.time()+limit
+              seen=[]
+              req=urllib.request.Request(BASE+f'/v1/runs/{rid}/events',headers={'Authorization':f'Bearer {KEY}'})
+              with urllib.request.urlopen(req,timeout=limit+30) as r:
+                  event_name=None
+                  data_lines=[]
+                  while time.time()<deadline:
+                      raw=r.readline()
+                      if not raw:
+                          break
+                      line=raw.decode(errors='replace').rstrip('\r\n')
+                      if not line:
+                          if data_lines:
+                              text='\n'.join(data_lines)
+                              try:data=json.loads(text)
+                              except Exception:data={'raw':text}
+                              seen.append({'event':event_name,'data':data})
+                              kind=event_name or str(data.get('type') or data.get('event') or '')
+                              if kind=='subagent.complete' or str(data.get('type') or '')=='subagent.complete':
+                                  return data,seen
+                          event_name=None; data_lines=[]
+                          continue
+                      if line.startswith('event:'):
+                          event_name=line[6:].strip()
+                      elif line.startswith('data:'):
+                          data_lines.append(line[5:].lstrip())
+              raise TimeoutError(f'no subagent.complete for {rid}; seen tail={seen[-10:]}')
+
+          prompts=[
+            "Use delegate_task exactly once. Delegate a child whose only task is to use terminal exactly once to run python -c \"print('LEAF_A_OK')\" and then report the observed marker. After delegate_task returns its background handle, answer exactly DISPATCHED_A. Do not wait, poll, inspect files, or use terminal yourself.",
+            "Use delegate_task exactly once. Delegate a different child whose only task is to use terminal exactly once to run python -c \"print('LEAF_B_OK')\" and then report the observed marker. After delegate_task returns its background handle, answer exactly DISPATCHED_B. Do not wait, poll, inspect files, or use terminal yourself.",
+          ]
+          results=[]
+          for idx,prompt in enumerate(prompts,1):
+              rid,started=start_run(prompt)
+              completion,events=wait_subagent_complete(rid,limit=420)
+              status=wait_run(rid,limit=120)
+              (events_dir/f'run{idx}.json').write_text(json.dumps(events,indent=2,sort_keys=True)+'\n')
+              results.append({'run_id':rid,'started':started,'status':status,'subagent_complete':completion})
+
+          rid3,started3=start_run('Answer exactly ROOT_OK. Do not call any tool.')
+          status3=wait_run(rid3,limit=300)
+          results.append({'run_id':rid3,'started':started3,'status':status3})
+          (out/'harness-result.json').write_text(json.dumps({'session_id':SESSION,'runs':results},indent=2,sort_keys=True)+'\n')
+          print(json.dumps({'session_id':SESSION,'runs':results},indent=2,sort_keys=True))
+          if any((r.get('status') or {}).get('status')!='completed' for r in results):
+              raise SystemExit('one or more runs failed')
+          PY
+
+      - name: Bundle observer and evaluate contract
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p0c/result
+          set +e
+          adaptive-evolution-observer --db "$ADAPTIVE_EVOLUTION_OBSERVER_DB" bundle p0c/capture > p0c/logs/bundle.log 2>&1
+          echo $? > p0c/bundle-rc.txt
+          set -e
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from datetime import datetime, timezone
+          root=Path('p0c')
+          def ri(name):
+              try:return int((root/name).read_text().strip())
+              except:return None
+          def rt(name):
+              p=root/name
+              return p.read_text(errors='replace') if p.exists() else ''
+          events=[]
+          p=root/'capture'/'normalized-events.jsonl'
+          if p.exists():
+              for line in p.read_text().splitlines():
+                  if line.strip():
+                      try:events.append(json.loads(line))
+                      except:pass
+          starts=[e for e in events if e.get('kind')=='interaction_start']
+          stops=[e for e in events if e.get('kind')=='interaction_stop']
+          harness={}
+          try:harness=json.loads((root/'harness-result.json').read_text())
+          except:pass
+          runs=harness.get('runs') or []
+          terminal_runs=sum(1 for r in runs if (r.get('status') or {}).get('status')=='completed')
+          completions=[r.get('subagent_complete') for r in runs if r.get('subagent_complete')]
+          observer_complete=len(starts)>=2 and len(stops)>=2
+          final_root_ok=False
+          if len(runs)>=3:
+              text=json.dumps((runs[2].get('status') or {}).get('output') or '')
+              final_root_ok='ROOT_OK' in text
+          passed=observer_complete and len(completions)>=2 and terminal_runs>=3 and final_root_ok
+          if passed: cls='contract_compliant_two_leaf_serial_pass'
+          elif len(completions)>=2 and observer_complete: cls='delegations_complete_final_root_failure'
+          elif completions: cls='partial_contract_completion'
+          else: cls='contract_harness_or_delegation_failure'
+          s={
+            'schema':'adaptive-evolution.p0c-contract-sequential.v0.1',
+            'authority':'provider_backed_contract_compliant_runtime',
+            'created_at':datetime.now(timezone.utc).isoformat(),
+            'run_id':os.environ['GITHUB_RUN_ID'],
+            'source_sha':os.environ['GITHUB_SHA'],
+            'model':os.environ['MODEL'],
+            'context':int(os.environ['CONTEXT']),
+            'route_context':ri('route-context.txt'),
+            'child_max_iterations':int(os.environ['CHILD_MAX_ITERATIONS']),
+            'child_timeout_seconds':int(os.environ['CHILD_TIMEOUT_SECONDS']),
+            'api_runs_completed':terminal_runs,
+            'subagent_completion_events':len(completions),
+            'interaction_starts':len(starts),
+            'interaction_stops':len(stops),
+            'observer_complete':observer_complete,
+            'final_root_ok':final_root_ok,
+            'passed':passed,
+            'classification':cls,
+            'note':'Top-level delegate_task is asynchronous by contract; this experiment waits for subagent.complete outside the model turn before issuing the next delegation.',
+            'harness_tail':rt('logs/harness.log')[-3000:],
+            'gateway_tail':rt('logs/gateway.log')[-3000:],
+          }
+          (root/'result'/'status.json').write_text(json.dumps(s,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(s,indent=2,sort_keys=True))
+          PY
+
+      - name: Stop gateway
+        if: always()
+        shell: bash
+        run: |
+          if test -f p0c/gateway.pid; then kill "$(cat p0c/gateway.pid)" || true; fi
+
+      - name: Publish result branch
+        if: always()
+        shell: bash
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/p0c-result"
+          rm -rf "$tmp" && mkdir -p "$tmp"
+          cp -a p0c/result/. "$tmp/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan p0c-contract-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/p0c-contract-sequential/latest
+          cp -a "$tmp/." results/p0c-contract-sequential/latest/
+          git add -- results/p0c-contract-sequential/latest
+          git commit -m "Publish P0c contract result ${GITHUB_RUN_ID}"
+          git push --force origin HEAD:p0c-contract-sequential-results
