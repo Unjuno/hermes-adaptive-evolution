@@ -18,7 +18,7 @@ jobs:
     env:
       MODEL: hf.co/LiquidAI/LFM2.5-350M-GGUF:Q4_K_M
       CONTEXT: "8192"
-      SEEDS: "4"
+      SEEDS: "8"
       TRAIN_N: "6"
       TEST_N: "8"
 
@@ -100,7 +100,6 @@ jobs:
 
           def parse_action(text):
               t=text.upper()
-              # Prefer final explicit token if both appear in reasoning.
               toks=re.findall(r'\b(ACCEPT|REJECT)\b', t)
               return toks[-1] if toks else 'INVALID'
 
@@ -130,7 +129,6 @@ Choose the correct action. Output exactly ACCEPT or REJECT.'''
 
           def make_dataset(seed):
               rng=random.Random(seed)
-              # Causal rule alternates across seeds to prevent a globally hard-coded mapping.
               alpha_accept=(seed % 2 == 0)
               def label(sigil):
                   yes=(sigil=='ALPHA') == alpha_accept
@@ -139,7 +137,6 @@ Choose the correct action. Output exactly ACCEPT or REJECT.'''
               for i in range(TRAIN_N):
                   sigil='ALPHA' if i % 2 == 0 else 'BETA'
                   y=label(sigil)
-                  # Spurious badge is correlated 5/6 of the time in training.
                   corr = i != TRAIN_N-1
                   badge=('RED' if y=='ACCEPT' else 'BLUE') if corr else ('BLUE' if y=='ACCEPT' else 'RED')
                   train.append({'sigil':sigil,'badge':badge,'label':y})
@@ -148,7 +145,6 @@ Choose the correct action. Output exactly ACCEPT or REJECT.'''
               for i in range(TEST_N):
                   sigil='ALPHA' if i % 2 == 0 else 'BETA'
                   y=label(sigil)
-                  # OOD: shortcut relation is reversed.
                   badge='BLUE' if y=='ACCEPT' else 'RED'
                   test.append({'sigil':sigil,'badge':badge,'label':y})
               rng.shuffle(test)
@@ -157,28 +153,22 @@ Choose the correct action. Output exactly ACCEPT or REJECT.'''
           records=[]; lat=[]; usage=[]
           for seed in range(SEEDS):
               train,test=make_dataset(seed)
-
-              # B: immediate iterative compression after every experience.
               mem=''
               immediate_trace=[]
               for exp in train:
                   mem,dt,u=update_memory(mem,exp); lat.append(dt); usage.append(u)
                   immediate_trace.append(mem)
               mem_immediate=mem
-
-              # C: raw trajectory retention followed by one delayed abstraction.
               mem_delayed,dt,u=delayed_memory(train); lat.append(dt); usage.append(u)
 
-              # A: no memory, B: immediate, C: delayed.
               for strategy,memory in [('none',''),('immediate',mem_immediate),('delayed',mem_delayed)]:
                   correct=0; invalid=0; shortcut_errors=0; preds=[]
                   for ex in test:
                       out,dt,u=predict(memory,ex); lat.append(dt); usage.append(u)
-                      pred=parse_action(out); usage.append(u)
+                      pred=parse_action(out)
                       ok=(pred==ex['label'])
                       correct += int(ok)
                       invalid += int(pred=='INVALID')
-                      # Spurious badge rule in OOD: RED=>ACCEPT, BLUE=>REJECT.
                       shortcut_pred='ACCEPT' if ex['badge']=='RED' else 'REJECT'
                       shortcut_errors += int((not ok) and pred==shortcut_pred)
                       preds.append({'case':ex,'raw':out,'pred':pred,'ok':ok})
@@ -197,7 +187,7 @@ Choose the correct action. Output exactly ACCEPT or REJECT.'''
           def vals(strategy,key):
               return [r[key] for r in records if r['strategy']==strategy]
           summary={
-              'schema':'adaptive-evolution.k0-fast-surrogate.v0.1',
+              'schema':'adaptive-evolution.k0-fast-surrogate.v0.2',
               'run_id':os.environ['GITHUB_RUN_ID'],
               'source_sha':os.environ['GITHUB_SHA'],
               'model':MODEL,
