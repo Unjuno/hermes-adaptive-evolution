@@ -1,0 +1,400 @@
+name: m2-lfm25-context-ab
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/m2-lfm25-context-ab.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  context-ab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
+      MODEL: hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M
+      CONTEXT: "98304"
+      MAX_TOKENS: "1024"
+      ADAPTIVE_EVOLUTION_CAPTURE_CONTENT: "0"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install pinned Hermes and observer
+        id: install
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p context-ab/logs
+          {
+            test "$(git -C _hermes rev-parse HEAD)" = "$HERMES_CONTRACT_SHA"
+            python -m pip install -e ./_hermes
+            python -m pip install -e .
+          } 2>&1 | tee context-ab/logs/install.log
+
+      - name: Install Ollama and start controlled server
+        id: ollama
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            curl -fsSL https://ollama.com/install.sh | sh
+            ollama --version
+
+            sudo systemctl stop ollama.service || true
+            sudo systemctl disable ollama.service || true
+            sudo pkill -x ollama || true
+            for i in $(seq 1 30); do
+              if ! curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+                break
+              fi
+              sleep 1
+            done
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+              echo "pre-existing Ollama listener survived shutdown" >&2
+              exit 1
+            fi
+
+            env \
+              OLLAMA_CONTEXT_LENGTH="$CONTEXT" \
+              OLLAMA_NUM_PARALLEL=1 \
+              OLLAMA_MAX_LOADED_MODELS=1 \
+              nohup ollama serve > context-ab/logs/ollama-serve.log 2>&1 &
+            echo $! > context-ab/ollama.pid
+
+            for i in $(seq 1 60); do
+              if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then
+                break
+              fi
+              sleep 1
+            done
+            curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+
+            pid="$(cat context-ab/ollama.pid)"
+            kill -0 "$pid"
+            tr '\0' '\n' < "/proc/$pid/environ" | grep '^OLLAMA_' | sort | tee context-ab/logs/ollama-environment.log
+            ps -fp "$pid" | tee context-ab/logs/ollama-process.log
+            sudo systemctl is-active ollama.service > context-ab/systemd-active.txt || true
+          } 2>&1 | tee context-ab/logs/ollama-install.log
+
+      - name: Pull LFM2.5 Q4
+        id: pull
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          ollama pull "$MODEL" 2>&1 | tee context-ab/logs/model-pull.log
+          ollama show "$MODEL" 2>&1 | tee context-ab/logs/model-show.log
+
+      - name: A - Native API explicit num_ctx
+        id: native
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee context-ab/logs/native-api.log
+          import json, os, urllib.request
+          model=os.environ['MODEL']; ctx=int(os.environ['CONTEXT'])
+          payload=json.dumps({
+              'model':model,
+              'messages':[{'role':'user','content':'Reply exactly OK.'}],
+              'stream':False,
+              'keep_alive':'30m',
+              'options':{'num_ctx':ctx,'temperature':0.0,'num_predict':8},
+          }).encode()
+          req=urllib.request.Request('http://127.0.0.1:11434/api/chat',data=payload,headers={'Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=900) as r:
+              body=json.load(r)
+          print(json.dumps(body,indent=2,sort_keys=True))
+          with urllib.request.urlopen('http://127.0.0.1:11434/api/ps',timeout=30) as r:
+              ps=json.load(r)
+          print('PS='+json.dumps(ps,sort_keys=True))
+          models=ps.get('models') or []
+          runtime_ctx=int(models[0].get('context_length') or 0) if models else 0
+          open('context-ab/native-context.txt','w').write(str(runtime_ctx)+'\n')
+          if runtime_ctx < ctx:
+              raise SystemExit(f'native context too small: {runtime_ctx} < {ctx}')
+          PY
+
+      - name: Unload model before OpenAI route
+        id: unload
+        continue-on-error: true
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          payload=json.dumps({'model':os.environ['MODEL'],'keep_alive':0}).encode()
+          req=urllib.request.Request('http://127.0.0.1:11434/api/generate',data=payload,headers={'Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=60) as r:
+              print(r.read().decode())
+          for _ in range(30):
+              with urllib.request.urlopen('http://127.0.0.1:11434/api/ps',timeout=30) as r:
+                  ps=json.load(r)
+              if not (ps.get('models') or []):
+                  print('model unloaded')
+                  break
+              time.sleep(1)
+          else:
+              raise SystemExit('model did not unload')
+          PY
+
+      - name: B - OpenAI compatible route using server context
+        id: openai_route
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee context-ab/logs/openai-route.log
+          import json, os, urllib.error, urllib.request
+          model=os.environ['MODEL']; ctx=int(os.environ['CONTEXT'])
+          payload=json.dumps({
+              'model':model,
+              'messages':[{'role':'user','content':'Reply exactly OK.'}],
+              'stream':False,
+              'max_tokens':8,
+              'temperature':0.0,
+          }).encode()
+          req=urllib.request.Request('http://127.0.0.1:11434/v1/chat/completions',data=payload,headers={'Content-Type':'application/json'})
+          try:
+              with urllib.request.urlopen(req,timeout=900) as r:
+                  body=json.load(r)
+              print(json.dumps(body,indent=2,sort_keys=True))
+          except urllib.error.HTTPError as e:
+              err=e.read().decode(errors='replace')
+              print('HTTP_STATUS=',e.code)
+              print('HTTP_BODY=',err)
+              open('context-ab/openai-http-error.txt','w').write(f'{e.code}\n{err}\n')
+              raise
+          with urllib.request.urlopen('http://127.0.0.1:11434/api/ps',timeout=30) as r:
+              ps=json.load(r)
+          print('PS='+json.dumps(ps,sort_keys=True))
+          models=ps.get('models') or []
+          runtime_ctx=int(models[0].get('context_length') or 0) if models else 0
+          open('context-ab/openai-context.txt','w').write(str(runtime_ctx)+'\n')
+          if runtime_ctx < ctx:
+              raise SystemExit(f'OpenAI route context too small: {runtime_ctx} < {ctx}')
+          PY
+
+      - name: Configure isolated Hermes profile
+        id: configure
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -e
+          export HERMES_HOME="${RUNNER_TEMP}/hermes-context-ab"
+          mkdir -p "$HERMES_HOME"
+          cat > "$HERMES_HOME/config.yaml" <<EOF
+          model:
+            default: "$MODEL"
+            provider: custom
+            base_url: "http://127.0.0.1:11434/v1"
+            context_length: $CONTEXT
+            ollama_num_ctx: $CONTEXT
+            max_tokens: $MAX_TOKENS
+            reasoning:
+              enabled: false
+          terminal:
+            cwd: "${GITHUB_WORKSPACE}"
+          plugins:
+            enabled:
+              - adaptive-evolution
+          delegation:
+            max_concurrent_children: 1
+            subagent_auto_approve: false
+          EOF
+          echo "HERMES_HOME=$HERMES_HOME" >> "$GITHUB_ENV"
+          echo "ADAPTIVE_EVOLUTION_OBSERVER_DB=${RUNNER_TEMP}/context-ab.sqlite3" >> "$GITHUB_ENV"
+          cat "$HERMES_HOME/config.yaml" > context-ab/hermes-config.yaml
+
+      - name: C - Hermes two-leaf call
+        id: hermes
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          prompt='Controlled context A/B. Use delegate_task exactly twice, sequentially, with two different leaf subagents. First child: use terminal exactly once to run python -c "print(\"LEAF_A_OK\")" and return the marker. Wait for the child. Second child: use terminal exactly once to run python -c "print(\"LEAF_B_OK\")" and return the marker. Wait for the child. After both return, use terminal exactly once to run python -c "print(\"ROOT_OK\")" and answer ROOT_OK. Do not inspect or modify files.'
+          set +e
+          timeout 1200s hermes -t terminal,delegation chat \
+            -q "$prompt" -Q --max-turns 10 --source adaptive-evolution-m2-context-ab \
+            > context-ab/hermes-output.txt \
+            2> context-ab/logs/hermes-run.log
+          rc=$?
+          set -e
+          echo "$rc" > context-ab/hermes-rc.txt
+
+          python - <<'PY' 2>&1 | tee context-ab/logs/hermes-post-ps.log
+          import json, os, urllib.request
+          with urllib.request.urlopen('http://127.0.0.1:11434/api/ps',timeout=30) as r:
+              ps=json.load(r)
+          print(json.dumps(ps,indent=2,sort_keys=True))
+          models=ps.get('models') or []
+          runtime_ctx=int(models[0].get('context_length') or 0) if models else 0
+          open('context-ab/hermes-context.txt','w').write(str(runtime_ctx)+'\n')
+          if runtime_ctx and runtime_ctx < int(os.environ['CONTEXT']):
+              raise SystemExit(f'Hermes left model at too-small context: {runtime_ctx}')
+          PY
+          exit "$rc"
+
+      - name: Bundle observer trace
+        id: bundle
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          if [ -f "$ADAPTIVE_EVOLUTION_OBSERVER_DB" ]; then
+            adaptive-evolution-observer --db "$ADAPTIVE_EVOLUTION_OBSERVER_DB" bundle context-ab/capture \
+              2>&1 | tee context-ab/logs/bundle.log
+          else
+            echo "observer database missing" | tee context-ab/logs/bundle.log
+            exit 1
+          fi
+
+      - name: Summarize A/B result
+        id: summarize
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          OLLAMA: ${{ steps.ollama.outcome }}
+          PULL: ${{ steps.pull.outcome }}
+          NATIVE: ${{ steps.native.outcome }}
+          UNLOAD: ${{ steps.unload.outcome }}
+          OPENAI_ROUTE: ${{ steps.openai_route.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          HERMES: ${{ steps.hermes.outcome }}
+          BUNDLE: ${{ steps.bundle.outcome }}
+        shell: bash
+        run: |
+          mkdir -p result
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          root=Path('context-ab')
+          def read_int(name):
+              p=root/name
+              if not p.exists(): return None
+              try: return int(p.read_text().strip())
+              except Exception: return None
+          def text(name):
+              p=root/name
+              return p.read_text(errors='replace') if p.exists() else ''
+          combined=text('hermes-output.txt')+text('logs/hermes-run.log')
+          rc=read_int('hermes-rc.txt')
+          status={
+              'schema':'adaptive-evolution.m2-context-ab.v0.1',
+              'created_at':datetime.now(timezone.utc).isoformat(),
+              'source_sha':os.environ['GITHUB_SHA'],
+              'run_id':os.environ['GITHUB_RUN_ID'],
+              'model':os.environ['MODEL'],
+              'declared_context':int(os.environ['CONTEXT']),
+              'native_runtime_context':read_int('native-context.txt'),
+              'openai_runtime_context':read_int('openai-context.txt'),
+              'hermes_post_runtime_context':read_int('hermes-context.txt'),
+              'hermes_exit_code':rc,
+              'hermes_context_error_detected':'context length exceeded' in combined.lower(),
+              'systemd_active_after_controlled_start':text('systemd-active.txt').strip(),
+              'outcomes':{
+                  'install':os.environ['INSTALL'],
+                  'ollama':os.environ['OLLAMA'],
+                  'pull':os.environ['PULL'],
+                  'native':os.environ['NATIVE'],
+                  'unload':os.environ['UNLOAD'],
+                  'openai_route':os.environ['OPENAI_ROUTE'],
+                  'configure':os.environ['CONFIGURE'],
+                  'hermes':os.environ['HERMES'],
+                  'bundle':os.environ['BUNDLE'],
+              },
+              'authority':'provider_backed_context_ab_experiment',
+          }
+          target=status['declared_context']
+          n=status['native_runtime_context']; o=status['openai_runtime_context']; h=status['hermes_post_runtime_context']
+          if n and n >= target and o and o >= target and not status['hermes_context_error_detected']:
+              status['classification']='context_plumbing_fixed'
+          elif n and n >= target and (not o or o < target):
+              status['classification']='openai_route_context_not_inherited'
+          elif status['hermes_context_error_detected']:
+              status['classification']='context_failure_persists_under_controlled_server'
+          else:
+              status['classification']='runtime_ab_inconclusive'
+          Path('result/status.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n')
+          for name in ('native-context.txt','openai-context.txt','hermes-context.txt','hermes-rc.txt','systemd-active.txt','hermes-output.txt','hermes-config.yaml'):
+              p=root/name
+              if p.exists(): (Path('result')/name).write_bytes(p.read_bytes())
+          logs=Path('result/logs'); logs.mkdir(exist_ok=True)
+          for p in sorted((root/'logs').glob('*.log')):
+              lines=p.read_text(errors='replace').splitlines()
+              (logs/p.name).write_text('\n'.join(lines[-220:])+'\n')
+          print(json.dumps(status,indent=2,sort_keys=True))
+          PY
+
+      - name: Publish result branch
+        id: publish
+        if: always()
+        shell: bash
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/m2-context-ab-result"
+          rm -rf "$tmp"
+          mkdir -p "$tmp"
+          cp -a result/. "$tmp/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan m2-context-ab-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/m2-context-ab/latest
+          cp -a "$tmp"/. results/m2-context-ab/latest/
+          git add results/m2-context-ab/latest
+          git commit -m "Record M2 context A/B for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:m2-context-ab-results
+
+      - name: Upload experiment artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m2-lfm25-context-ab
+          path: context-ab/
+          retention-days: 7
+
+      - name: Enforce A/B infrastructure
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          OLLAMA: ${{ steps.ollama.outcome }}
+          PULL: ${{ steps.pull.outcome }}
+          NATIVE: ${{ steps.native.outcome }}
+          UNLOAD: ${{ steps.unload.outcome }}
+          OPENAI_ROUTE: ${{ steps.openai_route.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          PUBLISH: ${{ steps.publish.outcome }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          required=('INSTALL','OLLAMA','PULL','NATIVE','UNLOAD','OPENAI_ROUTE','CONFIGURE','PUBLISH')
+          failed=[k.lower() for k in required if os.environ[k] != 'success']
+          if failed:
+              raise SystemExit(f'context A/B infrastructure failed: {failed}')
+          print('context A/B infrastructure passed; Hermes outcome stored separately')
+          PY
