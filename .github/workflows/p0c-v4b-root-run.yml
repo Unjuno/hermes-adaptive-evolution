@@ -1,0 +1,220 @@
+name: p0c-v4b-root-run
+
+on:
+  push:
+    branches:
+      - experiment/p0-runtime-closure
+    paths:
+      - ".github/workflows/p0c-v4b-root-run.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  root-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
+      MODEL: hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M
+      CONTEXT: "98304"
+      MAX_TOKENS: "128"
+      API_SERVER_KEY: p0c-v4b-local-key
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Publish live locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          orig="$GITHUB_SHA"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan p0c-v4b-live-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/p0c-v4b/live
+          printf '{"run_id":"%s","source_sha":"%s"}\n' "$GITHUB_RUN_ID" "$orig" > results/p0c-v4b/live/status.json
+          git add results/p0c-v4b/live/status.json
+          git commit -m "Publish P0c-v4b live run ${GITHUB_RUN_ID}"
+          git push --force origin HEAD:p0c-v4b-live
+          git checkout --force "$orig"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Hermes and API dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C _hermes rev-parse HEAD)" = "$HERMES_CONTRACT_SHA"
+          python -m pip install -e ./_hermes
+          python -m pip install 'aiohttp>=3.9,<4'
+
+      - name: Start controlled Ollama
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p0c-v4b/logs p0c-v4b/result
+          curl -fsSL https://ollama.com/install.sh | sh
+          sudo systemctl stop ollama.service || true
+          sudo systemctl disable ollama.service || true
+          sudo pkill -x ollama || true
+          for i in $(seq 1 30); do
+            if ! curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          env OLLAMA_CONTEXT_LENGTH="$CONTEXT" OLLAMA_NUM_PARALLEL=1 OLLAMA_MAX_LOADED_MODELS=1 nohup ollama serve > p0c-v4b/logs/ollama-serve.log 2>&1 &
+          echo $! > p0c-v4b/ollama.pid
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+          ollama pull "$MODEL"
+
+      - name: Verify effective model context
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, urllib.request
+          model=os.environ['MODEL']; target=int(os.environ['CONTEXT'])
+          body=json.dumps({'model':model,'messages':[{'role':'user','content':'Reply exactly OK.'}],'stream':False,'max_tokens':8,'temperature':0.0}).encode()
+          req=urllib.request.Request('http://127.0.0.1:11434/v1/chat/completions',data=body,headers={'Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=900) as r: print(r.read().decode())
+          with urllib.request.urlopen('http://127.0.0.1:11434/api/ps',timeout=30) as r: ps=json.load(r)
+          got=int((ps.get('models') or [{}])[0].get('context_length') or 0)
+          open('p0c-v4b/effective-context.txt','w').write(str(got)+'\n')
+          if got < target: raise SystemExit(f'effective context {got} < {target}')
+          PY
+
+      - name: Configure Hermes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.hermes"
+          cat > "$HOME/.hermes/config.yaml" <<EOF
+          model:
+            default: "$MODEL"
+            provider: custom
+            base_url: "http://127.0.0.1:11434/v1"
+            context_length: $CONTEXT
+            ollama_num_ctx: $CONTEXT
+            max_tokens: $MAX_TOKENS
+            reasoning:
+              enabled: false
+          toolsets:
+            - terminal
+            - delegation
+          terminal:
+            cwd: "${GITHUB_WORKSPACE}"
+          delegation:
+            max_concurrent_children: 1
+            subagent_auto_approve: false
+            max_iterations: 8
+            child_timeout_seconds: 300
+          EOF
+          cat > "$HOME/.hermes/.env" <<EOF
+          API_SERVER_ENABLED=true
+          API_SERVER_KEY=$API_SERVER_KEY
+          EOF
+
+      - name: Start gateway
+        shell: bash
+        run: |
+          set -euo pipefail
+          env API_SERVER_ENABLED=true API_SERVER_KEY="$API_SERVER_KEY" nohup hermes gateway > p0c-v4b/logs/gateway.log 2>&1 &
+          echo $! > p0c-v4b/gateway.pid
+          code=000
+          for i in $(seq 1 90); do
+            code=$(curl -sS -o p0c-v4b/logs/health.json -w '%{http_code}' http://127.0.0.1:8642/health || true)
+            if [ "$code" = 200 ]; then break; fi
+            if ! kill -0 "$(cat p0c-v4b/gateway.pid)" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          echo "$code" > p0c-v4b/health-http.txt
+          test "$code" = 200
+
+      - name: Execute root run via Runs API
+        id: run
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, time, urllib.error, urllib.request
+          from pathlib import Path
+          base='http://127.0.0.1:8642'; key=os.environ['API_SERVER_KEY']; p=Path('p0c-v4b')
+          def req(path,method='GET',body=None,timeout=60):
+              data=None if body is None else json.dumps(body).encode(); h={'Authorization':f'Bearer {key}'}
+              if data is not None: h['Content-Type']='application/json'
+              r=urllib.request.Request(base+path,data=data,headers=h,method=method)
+              try:
+                  with urllib.request.urlopen(r,timeout=timeout) as resp:
+                      raw=resp.read().decode(); return resp.status,json.loads(raw) if raw.strip() else {}
+              except urllib.error.HTTPError as e:
+                  raw=e.read().decode(errors='replace'); print('HTTP_ERROR',e.code,path,raw); raise
+          code,started=req('/v1/runs','POST',{'input':'Reply exactly OK. Do not call any tool.','session_id':'p0c-v4b-root'},timeout=60)
+          if code!=202: raise SystemExit(f'expected 202, got {code}')
+          rid=started.get('run_id')
+          if not rid: raise SystemExit('missing run_id')
+          terminal=None; transitions=[]; last=None; deadline=time.time()+420
+          while time.time()<deadline:
+              _,state=req(f'/v1/runs/{rid}',timeout=30); s=state.get('status')
+              if s!=last: transitions.append({'status':s,'state':state}); last=s
+              if s in {'completed','failed','cancelled'}: terminal=state; break
+              time.sleep(1)
+          result={'run_id':rid,'started':started,'transitions':transitions,'terminal':terminal}
+          (p/'root-run.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          if not terminal or terminal.get('status')!='completed': raise SystemExit(f'not completed: {terminal}')
+          if 'OK' not in json.dumps(terminal,ensure_ascii=False): raise SystemExit(f'OK not found: {terminal}')
+          PY
+
+      - name: Evaluate and publish
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path('p0c-v4b'); root={}
+          try: root=json.loads((p/'root-run.json').read_text())
+          except Exception: pass
+          def read(name):
+              q=p/name; return q.read_text(errors='replace') if q.exists() else ''
+          def intv(name):
+              try:return int(read(name).strip())
+              except:return None
+          ctx=intv('effective-context.txt'); health=intv('health-http.txt'); terminal=(root.get('terminal') or {}).get('status')
+          passed=(ctx is not None and ctx>=int(os.environ['CONTEXT']) and health==200 and terminal=='completed' and 'OK' in json.dumps(root.get('terminal') or {}))
+          s={'schema':'adaptive-evolution.p0c-v4b.v0.1','run_id':os.environ['GITHUB_RUN_ID'],'source_sha':os.environ['GITHUB_SHA'],'effective_context':ctx,'health_http':health,'root_run_id':root.get('run_id'),'terminal_status':terminal,'passed':passed,'classification':'root_runs_api_closed' if passed else 'root_runs_api_open','gateway_tail':read('logs/gateway.log')[-5000:]}
+          (p/'result'/'status.json').write_text(json.dumps(s,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(s,indent=2,sort_keys=True))
+          PY
+          tmp="${RUNNER_TEMP}/p0c-v4b-result"; rm -rf "$tmp"; mkdir -p "$tmp"; cp -a p0c-v4b/result/. "$tmp/"
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan p0c-v4b-result-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/p0c-v4b; cp -a "$tmp/." results/p0c-v4b/
+          git add results/p0c-v4b; git commit -m "Publish P0c-v4b result ${GITHUB_RUN_ID}"; git push --force origin HEAD:p0c-v4b-result
+
+      - name: Stop services
+        if: always()
+        shell: bash
+        run: |
+          if test -f p0c-v4b/gateway.pid; then kill "$(cat p0c-v4b/gateway.pid)" || true; fi
+          if test -f p0c-v4b/ollama.pid; then kill "$(cat p0c-v4b/ollama.pid)" || true; fi
