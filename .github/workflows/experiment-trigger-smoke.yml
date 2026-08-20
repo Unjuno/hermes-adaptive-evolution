@@ -1,0 +1,35 @@
+name: experiment-trigger-smoke
+
+on:
+  push:
+    branches:
+      - experiment/m2-context-root-ab
+    paths:
+      - ".github/workflows/experiment-trigger-smoke.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish trigger proof
+        shell: bash
+        run: |
+          set -e
+          mkdir -p /tmp/trigger-proof/results/experiment-trigger-smoke/latest
+          printf '{"run_id":"%s","source_sha":"%s","event":"%s"}\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_SHA" "$GITHUB_EVENT_NAME" \
+            > /tmp/trigger-proof/results/experiment-trigger-smoke/latest/status.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan experiment-trigger-smoke-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          cp -a /tmp/trigger-proof/results .
+          git add -- results/experiment-trigger-smoke/latest/status.json
+          git commit -m "Record experiment trigger smoke for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:experiment-trigger-smoke-results
