@@ -1,0 +1,7 @@
+  ⚠ tirith security scanner enabled but not available — command scanning will use pattern matching only
+
+┌─ Reasoning ──────────────────────────────────────────────────────────────────┐
+The user wants me to reply exactly "OK" and not call any tools. This is a simple request
+ - they want me to confirm something with just that word. I should respond directly
+ with "OK" and nothing else, no tool calls, no markdown.The user wants me to reply exactly "OK" and not call any tools. This is a simple request - they want me to confirm something with just that word. I should respond directly with "OK" and nothing else, no tool calls, no markdown.
+OK
