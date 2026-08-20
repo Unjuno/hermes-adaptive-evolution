@@ -1,0 +1,300 @@
+name: m2-lfm25-two-leaf-controlled
+
+on:
+  push:
+    branches:
+      - experiment/m2-context-root-ab
+    paths:
+      - ".github/workflows/m2-lfm25-two-leaf-controlled.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  two-leaf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
+      MODEL: hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M
+      CONTEXT: "98304"
+      MAX_TOKENS: "1024"
+      ADAPTIVE_EVOLUTION_CAPTURE_CONTENT: "0"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Publish live run locator
+        shell: bash
+        run: |
+          set -e
+          orig="$GITHUB_SHA"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan m2-two-leaf-controlled-live-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/m2-two-leaf-controlled/live
+          printf '{"run_id":"%s","source_sha":"%s","event":"%s"}\n' \
+            "$GITHUB_RUN_ID" "$orig" "$GITHUB_EVENT_NAME" \
+            > results/m2-two-leaf-controlled/live/status.json
+          git add -- results/m2-two-leaf-controlled/live/status.json
+          git commit -m "Publish M2 two-leaf live run ${GITHUB_RUN_ID}"
+          git push --force origin HEAD:m2-two-leaf-controlled-live
+          git checkout --force "$orig"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install Hermes and observer plugin
+        id: install
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p two-leaf/logs
+          {
+            test "$(git -C _hermes rev-parse HEAD)" = "$HERMES_CONTRACT_SHA"
+            python -m pip install -e ./_hermes
+            python -m pip install -e .
+          } 2>&1 | tee two-leaf/logs/install.log
+
+      - name: Install Ollama and start controlled server
+        id: ollama
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            curl -fsSL https://ollama.com/install.sh | sh
+            ollama --version
+            sudo systemctl stop ollama.service || true
+            sudo systemctl disable ollama.service || true
+            sudo pkill -x ollama || true
+            for i in $(seq 1 30); do
+              if ! curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then break; fi
+              sleep 1
+            done
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+              echo "old Ollama listener still active" >&2; exit 1
+            fi
+            env OLLAMA_CONTEXT_LENGTH="$CONTEXT" OLLAMA_NUM_PARALLEL=1 OLLAMA_MAX_LOADED_MODELS=1 \
+              nohup ollama serve > two-leaf/logs/ollama-serve.log 2>&1 &
+            echo $! > two-leaf/ollama.pid
+            for i in $(seq 1 60); do
+              if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then break; fi
+              sleep 1
+            done
+            curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+            pid="$(cat two-leaf/ollama.pid)"; kill -0 "$pid"
+            tr '\0' '\n' < "/proc/$pid/environ" | grep '^OLLAMA_' | sort | tee two-leaf/logs/ollama-environment.log
+            sudo systemctl is-active ollama.service > two-leaf/systemd-active.txt || true
+          } 2>&1 | tee two-leaf/logs/ollama-install.log
+
+      - name: Pull model
+        id: pull
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          ollama pull "$MODEL" 2>&1 | tee two-leaf/logs/model-pull.log
+          ollama show "$MODEL" 2>&1 | tee two-leaf/logs/model-show.log
+
+      - name: Verify OpenAI route at controlled context
+        id: route_probe
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee two-leaf/logs/route-probe.log
+          import json, os, urllib.request
+          model=os.environ['MODEL']; ctx=int(os.environ['CONTEXT'])
+          data=json.dumps({'model':model,'messages':[{'role':'user','content':'Reply exactly OK.'}],
+                           'stream':False,'max_tokens':8,'temperature':0.0}).encode()
+          req=urllib.request.Request('http://127.0.0.1:11434/v1/chat/completions',data=data,headers={'Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=900) as r: print(r.read().decode())
+          with urllib.request.urlopen('http://127.0.0.1:11434/api/ps',timeout=30) as r: ps=json.load(r)
+          print(json.dumps(ps,indent=2,sort_keys=True))
+          got=int((ps.get('models') or [{}])[0].get('context_length') or 0)
+          open('two-leaf/pre-hermes-context.txt','w').write(f'{got}\n')
+          if got < ctx: raise SystemExit(f'route context {got} < {ctx}')
+          PY
+
+      - name: Configure isolated Hermes profile
+        id: configure
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -e
+          export HERMES_HOME="${RUNNER_TEMP}/hermes-two-leaf-controlled"
+          mkdir -p "$HERMES_HOME"
+          cat > "$HERMES_HOME/config.yaml" <<EOF
+          model:
+            default: "$MODEL"
+            provider: custom
+            base_url: "http://127.0.0.1:11434/v1"
+            context_length: $CONTEXT
+            ollama_num_ctx: $CONTEXT
+            max_tokens: $MAX_TOKENS
+            reasoning:
+              enabled: false
+          terminal:
+            cwd: "${GITHUB_WORKSPACE}"
+          plugins:
+            enabled:
+              - adaptive-evolution
+          delegation:
+            max_concurrent_children: 1
+            subagent_auto_approve: false
+          EOF
+          echo "HERMES_HOME=$HERMES_HOME" >> "$GITHUB_ENV"
+          echo "ADAPTIVE_EVOLUTION_OBSERVER_DB=${RUNNER_TEMP}/two-leaf-controlled.sqlite3" >> "$GITHUB_ENV"
+          cp "$HERMES_HOME/config.yaml" two-leaf/hermes-config.yaml
+
+      - name: Run minimal two-leaf delegation
+        id: hermes
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          prompt='Controlled M2 provider canary. Use delegate_task exactly twice, sequentially, with two different leaf subagents. First child: use terminal exactly once to run python -c "print(\"LEAF_A_OK\")" and return the observed marker. Do not inspect files and do not edit anything. Wait for that child to return. Second child: use terminal exactly once to run python -c "print(\"LEAF_B_OK\")" and return the observed marker. Do not inspect files and do not edit anything. Wait for that child to return. After both children return, use terminal exactly once to run python -c "print(\"ROOT_OK\")" and then answer ROOT_OK. Do not modify files.'
+          start="$(date +%s)"
+          set +e
+          timeout 900s hermes -t terminal,delegation chat \
+            -q "$prompt" -Q --max-turns 10 --source adaptive-evolution-m2-two-leaf-controlled \
+            > two-leaf/hermes-output.txt 2> two-leaf/logs/hermes-run.log
+          rc=$?
+          set -e
+          end="$(date +%s)"
+          echo "$rc" > two-leaf/hermes-rc.txt
+          echo "wall_seconds=$((end-start))" > two-leaf/hermes-timing.txt
+          python - <<'PY' 2>&1 | tee two-leaf/logs/hermes-post-ps.log
+          import json, os, urllib.request
+          with urllib.request.urlopen('http://127.0.0.1:11434/api/ps',timeout=30) as r: ps=json.load(r)
+          print(json.dumps(ps,indent=2,sort_keys=True))
+          got=int((ps.get('models') or [{}])[0].get('context_length') or 0) if ps.get('models') else 0
+          open('two-leaf/post-hermes-context.txt','w').write(f'{got}\n')
+          if got and got < int(os.environ['CONTEXT']): raise SystemExit(f'post-Hermes context {got} too small')
+          PY
+          exit "$rc"
+
+      - name: Bundle observer trace
+        id: bundle
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          test -f "$ADAPTIVE_EVOLUTION_OBSERVER_DB"
+          adaptive-evolution-observer --db "$ADAPTIVE_EVOLUTION_OBSERVER_DB" bundle two-leaf/capture \
+            2>&1 | tee two-leaf/logs/bundle.log
+
+      - name: Validate provider multi-edge capture
+        id: validate
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python experiments/validate_m2_multiedge_capture.py two-leaf/capture \
+            --output two-leaf/m2-validation.json \
+            2>&1 | tee two-leaf/logs/m2-validation.log
+
+      - name: Summarize and publish
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          OLLAMA: ${{ steps.ollama.outcome }}
+          PULL: ${{ steps.pull.outcome }}
+          ROUTE_PROBE: ${{ steps.route_probe.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          HERMES: ${{ steps.hermes.outcome }}
+          BUNDLE: ${{ steps.bundle.outcome }}
+          VALIDATE: ${{ steps.validate.outcome }}
+        shell: bash
+        run: |
+          mkdir -p result
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          root=Path('two-leaf')
+          def ri(n):
+              p=root/n
+              try: return int(p.read_text().strip()) if p.exists() else None
+              except: return None
+          def rt(n):
+              p=root/n
+              return p.read_text(errors='replace') if p.exists() else ''
+          validation=None
+          vp=root/'m2-validation.json'
+          if vp.exists():
+              try: validation=json.loads(vp.read_text())
+              except: pass
+          combined=(rt('hermes-output.txt')+'\n'+rt('logs/hermes-run.log')).lower()
+          s={'schema':'adaptive-evolution.m2-provider-two-leaf-controlled.v0.1',
+             'created_at':datetime.now(timezone.utc).isoformat(),'run_id':os.environ['GITHUB_RUN_ID'],
+             'source_sha':os.environ['GITHUB_SHA'],'model':os.environ['MODEL'],'declared_context':int(os.environ['CONTEXT']),
+             'pre_hermes_context':ri('pre-hermes-context.txt'),'post_hermes_context':ri('post-hermes-context.txt'),
+             'hermes_exit_code':ri('hermes-rc.txt'),'context_error_detected':'context length exceeded' in combined,
+             'multi_edge_validation_passed':bool(validation and validation.get('passed')),
+             'validation':validation,'hermes_output_tail':rt('hermes-output.txt')[-3000:],
+             'hermes_stderr_tail':rt('logs/hermes-run.log')[-3000:],
+             'outcomes':{k.lower():os.environ[k] for k in ('INSTALL','OLLAMA','PULL','ROUTE_PROBE','CONFIGURE','HERMES','BUNDLE','VALIDATE')},
+             'authority':'provider_backed_m2_two_leaf_canary'}
+          if s['hermes_exit_code']==0 and s['multi_edge_validation_passed'] and not s['context_error_detected']:
+              s['classification']='provider_two_leaf_multiedge_pass'
+          elif s['multi_edge_validation_passed'] and s['hermes_exit_code']!=0:
+              s['classification']='observer_pass_runtime_exit_failure'
+          elif s['context_error_detected']:
+              s['classification']='context_failure_persists_in_two_leaf'
+          elif s['hermes_exit_code']==124:
+              s['classification']='two_leaf_timeout'
+          else:
+              s['classification']='two_leaf_noncontext_failure'
+          timing=root/'hermes-timing.txt'
+          if timing.exists():
+              try: s['hermes_wall_seconds']=int(timing.read_text().strip().split('=',1)[1])
+              except: pass
+          Path('result/status.json').write_text(json.dumps(s,indent=2,sort_keys=True)+'\n')
+          if vp.exists(): Path('result/m2-validation.json').write_bytes(vp.read_bytes())
+          manifest=root/'capture'/'manifest.json'
+          if manifest.exists(): Path('result/capture-manifest.json').write_bytes(manifest.read_bytes())
+          logs=Path('result/logs'); logs.mkdir(exist_ok=True)
+          for p in sorted((root/'logs').glob('*.log')):
+              (logs/p.name).write_text('\n'.join(p.read_text(errors='replace').splitlines()[-240:])+'\n')
+          for n in ('pre-hermes-context.txt','post-hermes-context.txt','hermes-rc.txt','hermes-timing.txt','systemd-active.txt','hermes-output.txt'):
+              p=root/n
+              if p.exists(): (Path('result')/n).write_bytes(p.read_bytes())
+          print(json.dumps(s,indent=2,sort_keys=True))
+          PY
+          tmp="${RUNNER_TEMP}/m2-two-leaf-controlled-result"
+          rm -rf "$tmp" && mkdir -p "$tmp" && cp -a result/. "$tmp/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan m2-two-leaf-controlled-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/m2-two-leaf-controlled/latest
+          cp -a "$tmp"/. results/m2-two-leaf-controlled/latest/
+          git add -- results/m2-two-leaf-controlled/latest
+          git commit -m "Record controlled M2 two-leaf run for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:m2-two-leaf-controlled-results
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m2-two-leaf-controlled
+          path: two-leaf/
+          retention-days: 7
