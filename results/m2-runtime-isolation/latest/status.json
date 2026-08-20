@@ -1,0 +1,30 @@
+{
+  "authority": "runtime_isolation_experiment_only",
+  "classification": "context_failure_before_valid_multiedge",
+  "context_error_detected": true,
+  "context_length": 98304,
+  "created_at": "2026-08-20T03:52:26.227066+00:00",
+  "decision_rule": "Context handling fails even on the minimal trajectory; isolate Hermes/provider context accounting next.",
+  "hermes_contract_sha": "b5455fdd16fe608214f91149233660e1836b067c",
+  "hermes_exit_code": 1,
+  "hermes_wall_seconds": 37,
+  "max_tokens": 1024,
+  "model": "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M",
+  "multi_edge_validation_passed": false,
+  "note": "Historical control: the same LFM2.5 Q4 model previously passed a one-leaf E1 run at declared context 98304. This experiment asks whether adding a second minimal sequential leaf alone reproduces the M2 failure.",
+  "outcomes": {
+    "bundle": "success",
+    "configure": "success",
+    "hermes_run": "failure",
+    "install": "success",
+    "ollama": "success",
+    "preload": "success",
+    "validate": "failure"
+  },
+  "prompt_class": "minimal_two_leaf_marker_only",
+  "provider": "ollama-local",
+  "run_id": "32329083438",
+  "schema": "adaptive-evolution.m2-runtime-isolation.v0.1",
+  "source_sha": "f7e3ff5fa1e551944c9a33de9f034654b777ca44",
+  "timeout_detected": false
+}

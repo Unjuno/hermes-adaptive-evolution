@@ -1,0 +1,74 @@
+{
+  "authority": "m2_observability_contract_only",
+  "bundle": "runtime-isolation/capture",
+  "checks": {
+    "at_least_three_agents": false,
+    "at_least_two_completed_interactions": false,
+    "at_least_two_interactions": false,
+    "completed_flow_connectivity_present": false,
+    "completion_coverage_present": false,
+    "connectivity_method_v04": true,
+    "legacy_gap_deauthorized": true,
+    "no_uncertain_identity": true,
+    "schema_v04": true,
+    "traffic_breadth_present": false
+  },
+  "event_diagnostics": {
+    "duplicates_removed": 0,
+    "known_child_sessions": 0,
+    "known_root_sessions": 1,
+    "raw_count": 3,
+    "unattributed_observer_events": 0,
+    "uncertain_session_events": 0,
+    "unique_count": 3
+  },
+  "note": "Passing proves that a real Hermes multi-edge trajectory exposes the v0.4 vector topology state. It does not prove that these observables improve routing decisions.",
+  "organization_state": {
+    "agents": 1,
+    "authority": "diagnostic_only",
+    "completed_flow_connectivity": null,
+    "completed_flow_connectivity_method": "unnormalized_algebraic_lambda2_over_n_binary_completed_relations",
+    "completed_interaction_events": 0,
+    "directed_diffusivity": null,
+    "directed_diffusivity_authority": "deprecated_diagnostic_only",
+    "directed_traffic_breadth": null,
+    "experimental": true,
+    "fragility": {
+      "root:20260820_035152_2b565d": 0.6666666666666666
+    },
+    "interaction_completion_coverage": null,
+    "interaction_events": 0,
+    "interaction_sources": 0,
+    "mean_role_entropy": 1.0,
+    "note": "Topology is intentionally vector-valued: directed traffic breadth measures local fan-out, while completed-flow connectivity measures global bottlenecks. v0.4 uses monotone unnormalized algebraic connectivity on binary completed relations so additional completed-edge evidence cannot worsen the connectivity value for a fixed node set. Completion coverage remains support metadata, not confidence. The legacy start-only directed_diffusivity is retained only for backward-compatible diagnostics. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks.",
+    "role_conditioned_traffic_coverage": null,
+    "role_confidence": {
+      "root:20260820_035152_2b565d": 0.0
+    },
+    "role_evidence": {
+      "root:20260820_035152_2b565d": 0.0
+    },
+    "role_posteriors": {
+      "root:20260820_035152_2b565d": {
+        "coordination": 0.25,
+        "implementation": 0.25,
+        "research": 0.25,
+        "verification": 0.25
+      }
+    },
+    "schema": "adaptive-evolution.organization-state.v0.4",
+    "support": {
+      "agents_with_outcome_evidence": 1,
+      "agents_with_outgoing_interactions": 0,
+      "agents_with_tool_role_evidence": 0,
+      "completed_interaction_count": 0,
+      "interaction_completion_coverage": null,
+      "interaction_count": 0,
+      "role_conditioned_interaction_weight": 0.0
+    },
+    "tool_outcomes": 1,
+    "traffic_weighted_role_mixing": null
+  },
+  "passed": false,
+  "schema": "adaptive-evolution.m2-multiedge-validation.v0.2"
+}
