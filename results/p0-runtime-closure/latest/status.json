@@ -1,0 +1,128 @@
+{
+  "authority": "provider_backed_p0_runtime_closure",
+  "cases": {
+    "one_no_tool": {
+      "authority": "provider_backed_runtime_isolation",
+      "bundle_exit_code": 0,
+      "case": "one_no_tool",
+      "classification": "timeout_before_observer_complete",
+      "clean_exit": false,
+      "context_error_detected": false,
+      "expected_leaves": 1,
+      "expects_child_terminal": false,
+      "hermes_exit_code": 124,
+      "hermes_output_tail": "gate_task) with the goal of returning \"LEAF_A_OK\"\n2. The child must NOT call any tool (so it should just output a simple message)\n3. Wait for the child to finish\n4. Then output \"ROOT_OK\"\n\nLet me create the delegate_task with proper context and goal. The child must return exactly \"LEAF_A_OK\" - this is a constraint on the child's output.\n\nI'll create a subagent that simply outputs \"LEAF_A_OK\" with no tool calls. Then I wait for it to finish, and finally output \"ROOT_OK\".\n\nThe child task must be exactly one (delegate_task exactly once). The child itself cannot call any tools - it must just return \"LEAF_A_OK\".\n\nLet me craft the delegate_task call properly.The user wants me to use delegate_task\n exactly once, and the child must return exactly \"LEAF_A_OK\" and not call any tools\n. The error says batch mode requires at least 2 tasks, but for a single task I should\n use the `goal` parameter instead of `tasks`.\n\nLet me fix this - I need to use the `goal` parameter with a single task definition\n, not the `tasks` array.The user wants me to use delegate_task exactly once, and the child must return exactly \"LEAF_A_OK\" and not call any tools. The error says batch mode requires at least 2 tasks, but for a single task I should use the `goal` parameter instead of `tasks`.\n\nLet me fix this - I need to use the `goal` parameter with a single task definition, not the `tasks` array.\n\u21a9 Background task running \u2014 I'll resume when it finishes. Keep chatting.\n[subagent-0] \u26a1 Interrupted during API call.\n",
+      "hermes_stderr_tail": "\nsession_id: 20260820_142310_2893f2\n",
+      "interaction_starts": 1,
+      "interaction_stops": 0,
+      "known_children": [
+        "subagent:sa-0-d482457d"
+      ],
+      "observer_complete": false,
+      "schema": "adaptive-evolution.p0-runtime-case.v0.1",
+      "timed_out": true,
+      "tool_histogram": {
+        "delegate_task": 2
+      },
+      "tool_results": 2,
+      "wall_seconds": 301
+    },
+    "one_terminal": {
+      "authority": "provider_backed_runtime_isolation",
+      "bundle_exit_code": 0,
+      "case": "one_terminal",
+      "classification": "timeout_before_observer_complete",
+      "clean_exit": false,
+      "context_error_detected": false,
+      "expected_leaves": 1,
+      "expects_child_terminal": true,
+      "hermes_exit_code": 124,
+      "hermes_output_tail": "to be careful. The instruction says \"The child must use the terminal exactly once to run python -c 'print('LEAF_A_OK')', then return exactly the observed marker.\" This suggests the child might need to do two things: run the python command AND return a marker.\n\nBut then \"Wait for the child to finish, then answer exactly ROOT_OK\" - I think \"ROOT_OK\" is what I (the main agent) should output at the end, not something the child does.\n\nLet me interpret it as:\n- I call delegate_task once\n- The child runs the python command in the terminal (exactly once)\n- TheThe user wants me to:\n1. Use delegate_task exactly once\n2. The child must use terminal exactly once to run python -c \"print('LEAF_A_OK')\"\n3. Then return exactly the observed marker (ROOT_OK)\n4. Do not use terminal myself\n5. Do not inspect or edit files\n6. Do not do anything else\n\nLet me first set up the delegate_task with the correct goal. The task is to run python\n -c \"print('LEAF_A_OK')\" exactly once in the child, and then the outer agent should\n return ROOT_OK.\n\nWait, I need to be careful. The user says \"Use delegate_task exactly once\" and \"The\n child must use the terminal exactly once to run python -c 'print('LEAF_A_OK')'\".\n So the child should run that command. Then I (the outer agent) should return \"RO\nOT_OK\".\n\nBut there's a constraint: \"Do not use the terminal yourself.\" This means I cannot\n run the terminal command - the child must do it.\n\nLet me create the delegate_task with the child's goal to run that python command.\n",
+      "hermes_stderr_tail": "\nsession_id: 20260820_143511_639183\n",
+      "interaction_starts": 0,
+      "interaction_stops": 0,
+      "known_children": [],
+      "observer_complete": false,
+      "schema": "adaptive-evolution.p0-runtime-case.v0.1",
+      "timed_out": true,
+      "tool_histogram": {},
+      "tool_results": 0,
+      "wall_seconds": 422
+    },
+    "two_no_tool": {
+      "authority": "provider_backed_runtime_isolation",
+      "bundle_exit_code": 0,
+      "case": "two_no_tool",
+      "classification": "timeout_before_observer_complete",
+      "clean_exit": false,
+      "context_error_detected": false,
+      "expected_leaves": 2,
+      "expects_child_terminal": false,
+      "hermes_exit_code": 124,
+      "hermes_output_tail": " The second child must return exactly LEAF_B_OK without calling any tool.\n\nSince both child tasks must be completed before I can output ROOT_OK, I need to:\n1. Wait for the first child (sa-0-2292dea2) to complete\n2. Dispatch the second child (sa-0-...) with the same pattern\n3. Wait for the second child to complete\n4. Output ROOT_OK\n\nLet me first check if the first child has completed by polling. Actually, I should just wait - the tool result of the first child will appear in the live_transcripts. But I need to be careful about the sequence.\n\nThe instruction says \"Wait for it to finish\" - soThe previous delegate_task was dispat\nched and is running in the background. The goal was to return exactly \"LEAF_A_OK\"\n without calling any tool. The process list shows no active processes yet. I need\n to wait for the child subagent to finish. The subagent_id is \"sa-0-2292dea2\". I should\n check if it has completed by polling or looking at its transcript.\n\nActually, the system said \"its full result re-enters the conversation as a new message\n when it finishes.\" So I should wait for the result. Let me use process(action='list\n') to see if it's still running, or use delegate_task to check status.\n\nBut the instructions say: \"Wait for it to finish.\" So I need to wait. Let me poll\n the process list again with a longer timeout.\n\nActually, looking more carefully - the first delegate_task was dispatched and is running\n. The system note says \"Subagent is running in the background\" with subagent_id \"\n",
+      "hermes_stderr_tail": "\nsession_id: 20260820_142810_2640ef\n",
+      "interaction_starts": 1,
+      "interaction_stops": 1,
+      "known_children": [
+        "subagent:sa-0-2292dea2"
+      ],
+      "observer_complete": false,
+      "schema": "adaptive-evolution.p0-runtime-case.v0.1",
+      "timed_out": true,
+      "tool_histogram": {
+        "delegate_task": 1,
+        "process": 1
+      },
+      "tool_results": 2,
+      "wall_seconds": 422
+    },
+    "two_terminal": {
+      "authority": "provider_backed_runtime_isolation",
+      "bundle_exit_code": 0,
+      "case": "two_terminal",
+      "classification": "timeout_before_observer_complete",
+      "clean_exit": false,
+      "context_error_detected": false,
+      "expected_leaves": 2,
+      "expects_child_terminal": true,
+      "hermes_exit_code": 124,
+      "hermes_output_tail": "it's running with subagent_id \"sa-0-9c61e24e\" and status \"running\".\n\nLet me wait a bit longer for it to complete, or I can check the live transcript. But I should proceed with the second delegate_task after waiting for the first to finish.\n\nActually, the constraint is to use delegate_task exactly twice. The first one is already dispat\nThe first delegate task has been dispatched and is running. I need to wait for it\n to complete. The second LEAF_B task also needs to be created and run. Let me wait\n for the first one to finish and then create the second one.\n\nLooking at the error messages, I see that when I try to use delegate_task with tasks\n array, it requires at least 2 tasks. But when I use just a goal parameter (not in\n batch mode), it works. So I need to create two separate delegate tasks - one for\n LEAF_A and one for LEAF_B.\n\nSince the first one is already running, I should wait for it to complete, then create\n and run the second one. Or I could create both at once but they would be sequential\n (first one runs, then second one runs).\n\nActually, looking more carefully at the instructions:\n- \"Use delegate_task exactly twice, sequentially, with two distinct leaf subagents\n\"\n- First child must use terminal exactly once to run python -c \"print('LEAF_A_OK')\",\n then return the observed marker\n- Second child must use terminal exactly once to run python -c \"print('LEAF_B_OK')\",\n then return the observed marker\n- Wait for both to finish\n[subagent-0] \u26a1 Interrupted during API call.\n",
+      "hermes_stderr_tail": "\nsession_id: 20260820_144213_05d099\n",
+      "interaction_starts": 1,
+      "interaction_stops": 1,
+      "known_children": [
+        "subagent:sa-0-9c61e24e"
+      ],
+      "observer_complete": false,
+      "schema": "adaptive-evolution.p0-runtime-case.v0.1",
+      "timed_out": true,
+      "tool_histogram": {
+        "delegate_task": 5,
+        "terminal": 2
+      },
+      "tool_results": 7,
+      "wall_seconds": 722
+    }
+  },
+  "classification": "baseline_one_leaf_instability",
+  "created_at": "2026-08-20T14:54:16.061161+00:00",
+  "decision_rule": "P0 passes only when a two-leaf serial case can complete with Hermes exit code 0 and observer-complete interaction lifecycle under controlled context. CPU timing is diagnostic, not deployment-performance evidence.",
+  "declared_context": 98304,
+  "factorial": {
+    "child_terminal_use": [
+      false,
+      true
+    ],
+    "leaf_count": [
+      1,
+      2
+    ]
+  },
+  "hermes_contract_sha": "b5455fdd16fe608214f91149233660e1836b067c",
+  "inference": "Even the one-leaf no-terminal baseline is unstable; do not attribute failure to leaf count or terminal use yet.",
+  "model": "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M",
+  "route_context": 98304,
+  "run_id": "32379528021",
+  "schema": "adaptive-evolution.p0-runtime-closure.v0.1",
+  "source_sha": "e560a6ff31354fd19bc78ff9c3f7239591469150"
+}

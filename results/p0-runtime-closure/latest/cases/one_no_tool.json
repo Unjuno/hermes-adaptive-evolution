@@ -1,0 +1,26 @@
+{
+  "authority": "provider_backed_runtime_isolation",
+  "bundle_exit_code": 0,
+  "case": "one_no_tool",
+  "classification": "timeout_before_observer_complete",
+  "clean_exit": false,
+  "context_error_detected": false,
+  "expected_leaves": 1,
+  "expects_child_terminal": false,
+  "hermes_exit_code": 124,
+  "hermes_output_tail": "gate_task) with the goal of returning \"LEAF_A_OK\"\n2. The child must NOT call any tool (so it should just output a simple message)\n3. Wait for the child to finish\n4. Then output \"ROOT_OK\"\n\nLet me create the delegate_task with proper context and goal. The child must return exactly \"LEAF_A_OK\" - this is a constraint on the child's output.\n\nI'll create a subagent that simply outputs \"LEAF_A_OK\" with no tool calls. Then I wait for it to finish, and finally output \"ROOT_OK\".\n\nThe child task must be exactly one (delegate_task exactly once). The child itself cannot call any tools - it must just return \"LEAF_A_OK\".\n\nLet me craft the delegate_task call properly.The user wants me to use delegate_task\n exactly once, and the child must return exactly \"LEAF_A_OK\" and not call any tools\n. The error says batch mode requires at least 2 tasks, but for a single task I should\n use the `goal` parameter instead of `tasks`.\n\nLet me fix this - I need to use the `goal` parameter with a single task definition\n, not the `tasks` array.The user wants me to use delegate_task exactly once, and the child must return exactly \"LEAF_A_OK\" and not call any tools. The error says batch mode requires at least 2 tasks, but for a single task I should use the `goal` parameter instead of `tasks`.\n\nLet me fix this - I need to use the `goal` parameter with a single task definition, not the `tasks` array.\n\u21a9 Background task running \u2014 I'll resume when it finishes. Keep chatting.\n[subagent-0] \u26a1 Interrupted during API call.\n",
+  "hermes_stderr_tail": "\nsession_id: 20260820_142310_2893f2\n",
+  "interaction_starts": 1,
+  "interaction_stops": 0,
+  "known_children": [
+    "subagent:sa-0-d482457d"
+  ],
+  "observer_complete": false,
+  "schema": "adaptive-evolution.p0-runtime-case.v0.1",
+  "timed_out": true,
+  "tool_histogram": {
+    "delegate_task": 2
+  },
+  "tool_results": 2,
+  "wall_seconds": 301
+}

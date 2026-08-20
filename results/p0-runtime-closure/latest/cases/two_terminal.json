@@ -1,0 +1,27 @@
+{
+  "authority": "provider_backed_runtime_isolation",
+  "bundle_exit_code": 0,
+  "case": "two_terminal",
+  "classification": "timeout_before_observer_complete",
+  "clean_exit": false,
+  "context_error_detected": false,
+  "expected_leaves": 2,
+  "expects_child_terminal": true,
+  "hermes_exit_code": 124,
+  "hermes_output_tail": "it's running with subagent_id \"sa-0-9c61e24e\" and status \"running\".\n\nLet me wait a bit longer for it to complete, or I can check the live transcript. But I should proceed with the second delegate_task after waiting for the first to finish.\n\nActually, the constraint is to use delegate_task exactly twice. The first one is already dispat\nThe first delegate task has been dispatched and is running. I need to wait for it\n to complete. The second LEAF_B task also needs to be created and run. Let me wait\n for the first one to finish and then create the second one.\n\nLooking at the error messages, I see that when I try to use delegate_task with tasks\n array, it requires at least 2 tasks. But when I use just a goal parameter (not in\n batch mode), it works. So I need to create two separate delegate tasks - one for\n LEAF_A and one for LEAF_B.\n\nSince the first one is already running, I should wait for it to complete, then create\n and run the second one. Or I could create both at once but they would be sequential\n (first one runs, then second one runs).\n\nActually, looking more carefully at the instructions:\n- \"Use delegate_task exactly twice, sequentially, with two distinct leaf subagents\n\"\n- First child must use terminal exactly once to run python -c \"print('LEAF_A_OK')\",\n then return the observed marker\n- Second child must use terminal exactly once to run python -c \"print('LEAF_B_OK')\",\n then return the observed marker\n- Wait for both to finish\n[subagent-0] \u26a1 Interrupted during API call.\n",
+  "hermes_stderr_tail": "\nsession_id: 20260820_144213_05d099\n",
+  "interaction_starts": 1,
+  "interaction_stops": 1,
+  "known_children": [
+    "subagent:sa-0-9c61e24e"
+  ],
+  "observer_complete": false,
+  "schema": "adaptive-evolution.p0-runtime-case.v0.1",
+  "timed_out": true,
+  "tool_histogram": {
+    "delegate_task": 5,
+    "terminal": 2
+  },
+  "tool_results": 7,
+  "wall_seconds": 722
+}

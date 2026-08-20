@@ -1,0 +1,27 @@
+{
+  "authority": "provider_backed_runtime_isolation",
+  "bundle_exit_code": 0,
+  "case": "two_no_tool",
+  "classification": "timeout_before_observer_complete",
+  "clean_exit": false,
+  "context_error_detected": false,
+  "expected_leaves": 2,
+  "expects_child_terminal": false,
+  "hermes_exit_code": 124,
+  "hermes_output_tail": " The second child must return exactly LEAF_B_OK without calling any tool.\n\nSince both child tasks must be completed before I can output ROOT_OK, I need to:\n1. Wait for the first child (sa-0-2292dea2) to complete\n2. Dispatch the second child (sa-0-...) with the same pattern\n3. Wait for the second child to complete\n4. Output ROOT_OK\n\nLet me first check if the first child has completed by polling. Actually, I should just wait - the tool result of the first child will appear in the live_transcripts. But I need to be careful about the sequence.\n\nThe instruction says \"Wait for it to finish\" - soThe previous delegate_task was dispat\nched and is running in the background. The goal was to return exactly \"LEAF_A_OK\"\n without calling any tool. The process list shows no active processes yet. I need\n to wait for the child subagent to finish. The subagent_id is \"sa-0-2292dea2\". I should\n check if it has completed by polling or looking at its transcript.\n\nActually, the system said \"its full result re-enters the conversation as a new message\n when it finishes.\" So I should wait for the result. Let me use process(action='list\n') to see if it's still running, or use delegate_task to check status.\n\nBut the instructions say: \"Wait for it to finish.\" So I need to wait. Let me poll\n the process list again with a longer timeout.\n\nActually, looking more carefully - the first delegate_task was dispatched and is running\n. The system note says \"Subagent is running in the background\" with subagent_id \"\n",
+  "hermes_stderr_tail": "\nsession_id: 20260820_142810_2640ef\n",
+  "interaction_starts": 1,
+  "interaction_stops": 1,
+  "known_children": [
+    "subagent:sa-0-2292dea2"
+  ],
+  "observer_complete": false,
+  "schema": "adaptive-evolution.p0-runtime-case.v0.1",
+  "timed_out": true,
+  "tool_histogram": {
+    "delegate_task": 1,
+    "process": 1
+  },
+  "tool_results": 2,
+  "wall_seconds": 422
+}
