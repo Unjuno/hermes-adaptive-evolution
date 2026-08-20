@@ -1,0 +1,23 @@
+  Model
+    architecture        lfm2      
+    parameters          2.7B      
+    context length      131072    
+    embedding length    2048      
+    quantization        Q4_K_M    
+
+  Capabilities
+    tools         
+    thinking      
+    completion    
+
+  Parameters
+    stop    "<|startoftext|>"     
+    stop    "<|im_start|>"        
+    stop    "<|im_end|>"          
+    stop    "<|im_start|>user"    
+
+  License
+    LFM Open License v1.0                                           
+    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION    
+    ...                                                             
+

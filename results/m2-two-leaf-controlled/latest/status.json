@@ -1,0 +1,120 @@
+{
+  "authority": "provider_backed_m2_two_leaf_canary",
+  "classification": "observer_pass_runtime_exit_failure",
+  "context_error_detected": false,
+  "created_at": "2026-08-20T09:52:12.795660+00:00",
+  "declared_context": 98304,
+  "hermes_exit_code": 124,
+  "hermes_output_tail": "cript to see if there's any progress, or I could try to steer the subagent.\n\nBut wait - the instructions say to use delegate_task exactly twice, sequentially, with two different leaf subagents. The first child (sa-0-ed746dd1) is still running. I need to wait for it to complete before I can spawn the second one.\n\nLet me try a different approach - I'll wait a bit longer and check again. The subagent might have encountered some issue.\n\nActually, I should try to check if there's a way to get more info. Let me try to read the live transcript file to see if the task has progressed.\nThe first subagent completed. The terminal output shows that the task was eventually\n completed successfully with `python3 /tmp/leave_a.py` which printed \"LEAF_A_OK\".\n The subagent has finished running. Now I need to:\n\n1. Wait for the first child (sa-0-ed746dd1) to return - it appears to have completed\n (status shows the task finished).\n2. Then spawn the second leaf subagent (second task) to run `python -c \"print(\\\"LE\nAF_B_OK\\\")\"`\n3. After both children return, run `python -c \"print(\\\"ROOT_OK\\\")\"` and output RO\nOT_OK.\n\nLet me first check the status of the first subagent and wait for it to complete. The\n last tail output shows the task completed successfully (exit_code 0, output \"LEAF\n_A_OK\"). So the first child has returned.\n\nNow I need to spin up the second leaf subagent. The instructions say to use delegate\n_task exactly twice, sequentially, with two different leaf subagents. The first one\n is done. Now I need to create the second one.\n\nFor the second child, I should use terminal to run `python -c \"print(\\\"LEAF_B_OK\\\n\")\"` exactly once. \n\nLet me start the second subagent.The first subagent completed. The terminal output shows that the task was eventually completed successfully with `python3 /tmp/leave_a.py` which printed \"LEAF_A_OK\". The subagent has finished running. Now I need to:\n\n1. Wait for the first child (sa-0-ed746dd1) to return - it appears to have completed (status shows the task finished).\n2. Then spawn the second leaf subagent (second task) to run `python -c \"print(\\\"LEAF_B_OK\\\")\"`\n3. After both children return, run `python -c \"print(\\\"ROOT_OK\\\")\"` and output ROOT_OK.\n\nLet me first check the status of the first subagent and wait for it to complete. The last tail output shows the task completed successfully (exit_code 0, output \"LEAF_A_OK\"). So the first child has returned.\n\nNow I need to spin up the second leaf subagent. The instructions say to use delegate_task exactly twice, sequentially, with two different leaf subagents. The first one is done. Now I need to create the second one.\n\nFor the second child, I should use terminal to run `python -c \"print(\\\"LEAF_B_OK\\\")\"` exactly once. \n\n\u21a9 Background task running \u2014 I'll resume when it finishes. Keep chatting.\nLet me start the second subagent.The second subagent is now running (deleg_768847\ndc). I need to wait for it to complete before running the final root subagent. Let\n[subagent-0] \u26a1 Interrupted during API call.\n",
+  "hermes_stderr_tail": "\nsession_id: 20260820_093713_7462b3\n",
+  "hermes_wall_seconds": 903,
+  "model": "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M",
+  "multi_edge_validation_passed": true,
+  "outcomes": {
+    "bundle": "success",
+    "configure": "success",
+    "hermes": "failure",
+    "install": "success",
+    "ollama": "success",
+    "pull": "success",
+    "route_probe": "success",
+    "validate": "success"
+  },
+  "post_hermes_context": 98304,
+  "pre_hermes_context": 98304,
+  "run_id": "32354606618",
+  "schema": "adaptive-evolution.m2-provider-two-leaf-controlled.v0.1",
+  "source_sha": "a5376045c8d018bb000476a95de0a110b2cc6b0b",
+  "validation": {
+    "authority": "m2_observability_contract_only",
+    "bundle": "two-leaf/capture",
+    "checks": {
+      "at_least_three_agents": true,
+      "at_least_two_completed_interactions": true,
+      "at_least_two_interactions": true,
+      "completed_flow_connectivity_present": true,
+      "completion_coverage_present": true,
+      "connectivity_method_v04": true,
+      "legacy_gap_deauthorized": true,
+      "no_uncertain_identity": true,
+      "schema_v04": true,
+      "traffic_breadth_present": true
+    },
+    "event_diagnostics": {
+      "duplicates_removed": 0,
+      "known_child_sessions": 2,
+      "known_root_sessions": 1,
+      "raw_count": 24,
+      "unattributed_observer_events": 0,
+      "uncertain_session_events": 0,
+      "unique_count": 24
+    },
+    "note": "Passing proves that a real Hermes multi-edge trajectory exposes the v0.4 vector topology state. It does not prove that these observables improve routing decisions.",
+    "organization_state": {
+      "agents": 3,
+      "authority": "diagnostic_only",
+      "completed_flow_connectivity": 0.3333333333333333,
+      "completed_flow_connectivity_method": "unnormalized_algebraic_lambda2_over_n_binary_completed_relations",
+      "completed_interaction_events": 2,
+      "directed_diffusivity": 0.0,
+      "directed_diffusivity_authority": "deprecated_diagnostic_only",
+      "directed_traffic_breadth": 1.0,
+      "experimental": true,
+      "fragility": {
+        "root:20260820_093713_7462b3": 0.2,
+        "subagent:sa-0-6065fac0": 0.6666666666666666,
+        "subagent:sa-0-ed746dd1": 0.5
+      },
+      "interaction_completion_coverage": 1.0,
+      "interaction_events": 2,
+      "interaction_sources": 1,
+      "mean_role_entropy": 0.6923359621788,
+      "note": "Topology is intentionally vector-valued: directed traffic breadth measures local fan-out, while completed-flow connectivity measures global bottlenecks. v0.4 uses monotone unnormalized algebraic connectivity on binary completed relations so additional completed-edge evidence cannot worsen the connectivity value for a fixed node set. Completion coverage remains support metadata, not confidence. The legacy start-only directed_diffusivity is retained only for backward-compatible diagnostics. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks.",
+      "role_conditioned_traffic_coverage": 0.10574802836590003,
+      "role_confidence": {
+        "root:20260820_093713_7462b3": 0.4229921134636,
+        "subagent:sa-0-6065fac0": 0.10375937481971109,
+        "subagent:sa-0-ed746dd1": 0.396240625180289
+      },
+      "role_evidence": {
+        "root:20260820_093713_7462b3": 8.0,
+        "subagent:sa-0-6065fac0": 1.0,
+        "subagent:sa-0-ed746dd1": 4.0
+      },
+      "role_posteriors": {
+        "root:20260820_093713_7462b3": {
+          "coordination": 0.75,
+          "implementation": 0.15,
+          "research": 0.05,
+          "verification": 0.05
+        },
+        "subagent:sa-0-6065fac0": {
+          "coordination": 0.16666666666666666,
+          "implementation": 0.5,
+          "research": 0.16666666666666666,
+          "verification": 0.16666666666666666
+        },
+        "subagent:sa-0-ed746dd1": {
+          "coordination": 0.08333333333333333,
+          "implementation": 0.75,
+          "research": 0.08333333333333333,
+          "verification": 0.08333333333333333
+        }
+      },
+      "schema": "adaptive-evolution.organization-state.v0.4",
+      "support": {
+        "agents_with_outcome_evidence": 3,
+        "agents_with_outgoing_interactions": 1,
+        "agents_with_tool_role_evidence": 3,
+        "completed_interaction_count": 2,
+        "interaction_completion_coverage": 1.0,
+        "interaction_count": 2,
+        "role_conditioned_interaction_weight": 0.21149605673180005
+      },
+      "tool_outcomes": 13,
+      "traffic_weighted_role_mixing": 0.8097493750120193
+    },
+    "passed": true,
+    "schema": "adaptive-evolution.m2-multiedge-validation.v0.2"
+  }
+}

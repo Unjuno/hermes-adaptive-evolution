@@ -1,0 +1,104 @@
+{
+  "directory": "two-leaf/capture",
+  "manifest": {
+    "created_at": "2026-08-20T09:52:12.447598+00:00",
+    "event_diagnostics": {
+      "duplicates_removed": 0,
+      "known_child_sessions": 2,
+      "known_root_sessions": 1,
+      "raw_count": 24,
+      "unattributed_observer_events": 0,
+      "uncertain_session_events": 0,
+      "unique_count": 24
+    },
+    "normalized_trace": {
+      "events": 24,
+      "file": "normalized-events.jsonl",
+      "sha256": "5dd81c4b155b19d11669c14c44ab60056882939a211e38ac4aa8ad147bf68e1b"
+    },
+    "organization_state": {
+      "agents": 3,
+      "authority": "diagnostic_only",
+      "completed_flow_connectivity": 0.3333333333333333,
+      "completed_flow_connectivity_method": "unnormalized_algebraic_lambda2_over_n_binary_completed_relations",
+      "completed_interaction_events": 2,
+      "directed_diffusivity": 0.0,
+      "directed_diffusivity_authority": "deprecated_diagnostic_only",
+      "directed_traffic_breadth": 1.0,
+      "experimental": true,
+      "fragility": {
+        "root:20260820_093713_7462b3": 0.2,
+        "subagent:sa-0-6065fac0": 0.6666666666666666,
+        "subagent:sa-0-ed746dd1": 0.5
+      },
+      "interaction_completion_coverage": 1.0,
+      "interaction_events": 2,
+      "interaction_sources": 1,
+      "mean_role_entropy": 0.6923359621788,
+      "note": "Topology is intentionally vector-valued: directed traffic breadth measures local fan-out, while completed-flow connectivity measures global bottlenecks. v0.4 uses monotone unnormalized algebraic connectivity on binary completed relations so additional completed-edge evidence cannot worsen the connectivity value for a fixed node set. Completion coverage remains support metadata, not confidence. The legacy start-only directed_diffusivity is retained only for backward-compatible diagnostics. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks.",
+      "role_conditioned_traffic_coverage": 0.10574802836590003,
+      "role_confidence": {
+        "root:20260820_093713_7462b3": 0.4229921134636,
+        "subagent:sa-0-6065fac0": 0.10375937481971109,
+        "subagent:sa-0-ed746dd1": 0.396240625180289
+      },
+      "role_evidence": {
+        "root:20260820_093713_7462b3": 8.0,
+        "subagent:sa-0-6065fac0": 1.0,
+        "subagent:sa-0-ed746dd1": 4.0
+      },
+      "role_posteriors": {
+        "root:20260820_093713_7462b3": {
+          "coordination": 0.75,
+          "implementation": 0.15,
+          "research": 0.05,
+          "verification": 0.05
+        },
+        "subagent:sa-0-6065fac0": {
+          "coordination": 0.16666666666666666,
+          "implementation": 0.5,
+          "research": 0.16666666666666666,
+          "verification": 0.16666666666666666
+        },
+        "subagent:sa-0-ed746dd1": {
+          "coordination": 0.08333333333333333,
+          "implementation": 0.75,
+          "research": 0.08333333333333333,
+          "verification": 0.08333333333333333
+        }
+      },
+      "schema": "adaptive-evolution.organization-state.v0.4",
+      "support": {
+        "agents_with_outcome_evidence": 3,
+        "agents_with_outgoing_interactions": 1,
+        "agents_with_tool_role_evidence": 3,
+        "completed_interaction_count": 2,
+        "interaction_completion_coverage": 1.0,
+        "interaction_count": 2,
+        "role_conditioned_interaction_weight": 0.21149605673180005
+      },
+      "tool_outcomes": 13,
+      "traffic_weighted_role_mixing": 0.8097493750120193
+    },
+    "privacy": {
+      "capture_content": false,
+      "raw_event_stream_is_pre_sanitized": true,
+      "raw_sqlite_included": false
+    },
+    "runtime": {
+      "hermes_agent_version": "0.20.4",
+      "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+      "plugin_version": "0.2.0",
+      "python": "3.13.15"
+    },
+    "sanitized_raw_trace": {
+      "events": 24,
+      "file": "sanitized-raw-events.jsonl",
+      "sha256": "d2bff183f70e19ac1724bffbee3b9537535ff3f212e07996a4b95bbdd5e183a7"
+    },
+    "schema": "adaptive-evolution.capture-bundle.v0.2",
+    "source": {
+      "database_name": "two-leaf-controlled.sqlite3"
+    }
+  }
+}
