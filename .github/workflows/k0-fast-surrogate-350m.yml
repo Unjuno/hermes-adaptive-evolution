@@ -1,0 +1,261 @@
+name: k0-fast-surrogate-350m
+
+on:
+  push:
+    branches:
+      - experiment/p0-runtime-closure
+    paths:
+      - ".github/workflows/k0-fast-surrogate-350m.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  k0-fast-surrogate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MODEL: hf.co/LiquidAI/LFM2.5-350M-GGUF:Q4_K_M
+      CONTEXT: "8192"
+      SEEDS: "4"
+      TRAIN_N: "6"
+      TEST_N: "8"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Publish live locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          orig="$GITHUB_SHA"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan k0-fast-350m-live-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/k0-fast-350m/live
+          printf '{"run_id":"%s","source_sha":"%s"}\n' "$GITHUB_RUN_ID" "$orig" > results/k0-fast-350m/live/status.json
+          git add results/k0-fast-350m/live/status.json
+          git commit -m "Publish K0 fast 350M live run ${GITHUB_RUN_ID}"
+          git push --force origin HEAD:k0-fast-350m-live
+          git checkout --force "$orig"
+
+      - name: Start controlled Ollama with official quantized 350M model
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p k0-fast/result k0-fast/logs
+          curl -fsSL https://ollama.com/install.sh | sh
+          sudo systemctl stop ollama.service || true
+          sudo systemctl disable ollama.service || true
+          sudo pkill -x ollama || true
+          env OLLAMA_CONTEXT_LENGTH="$CONTEXT" OLLAMA_NUM_PARALLEL=1 OLLAMA_MAX_LOADED_MODELS=1 nohup ollama serve > k0-fast/logs/ollama.log 2>&1 &
+          echo $! > k0-fast/ollama.pid
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+          ollama pull "$MODEL"
+
+      - name: Run delayed-abstraction screening experiment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, random, re, statistics, time, urllib.request
+          from pathlib import Path
+
+          MODEL=os.environ['MODEL']
+          SEEDS=int(os.environ['SEEDS'])
+          TRAIN_N=int(os.environ['TRAIN_N'])
+          TEST_N=int(os.environ['TEST_N'])
+          OUT=Path('k0-fast/result')
+          OUT.mkdir(parents=True, exist_ok=True)
+
+          def call(prompt, max_tokens=48):
+              body=json.dumps({
+                  'model': MODEL,
+                  'messages': [
+                      {'role':'system','content':'Follow the requested output format exactly. Be concise.'},
+                      {'role':'user','content':prompt}
+                  ],
+                  'stream': False,
+                  'temperature': 0.0,
+                  'max_tokens': max_tokens,
+              }).encode()
+              req=urllib.request.Request('http://127.0.0.1:11434/v1/chat/completions', data=body, headers={'Content-Type':'application/json'})
+              t0=time.monotonic()
+              with urllib.request.urlopen(req, timeout=120) as r:
+                  data=json.load(r)
+              dt=time.monotonic()-t0
+              msg=data['choices'][0]['message']
+              text=(msg.get('content') or '').strip()
+              if not text:
+                  text=(msg.get('reasoning') or '').strip()
+              return text, dt, data.get('usage') or {}
+
+          def parse_action(text):
+              t=text.upper()
+              # Prefer final explicit token if both appear in reasoning.
+              toks=re.findall(r'\b(ACCEPT|REJECT)\b', t)
+              return toks[-1] if toks else 'INVALID'
+
+          def update_memory(old, exp):
+              prompt=f'''You maintain a tiny policy memory from sequential experience.
+Existing memory (may be empty): {old!r}
+New verified experience:
+- sigil={exp['sigil']}
+- badge={exp['badge']}
+- correct_action={exp['label']}
+Update the policy memory immediately. Keep it under 24 words. Output memory only.'''
+              return call(prompt, 40)
+
+          def delayed_memory(train):
+              rows='\n'.join(f"{i+1}. sigil={e['sigil']}, badge={e['badge']}, correct_action={e['label']}" for i,e in enumerate(train))
+              prompt=f'''Infer a compact policy from all verified experiences below.
+Some visible features may be spurious shortcuts: prefer the feature whose relationship with the correct action remains invariant across independent examples.
+{rows}
+Return one policy memory under 24 words, and nothing else.'''
+              return call(prompt, 48)
+
+          def predict(memory, ex):
+              prompt=f'''Policy memory: {memory!r}
+Current case: sigil={ex['sigil']}, badge={ex['badge']}
+Choose the correct action. Output exactly ACCEPT or REJECT.'''
+              return call(prompt, 24)
+
+          def make_dataset(seed):
+              rng=random.Random(seed)
+              # Causal rule alternates across seeds to prevent a globally hard-coded mapping.
+              alpha_accept=(seed % 2 == 0)
+              def label(sigil):
+                  yes=(sigil=='ALPHA') == alpha_accept
+                  return 'ACCEPT' if yes else 'REJECT'
+              train=[]
+              for i in range(TRAIN_N):
+                  sigil='ALPHA' if i % 2 == 0 else 'BETA'
+                  y=label(sigil)
+                  # Spurious badge is correlated 5/6 of the time in training.
+                  corr = i != TRAIN_N-1
+                  badge=('RED' if y=='ACCEPT' else 'BLUE') if corr else ('BLUE' if y=='ACCEPT' else 'RED')
+                  train.append({'sigil':sigil,'badge':badge,'label':y})
+              rng.shuffle(train)
+              test=[]
+              for i in range(TEST_N):
+                  sigil='ALPHA' if i % 2 == 0 else 'BETA'
+                  y=label(sigil)
+                  # OOD: shortcut relation is reversed.
+                  badge='BLUE' if y=='ACCEPT' else 'RED'
+                  test.append({'sigil':sigil,'badge':badge,'label':y})
+              rng.shuffle(test)
+              return train,test
+
+          records=[]; lat=[]; usage=[]
+          for seed in range(SEEDS):
+              train,test=make_dataset(seed)
+
+              # B: immediate iterative compression after every experience.
+              mem=''
+              immediate_trace=[]
+              for exp in train:
+                  mem,dt,u=update_memory(mem,exp); lat.append(dt); usage.append(u)
+                  immediate_trace.append(mem)
+              mem_immediate=mem
+
+              # C: raw trajectory retention followed by one delayed abstraction.
+              mem_delayed,dt,u=delayed_memory(train); lat.append(dt); usage.append(u)
+
+              # A: no memory, B: immediate, C: delayed.
+              for strategy,memory in [('none',''),('immediate',mem_immediate),('delayed',mem_delayed)]:
+                  correct=0; invalid=0; shortcut_errors=0; preds=[]
+                  for ex in test:
+                      out,dt,u=predict(memory,ex); lat.append(dt); usage.append(u)
+                      pred=parse_action(out); usage.append(u)
+                      ok=(pred==ex['label'])
+                      correct += int(ok)
+                      invalid += int(pred=='INVALID')
+                      # Spurious badge rule in OOD: RED=>ACCEPT, BLUE=>REJECT.
+                      shortcut_pred='ACCEPT' if ex['badge']=='RED' else 'REJECT'
+                      shortcut_errors += int((not ok) and pred==shortcut_pred)
+                      preds.append({'case':ex,'raw':out,'pred':pred,'ok':ok})
+                  records.append({
+                      'seed':seed,
+                      'strategy':strategy,
+                      'memory':memory,
+                      'immediate_trace':immediate_trace if strategy=='immediate' else None,
+                      'accuracy':correct/len(test),
+                      'invalid_rate':invalid/len(test),
+                      'shortcut_error_rate':shortcut_errors/len(test),
+                      'predictions':preds,
+                      'train':train,
+                  })
+
+          def vals(strategy,key):
+              return [r[key] for r in records if r['strategy']==strategy]
+          summary={
+              'schema':'adaptive-evolution.k0-fast-surrogate.v0.1',
+              'run_id':os.environ['GITHUB_RUN_ID'],
+              'source_sha':os.environ['GITHUB_SHA'],
+              'model':MODEL,
+              'context':int(os.environ['CONTEXT']),
+              'seeds':SEEDS,
+              'train_n':TRAIN_N,
+              'test_n':TEST_N,
+              'conditions':{
+                  s:{
+                      'accuracy_mean':statistics.mean(vals(s,'accuracy')),
+                      'accuracy_median':statistics.median(vals(s,'accuracy')),
+                      'invalid_rate_mean':statistics.mean(vals(s,'invalid_rate')),
+                      'shortcut_error_rate_mean':statistics.mean(vals(s,'shortcut_error_rate')),
+                  } for s in ['none','immediate','delayed']
+              },
+              'latency_s':{
+                  'calls':len(lat),
+                  'median':statistics.median(lat),
+                  'mean':statistics.mean(lat),
+                  'p95':sorted(lat)[max(0,int(0.95*len(lat))-1)],
+                  'total':sum(lat),
+              },
+          }
+          d=summary['conditions']['delayed']['accuracy_mean']
+          b=summary['conditions']['immediate']['accuracy_mean']
+          ds=summary['conditions']['delayed']['shortcut_error_rate_mean']
+          bs=summary['conditions']['immediate']['shortcut_error_rate_mean']
+          summary['screening_decision'] = (
+              'PASS' if d>b and ds<=bs else
+              'FAIL' if d<b or ds>bs else
+              'UNCERTAIN'
+          )
+          summary['decision_rule']='PASS iff delayed mean OOD accuracy > immediate and delayed shortcut-error-rate <= immediate; FAIL iff worse on either; else UNCERTAIN.'
+          (OUT/'summary.json').write_text(json.dumps(summary,indent=2,ensure_ascii=False)+'\n')
+          (OUT/'records.json').write_text(json.dumps(records,indent=2,ensure_ascii=False)+'\n')
+          print(json.dumps(summary,indent=2,ensure_ascii=False))
+          PY
+
+      - name: Publish result branch
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="${RUNNER_TEMP}/k0-fast-350m-result"
+          rm -rf "$tmp"; mkdir -p "$tmp"
+          cp -a k0-fast/result/. "$tmp/" || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan k0-fast-350m-result-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/k0-fast-350m
+          cp -a "$tmp/." results/k0-fast-350m/
+          git add results/k0-fast-350m
+          git commit -m "Publish K0 fast 350M result ${GITHUB_RUN_ID}"
+          git push --force origin HEAD:k0-fast-350m-result
+
+      - name: Stop Ollama
+        if: always()
+        shell: bash
+        run: |
+          if test -f k0-fast/ollama.pid; then kill "$(cat k0-fast/ollama.pid)" || true; fi
