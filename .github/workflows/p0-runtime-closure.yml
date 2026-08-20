@@ -1,0 +1,455 @@
+name: p0-runtime-closure
+
+on:
+  push:
+    branches:
+      - experiment/p0-runtime-closure
+    paths:
+      - ".github/workflows/p0-runtime-closure.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  runtime-closure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      HERMES_CONTRACT_SHA: b5455fdd16fe608214f91149233660e1836b067c
+      MODEL: hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q4_K_M
+      CONTEXT: "98304"
+      MAX_TOKENS: "256"
+      ADAPTIVE_EVOLUTION_CAPTURE_CONTENT: "0"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Publish live run locator
+        shell: bash
+        run: |
+          set -e
+          orig="$GITHUB_SHA"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan p0-runtime-closure-live-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/p0-runtime-closure/live
+          printf '{"run_id":"%s","source_sha":"%s","event":"%s"}\n' \
+            "$GITHUB_RUN_ID" "$orig" "$GITHUB_EVENT_NAME" \
+            > results/p0-runtime-closure/live/status.json
+          git add -- results/p0-runtime-closure/live/status.json
+          git commit -m "Publish P0 runtime closure live run ${GITHUB_RUN_ID}"
+          git push --force origin HEAD:p0-runtime-closure-live
+          git checkout --force "$orig"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: b5455fdd16fe608214f91149233660e1836b067c
+          path: _hermes
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install pinned Hermes and observer
+        id: install
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p p0-runtime/logs
+          {
+            test "$(git -C _hermes rev-parse HEAD)" = "$HERMES_CONTRACT_SHA"
+            python -m pip install -e ./_hermes
+            python -m pip install -e .
+          } 2>&1 | tee p0-runtime/logs/install.log
+
+      - name: Install Ollama and start controlled server
+        id: ollama
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            curl -fsSL https://ollama.com/install.sh | sh
+            ollama --version
+            sudo systemctl stop ollama.service || true
+            sudo systemctl disable ollama.service || true
+            sudo pkill -x ollama || true
+            for i in $(seq 1 30); do
+              if ! curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then break; fi
+              sleep 1
+            done
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+              echo "old Ollama listener still active" >&2
+              exit 1
+            fi
+            env OLLAMA_CONTEXT_LENGTH="$CONTEXT" OLLAMA_NUM_PARALLEL=1 OLLAMA_MAX_LOADED_MODELS=1 \
+              nohup ollama serve > p0-runtime/logs/ollama-serve.log 2>&1 &
+            echo $! > p0-runtime/ollama.pid
+            for i in $(seq 1 60); do
+              if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then break; fi
+              sleep 1
+            done
+            curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+            pid="$(cat p0-runtime/ollama.pid)"
+            kill -0 "$pid"
+            tr '\0' '\n' < "/proc/$pid/environ" | grep '^OLLAMA_' | sort | tee p0-runtime/logs/ollama-environment.log
+            sudo systemctl is-active ollama.service > p0-runtime/systemd-active.txt || true
+          } 2>&1 | tee p0-runtime/logs/ollama-install.log
+
+      - name: Pull LFM2.5 Q4
+        id: pull
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          ollama pull "$MODEL" 2>&1 | tee p0-runtime/logs/model-pull.log
+          ollama show "$MODEL" 2>&1 | tee p0-runtime/logs/model-show.log
+
+      - name: Verify controlled OpenAI route context
+        id: route
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee p0-runtime/logs/route-probe.log
+          import json, os, urllib.request
+          model=os.environ['MODEL']; ctx=int(os.environ['CONTEXT'])
+          data=json.dumps({
+              'model':model,
+              'messages':[{'role':'user','content':'Reply exactly OK.'}],
+              'stream':False,
+              'max_tokens':8,
+              'temperature':0.0,
+          }).encode()
+          req=urllib.request.Request(
+              'http://127.0.0.1:11434/v1/chat/completions',
+              data=data,
+              headers={'Content-Type':'application/json'},
+          )
+          with urllib.request.urlopen(req,timeout=900) as r:
+              print(r.read().decode())
+          with urllib.request.urlopen('http://127.0.0.1:11434/api/ps',timeout=30) as r:
+              ps=json.load(r)
+          print(json.dumps(ps,indent=2,sort_keys=True))
+          got=int((ps.get('models') or [{}])[0].get('context_length') or 0)
+          open('p0-runtime/route-context.txt','w').write(f'{got}\n')
+          if got < ctx:
+              raise SystemExit(f'OpenAI route context {got} < {ctx}')
+          PY
+
+      - name: Run P0 2x2 runtime closure cases
+        id: cases
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -u
+
+          configure_case() {
+            local name="$1"
+            local home="${RUNNER_TEMP}/hermes-p0-${name}"
+            rm -rf "$home"
+            mkdir -p "$home"
+            cat > "$home/config.yaml" <<EOF
+          model:
+            default: "$MODEL"
+            provider: custom
+            base_url: "http://127.0.0.1:11434/v1"
+            context_length: $CONTEXT
+            ollama_num_ctx: $CONTEXT
+            max_tokens: $MAX_TOKENS
+            reasoning:
+              enabled: false
+          terminal:
+            cwd: "${GITHUB_WORKSPACE}"
+          plugins:
+            enabled:
+              - adaptive-evolution
+          delegation:
+            max_concurrent_children: 1
+            subagent_auto_approve: false
+          EOF
+          }
+
+          run_case() {
+            local name="$1"
+            local leaves="$2"
+            local expects_terminal="$3"
+            local limit="$4"
+            local max_turns="$5"
+            local prompt="$6"
+            local dir="p0-runtime/cases/${name}"
+            local home="${RUNNER_TEMP}/hermes-p0-${name}"
+            local db="${RUNNER_TEMP}/p0-${name}.sqlite3"
+            mkdir -p "$dir/logs"
+            rm -f "$db"
+            configure_case "$name"
+
+            local start end rc wall
+            start="$(date +%s)"
+            set +e
+            timeout "${limit}s" env \
+              HERMES_HOME="$home" \
+              ADAPTIVE_EVOLUTION_OBSERVER_DB="$db" \
+              hermes -t terminal,delegation chat \
+                -q "$prompt" -Q --max-turns "$max_turns" \
+                --source "adaptive-evolution-p0-${name}" \
+                > "$dir/hermes-output.txt" \
+                2> "$dir/logs/hermes-run.log"
+            rc=$?
+            set -e
+            end="$(date +%s)"
+            wall=$((end-start))
+            echo "$rc" > "$dir/hermes-rc.txt"
+            echo "$wall" > "$dir/wall-seconds.txt"
+
+            set +e
+            if test -f "$db"; then
+              adaptive-evolution-observer --db "$db" bundle "$dir/capture" \
+                > "$dir/logs/bundle.log" 2>&1
+              bundle_rc=$?
+            else
+              bundle_rc=2
+              echo "observer db missing: $db" > "$dir/logs/bundle.log"
+            fi
+            set -e
+            echo "$bundle_rc" > "$dir/bundle-rc.txt"
+
+            CASE="$name" EXPECTED_LEAVES="$leaves" EXPECTS_TERMINAL="$expects_terminal" \
+              CASE_DIR="$dir" python - <<'PY'
+          import json, os
+          from collections import Counter
+          from pathlib import Path
+
+          root=Path(os.environ['CASE_DIR'])
+          case=os.environ['CASE']
+          leaves=int(os.environ['EXPECTED_LEAVES'])
+          expects_terminal=bool(int(os.environ['EXPECTS_TERMINAL']))
+
+          def read_int(name):
+              p=root/name
+              try:
+                  return int(p.read_text().strip())
+              except Exception:
+                  return None
+
+          def read_text(name):
+              p=root/name
+              return p.read_text(errors='replace') if p.exists() else ''
+
+          rc=read_int('hermes-rc.txt')
+          wall=read_int('wall-seconds.txt')
+          bundle_rc=read_int('bundle-rc.txt')
+          combined=(read_text('hermes-output.txt')+'\n'+read_text('logs/hermes-run.log')).lower()
+          events=[]
+          normalized=root/'capture'/'normalized-events.jsonl'
+          if normalized.exists():
+              for line in normalized.read_text(encoding='utf-8').splitlines():
+                  if line.strip():
+                      try:
+                          events.append(json.loads(line))
+                      except Exception:
+                          pass
+          starts=[e for e in events if e.get('kind')=='interaction_start']
+          stops=[e for e in events if e.get('kind')=='interaction_stop']
+          tools=[e for e in events if e.get('kind')=='tool_result']
+          tool_hist=Counter(str((e.get('data') or {}).get('tool_name') or 'unknown') for e in tools)
+          children=sorted({str(e.get('agent_id')) for e in starts if e.get('agent_id')})
+          observer_complete=len(starts)>=leaves and len(stops)>=leaves
+          clean_exit=(rc==0)
+          timed_out=(rc==124)
+          context_error='context length exceeded' in combined
+          if clean_exit and observer_complete:
+              classification='clean_exit_complete'
+          elif timed_out and observer_complete:
+              classification='timeout_after_observer_complete'
+          elif timed_out:
+              classification='timeout_before_observer_complete'
+          elif observer_complete:
+              classification='runtime_failure_after_observer_complete'
+          elif context_error:
+              classification='context_failure'
+          else:
+              classification='runtime_failure_before_observer_complete'
+          status={
+              'schema':'adaptive-evolution.p0-runtime-case.v0.1',
+              'case':case,
+              'expected_leaves':leaves,
+              'expects_child_terminal':expects_terminal,
+              'hermes_exit_code':rc,
+              'wall_seconds':wall,
+              'bundle_exit_code':bundle_rc,
+              'context_error_detected':context_error,
+              'interaction_starts':len(starts),
+              'interaction_stops':len(stops),
+              'known_children':children,
+              'tool_results':len(tools),
+              'tool_histogram':dict(sorted(tool_hist.items())),
+              'observer_complete':observer_complete,
+              'clean_exit':clean_exit,
+              'timed_out':timed_out,
+              'classification':classification,
+              'hermes_output_tail':read_text('hermes-output.txt')[-1500:],
+              'hermes_stderr_tail':read_text('logs/hermes-run.log')[-1500:],
+              'authority':'provider_backed_runtime_isolation',
+          }
+          (root/'status.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(status,indent=2,sort_keys=True))
+          PY
+          }
+
+          read -r -d '' PROMPT_A <<'EOF' || true
+          P0 runtime closure case A. Use delegate_task exactly once. The child must return exactly LEAF_A_OK and must not call any tool. Wait for the child to finish, then answer exactly ROOT_OK. Do not use the terminal yourself. Do not inspect or edit files. Do not do anything else.
+          EOF
+          read -r -d '' PROMPT_C <<'EOF' || true
+          P0 runtime closure case C. Use delegate_task exactly twice, sequentially, with two distinct leaf subagents. First child must return exactly LEAF_A_OK without calling any tool. Wait for it to finish. Second child must return exactly LEAF_B_OK without calling any tool. Wait for it to finish. Then answer exactly ROOT_OK. Do not use the terminal yourself. Do not inspect or edit files. Do not do anything else.
+          EOF
+          read -r -d '' PROMPT_B <<'EOF' || true
+          P0 runtime closure case B. Use delegate_task exactly once. The child must use the terminal exactly once to run python -c "print('LEAF_A_OK')", then return exactly the observed marker. Wait for the child to finish, then answer exactly ROOT_OK. Do not use the terminal yourself. Do not inspect or edit files. Do not do anything else.
+          EOF
+          read -r -d '' PROMPT_D <<'EOF' || true
+          P0 runtime closure case D. Use delegate_task exactly twice, sequentially, with two distinct leaf subagents. First child must use the terminal exactly once to run python -c "print('LEAF_A_OK')", then return exactly the observed marker. Wait for it to finish. Second child must use the terminal exactly once to run python -c "print('LEAF_B_OK')", then return exactly the observed marker. Wait for it to finish. Then answer exactly ROOT_OK. Do not use the terminal yourself. Do not inspect or edit files. Do not do anything else.
+          EOF
+
+          run_case one_no_tool       1 0 300  6 "$PROMPT_A"
+          run_case two_no_tool       2 0 420 10 "$PROMPT_C"
+          run_case one_terminal      1 1 420  8 "$PROMPT_B"
+          run_case two_terminal      2 1 720 12 "$PROMPT_D"
+
+      - name: Summarize P0 causal result
+        id: summarize
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p result/cases result/logs
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          source=Path('p0-runtime/cases')
+          names=['one_no_tool','two_no_tool','one_terminal','two_terminal']
+          cases={}
+          for name in names:
+              p=source/name/'status.json'
+              if p.exists():
+                  cases[name]=json.loads(p.read_text())
+              else:
+                  cases[name]={'case':name,'classification':'missing_case_result','clean_exit':False,'observer_complete':False}
+
+          a=cases['one_no_tool']; c=cases['two_no_tool']; b=cases['one_terminal']; d=cases['two_terminal']
+          ac=bool(a.get('clean_exit')); cc=bool(c.get('clean_exit')); bc=bool(b.get('clean_exit')); dc=bool(d.get('clean_exit'))
+          if ac and bc and cc and dc:
+              classification='all_four_clean_exit'
+              inference='Prior timeout was not reproduced under the bounded P0 prompts; treat prompt/trajectory stochasticity as the leading explanation.'
+          elif ac and cc and (not bc) and (not dc):
+              classification='terminal_tool_factor_supported'
+              inference='Leaf terminal use is the leading failure factor because both no-terminal cases cleanly exit while terminal cases do not.'
+          elif ac and bc and (not cc) and (not dc):
+              classification='two_leaf_factor_supported'
+              inference='A second sequential leaf is the leading failure factor because both one-leaf cases cleanly exit while two-leaf cases do not.'
+          elif ac and bc and cc and (not dc):
+              classification='two_leaf_x_terminal_interaction_supported'
+              inference='Neither two leaves alone nor terminal use alone is sufficient; their combination reproduces the failure.'
+          elif not ac:
+              classification='baseline_one_leaf_instability'
+              inference='Even the one-leaf no-terminal baseline is unstable; do not attribute failure to leaf count or terminal use yet.'
+          elif ac and (not cc):
+              classification='two_leaf_related_mixed'
+              inference='The no-terminal two-leaf case fails while the one-leaf baseline passes; leaf-count/lifecycle remains implicated, with additional mixed effects possible.'
+          else:
+              classification='mixed_runtime_effect'
+              inference='The 2x2 pattern is mixed; inspect per-case observer completion and runtime tails before selecting the next factor.'
+
+          route_ctx=None
+          try: route_ctx=int(Path('p0-runtime/route-context.txt').read_text().strip())
+          except Exception: pass
+          status={
+              'schema':'adaptive-evolution.p0-runtime-closure.v0.1',
+              'created_at':datetime.now(timezone.utc).isoformat(),
+              'run_id':os.environ['GITHUB_RUN_ID'],
+              'source_sha':os.environ['GITHUB_SHA'],
+              'hermes_contract_sha':os.environ['HERMES_CONTRACT_SHA'],
+              'model':os.environ['MODEL'],
+              'declared_context':int(os.environ['CONTEXT']),
+              'route_context':route_ctx,
+              'factorial':{
+                  'leaf_count':[1,2],
+                  'child_terminal_use':[False,True],
+              },
+              'cases':cases,
+              'classification':classification,
+              'inference':inference,
+              'authority':'provider_backed_p0_runtime_closure',
+              'decision_rule':'P0 passes only when a two-leaf serial case can complete with Hermes exit code 0 and observer-complete interaction lifecycle under controlled context. CPU timing is diagnostic, not deployment-performance evidence.',
+          }
+          Path('result/status.json').write_text(json.dumps(status,indent=2,sort_keys=True)+'\n')
+          for name in names:
+              src=source/name/'status.json'
+              if src.exists():
+                  dst=Path('result/cases')/f'{name}.json'
+                  dst.write_bytes(src.read_bytes())
+          for p in sorted(Path('p0-runtime/logs').glob('*.log')):
+              (Path('result/logs')/p.name).write_text('\n'.join(p.read_text(errors='replace').splitlines()[-200:])+'\n')
+          print(json.dumps(status,indent=2,sort_keys=True))
+          PY
+
+      - name: Publish P0 result branch
+        id: publish
+        if: always()
+        shell: bash
+        run: |
+          set -e
+          tmp="${RUNNER_TEMP}/p0-runtime-result"
+          rm -rf "$tmp"
+          mkdir -p "$tmp"
+          cp -a result/. "$tmp/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan p0-runtime-closure-results-tmp
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p results/p0-runtime-closure/latest
+          cp -a "$tmp"/. results/p0-runtime-closure/latest/
+          git add -- results/p0-runtime-closure/latest
+          git commit -m "Record P0 runtime closure for ${GITHUB_SHA::12}"
+          git push --force origin HEAD:p0-runtime-closure-results
+
+      - name: Upload P0 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p0-runtime-closure-${{ github.run_id }}
+          path: |
+            result
+            p0-runtime/cases/*/logs
+            p0-runtime/cases/*/hermes-output.txt
+            p0-runtime/cases/*/capture/manifest.json
+            p0-runtime/cases/*/capture/normalized-events.jsonl
+          if-no-files-found: warn
+
+      - name: Enforce experiment infrastructure only
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          OLLAMA: ${{ steps.ollama.outcome }}
+          PULL: ${{ steps.pull.outcome }}
+          ROUTE: ${{ steps.route.outcome }}
+          PUBLISH: ${{ steps.publish.outcome }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          names=('INSTALL','OLLAMA','PULL','ROUTE','PUBLISH')
+          failed=[n.lower() for n in names if os.environ.get(n)!='success']
+          if failed:
+              raise SystemExit(f'P0 infrastructure failed: {failed}')
+          print('P0 infrastructure passed; experimental outcome is stored separately')
+          PY
