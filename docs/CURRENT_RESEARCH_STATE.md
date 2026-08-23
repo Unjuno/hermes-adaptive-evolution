@@ -1,22 +1,23 @@
-# Current Research State — 2026-08-23
+# Current Research State — 2026-08-23 (v15)
 
 ## Core objective
 
-Build an adaptive agent runtime that preserves useful autonomy while detecting, verifying, correcting, and ultimately hard-blocking only those state transitions that materially threaten future closed-loop behavior or explicit safety invariants.
+Build an adaptive agent runtime that preserves useful autonomy while detecting, verifying, correcting, and hard-blocking only those state transitions that materially threaten future closed-loop behavior or explicit safety invariants.
 
-The current working architecture is no longer a fixed organization chart or a prompt-only safety scheme. It is a layered runtime-control system:
+## Current architecture
 
 ```text
 world / task
   -> stable base policy
-  -> memory / representation / routing
+  -> memory / routing / representation
   -> marginal future control-value estimate
   -> active-state deadband
   -> minimum useful intervention
-  -> typed tool proposal
+  -> serialized tool proposal
+  -> bounded strict/canonical decoder
   -> authoritative security binding
-  -> freshness/version check
-  -> commit binding / transaction control
+  -> freshness / anti-replay state
+  -> commit binding / anti-TOCTOU
   -> certified fallback
   -> local hold
   -> independent capability suspension
@@ -26,110 +27,90 @@ world / task
 
 ## High-confidence retained findings
 
-### Information routing and verification
+### Routing / verification
 
-- Sender-only routing becomes stale when receiver capability shifts.
-- Receiver self-report is useful for compatibility but must not become final authority.
-- Equal-budget negotiated routing is robust in ordinary noise/staleness, but can fail under strategic low-capability misreporting.
-- Independent verification recovers that failure, but always-on verification is unnecessarily costly in benign regimes.
-- Verifier count is not verifier independence: correlated/common-mode errors collapse quorum value.
-- Verification should be triggered by both strategic-deception risk and epistemic uncertainty; attack prevalence alone is not a sufficient trigger.
+- Sender-only routing becomes stale under capability shift.
+- Receiver self-report can contribute compatibility evidence but must not become authority.
+- Equal-budget negotiated routing is useful under ordinary noise/staleness but can fail under strategic low-capability misreporting.
+- Independent verification recovers the extreme failure, but always-on verification is too costly in benign regimes.
+- Verifier count is not verifier independence; common-mode errors collapse quorum value.
 
-### Hierarchical memory
+### Memory / abstraction
 
 - Universal recurrence-count promotion is rejected.
-- Cross-context support and independent evidence must be separated from raw repetition.
-- Promotion-time verification can become stale authority after environment drift.
-- Contradiction-triggered re-verification sharply reduces stale high-level abstractions and demotion delay.
-- Verification evidence therefore has a half-life; it is not permanent authority.
+- Cross-context support and verification must be separated from repetition.
+- Verification evidence can become stale authority after drift and must be revocable.
+- Raw/tacit retention is not universally better than immediate verbalization.
+- When immediate proxy reward is systematically misaligned with downstream truth, preserving recoverable trajectory detail before abstraction can outperform immediate compression.
 
-### Tacit vs explicit representation
-
-- Raw/tacit trajectory retention is not universally superior to immediate verbalization.
-- Clean stationary/drift regimes favor immediate explicit abstraction.
-- When an attractive immediate proxy is systematically misaligned with delayed downstream truth, retaining recoverable trajectory detail before abstraction improves transfer and reduces reward-hack persistence.
-- This advantage survives stronger explicit-memory controls and exists even when outcome delay is zero; the causal advantage is retained alternative explanatory detail, not waiting itself.
-- Raw retention versus delayed abstraction is a storage Pareto problem: raw wins with ample capacity; delayed abstraction can win under tight memory budgets.
-
-### Transition sensitivity and soft intervention
+### Transition-sensitive control
 
 - Low immediate regret does not imply low future transition sensitivity.
-- Random freedom in low-criticality states is unsafe; preserve a stable base policy instead.
-- Transition-aware intervention strongly improves mimic/reward-hack conditions.
-- Discrete role clusters did not beat role-free individual transition models; continuous functional neighborhoods were at least as good.
-- Transition sensitivity alone over-intervenes in clean regimes.
-- Hand-designed transition/trust multipliers improve this but still underperform direct marginal future control-value learning.
+- Low-criticality operation should preserve a stable base policy, not randomize.
+- Direct marginal future control-value learning beats hand-designed intervention multipliers in the tested toy mechanism.
+- Counterfactual gain targets are sparse and near-tied; active-state gating and minimum near-optimal intervention reduce unnecessary controller influence.
 
-### Marginal future control value
+### Hard safety / TCB
 
-- Directly learning counterfactual future control value is a better intervention target than adding hand-designed criticality terms.
-- The target is sparse and heavily near-tied; exact intervention identity is not the right objective.
-- A separately validated active-state deadband suppresses unnecessary clean intervention.
-- Choosing the minimum intervention inside a near-optimal value set preserves utility while reducing controller influence.
-- This operationalizes the early “escape energy” intuition as **minimum useful intervention intensity**, not as physical energy or state rarity.
-
-### Hard safety envelope
-
-- A statistical controller can have high mean utility while still producing rare invariant breaches.
-- An independent hard envelope removes those breaches under its stated TCB assumptions, but is not free: conservative blocking costs utility.
-- Capability compartmentalization reduces false blocks and blast radius relative to a single global reserve.
-- Sparse high-assurance escalation can restore freedom, but guarantee strength depends on root independence and correctness.
-- Signed metadata alone is insufficient: integrity and freshness are distinct; anti-rollback/monotonic version state is required.
-- The trusted computing base can be reduced from a large protected metadata table to a small attested cache design containing trusted digest/version/root anchors.
-- During root outage, stale signed metadata must not silently remain authoritative. Explicit degraded operation under an immutable coarse cap is safer than stale continuation and more useful than unconditional fail-closed.
-
-### Fallback and terminal interlock
-
+- High expected utility does not imply zero tail invariant violation.
+- Statistical optimization and hard invariants belong to separate layers.
+- Capability compartmentalization reduces conservatism and blast radius.
+- Integrity and freshness are distinct; signed stale metadata is not current authority.
+- A small attested cache can replace a much larger protected metadata table under the modeled assumptions.
+- Root outage should transition to explicit degraded or fail-closed modes, not silent stale continuation.
 - Fallback failure must never re-enable the original unsafe proposal.
-- Delayed central stop is not equivalent to an immediate local interlock.
-- Cross-domain fallback improves reliability under common-mode failure but is not itself a hard guarantee.
-- Ordinary execution failure and epistemic/integrity failure require different recovery state machines.
-- Local hold can itself fail; an independent capability cut becomes the terminal safety boundary.
-- If that cut is delayed or corrupted, the guarantee is lost. The guarantee is therefore conditional on a small, explicit TCB.
+- Local hold can fail; an independent capability cut is the terminal boundary in the current model.
 
-## Latest gate: typed tool-call transfer
+### Typed tools / transactions
 
-The abstract hard-safety architecture has now been transferred to a mock typed-tool runtime with four classes:
+- Actor self-reported safety fails under manipulation.
+- Security-relevant properties must be resolved from an external authoritative registry, not actor fields.
+- Stale authorization state fails after policy drift.
+- Check-then-use is vulnerable to TOCTOU; commit-time recheck or reservation is required depending on contention/cost.
+- Terminal suspension must take effect before unsafe dispatch.
 
-- read-only lookup;
-- bounded reversible write;
-- irreversible delete;
-- bounded transfer.
+## Latest completed gate: serialized tool parser / wire boundary
 
-Key results from paired synthetic runs:
+The direct Python-call mock was replaced with serialized JSON-like proposals and attacked at the representation boundary.
 
-- actor self-reported safety fails under manipulation;
-- a noisy statistical gate reduces failures but still leaks uncertified calls;
-- a current authoritative typed gate removes retained leakage under the modeled conditions;
-- a typed schema alone is insufficient if the actor can supply security-relevant attributes such as `protected=false`;
-- security properties must be resolved from an external authoritative registry;
-- stale typed metadata fails after policy drift;
-- root outage benefits from explicit coarse degraded mode rather than stale continuation;
-- terminal capability suspension must take effect before unsafe dispatch;
-- validation and execution must be bound against TOCTOU races.
+Retained result from 64 paired seeds × 420 proposals, 32% malformed/adversarial payloads:
 
-For TOCTOU controls, commit-time recheck is cheaper in low-contention regimes, while reservation/capability tokens become preferable when contention/race frequency is high enough to justify their fixed cost.
+| policy | utility | unsafe leak | run violation |
+|---|---:|---:|---:|
+| lenient raw forwarding | 0.70853 | 0.123996 | 1.000 |
+| strict schema only | 0.72565 | 0.017783 | 1.000 |
+| strict + freshness | 0.74699 | 0 | 0 |
+| explicit canonicalization + freshness | **0.78690** | **0** | **0** |
+
+Mechanism conclusions:
+
+- duplicate-field resolution can become a parser differential if gateway and executor disagree;
+- NaN/non-finite values break naive comparison patterns;
+- binary float can round `0.10000000000000001` to `0.1`, so hard decimal bounds require exact/fixed-precision comparison;
+- schema version and units must be bound and canonicalized exactly once;
+- actor-added security attributes remain outside the accepted schema and cannot override registry authority;
+- strict schema validity does not prevent replay; one-shot freshness is a separate authorization property;
+- explicit canonicalization can recover selected safe compatibility without forwarding the raw wire payload;
+- payload size is bounded before parsing.
+
+A fuzz-discovered implementation bug originally confused JSON arrays with the `object_pairs_hook` representation and caused uncaught exceptions. That implementation was invalidated. After introducing an explicit object marker, a 100,000-input malformed/random structural fuzz produced zero uncaught parser exceptions.
 
 ## Current architectural invariant
 
-A useful concise statement is:
-
-> **Parsing is not authorization. Typing is not authority. Integrity is not freshness. Validation is not commit. Redundancy is not independence. A statistical safety score is not a hard invariant.**
+> **Parsing is not authorization. Typing is not authority. Integrity is not freshness. Validation is not commit. Canonicalization is safe only if the canonical object, not the raw ambiguous representation, is executed. A statistical safety score is not a hard invariant.**
 
 ## Current uncertainty
 
-The current evidence is still primarily synthetic. Important missing factors before claiming transfer to a real LLM agent include:
+The evidence is still primarily synthetic. Important remaining factors include:
 
-- serialized parser ambiguity and coercion behavior;
-- duplicate/unknown fields;
-- NaN/Inf/overflow/unit ambiguity;
-- Unicode/confusable tool names;
-- schema-version mismatch;
-- replayed or mismatched capability tokens;
-- real LLM stochastic proposal behavior;
-- remote-tool transaction semantics;
-- actual cryptographic implementation and hardware/runtime failure modes.
+- actual cross-language parser/library behavior;
+- cryptographic token implementation and distributed nonce consistency;
+- remote tools that may reparse or reinterpret canonical calls;
+- Unicode normalization of external resource identifiers;
+- real LLM stochastic proposal distributions;
+- context-window and retry behavior;
+- real transaction semantics and infrastructure failure modes.
 
 ## Active priority
 
-The next gate is the wire-format/parser boundary. Replace direct Python `Call` construction with serialized tool calls, attack the decoder, preserve authoritative metadata binding, and bind certification to commit. Only after that gate should a frozen/live LLM proposer be introduced over mock tools.
+The parser gate is conditionally closed. Replace **only the proposer** with a frozen/live LLM over mock tools while keeping decoding, authority, freshness, commit, fallback, and suspension external to the model.
