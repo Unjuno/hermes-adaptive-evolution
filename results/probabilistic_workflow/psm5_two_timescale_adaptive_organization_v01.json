@@ -1,0 +1,67 @@
+{
+  "config": {
+    "episodes": 5000,
+    "primitive_floor_mix": 0.02,
+    "reward_noise_sd": 0.22,
+    "seed": 20260827,
+    "steps": 1800,
+    "switch_cost": 0.025
+  },
+  "policies": {
+    "fixed": {
+      "approx_mixing_time_proxy": null,
+      "mean_absolute_logit_motion_per_update": 0.0,
+      "mean_dynamic_regret_per_step": 0.3377898394444434,
+      "mean_sampled_slem": null,
+      "mean_welfare": 0.6622101605555523,
+      "min_support_probability": 0.0011999999999999997,
+      "updates": 0
+    },
+    "same_timescale_u1": {
+      "approx_mixing_time_proxy": 1.5040683326329485,
+      "mean_absolute_logit_motion_per_update": 0.006192824747197669,
+      "mean_dynamic_regret_per_step": 0.1368941605555559,
+      "mean_sampled_slem": 0.3351365903373226,
+      "mean_welfare": 0.8631058394444412,
+      "min_support_probability": 0.0011999999999999997,
+      "updates": 1800
+    },
+    "u20": {
+      "approx_mixing_time_proxy": 1.539555869476853,
+      "mean_absolute_logit_motion_per_update": 0.019066268807891917,
+      "mean_dynamic_regret_per_step": 0.17661199944444317,
+      "mean_sampled_slem": 0.3504620262077245,
+      "mean_welfare": 0.8233880005555526,
+      "min_support_probability": 0.0011999999999999997,
+      "updates": 90
+    },
+    "u240": {
+      "approx_mixing_time_proxy": 1.5304040078666334,
+      "mean_absolute_logit_motion_per_update": 0.035495572909201155,
+      "mean_dynamic_regret_per_step": 0.30148002777777533,
+      "mean_sampled_slem": 0.346577769752453,
+      "mean_welfare": 0.6985199722222191,
+      "min_support_probability": 0.0011999999999999997,
+      "updates": 7
+    },
+    "u5": {
+      "approx_mixing_time_proxy": 1.4793035385973592,
+      "mean_absolute_logit_motion_per_update": 0.011480779070796933,
+      "mean_dynamic_regret_per_step": 0.12787151444444497,
+      "mean_sampled_slem": 0.324006213796949,
+      "mean_welfare": 0.8721284855555519,
+      "min_support_probability": 0.0011999999999999997,
+      "updates": 360
+    },
+    "u80": {
+      "approx_mixing_time_proxy": 1.550226665273554,
+      "mean_absolute_logit_motion_per_update": 0.02810381601814509,
+      "mean_dynamic_regret_per_step": 0.2554059266666635,
+      "mean_sampled_slem": 0.3549330414700746,
+      "mean_welfare": 0.7445940733333304,
+      "min_support_probability": 0.0011999999999999997,
+      "updates": 22
+    }
+  },
+  "schema": "humies.psm5-two-timescale-adaptive-organization.v0.1"
+}
