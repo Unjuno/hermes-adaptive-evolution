@@ -4,15 +4,14 @@ Active branch: `experiment/p0-runtime-closure`.
 
 ## Start here
 
-1. [`docs/BAC_TRACK_PROGRESS_2026-08-28_V17.md`](docs/BAC_TRACK_PROGRESS_2026-08-28_V17.md) — causal bottleneck allocator / model / representation evolution through BAC-18.
-2. [`docs/EXPERIMENT_PROGRESS_2026-08-28_V17.md`](docs/EXPERIMENT_PROGRESS_2026-08-28_V17.md) — latest compact experiment progress.
-3. [`docs/AGENT_PROMPT_CONTROL_SURFACE_2026-08-28.md`](docs/AGENT_PROMPT_CONTROL_SURFACE_2026-08-28.md) — Agent Prompt global control surface.
-4. [`docs/HUMIES_AGENT_PROMPT_CORE_V0_1.md`](docs/HUMIES_AGENT_PROMPT_CORE_V0_1.md) — immutable experimental prompt core.
-5. [`docs/FINITE_WORKFLOW_INFINITE_CONTEXT_2026-08-27.md`](docs/FINITE_WORKFLOW_INFINITE_CONTEXT_2026-08-27.md) — finite workflow / hidden context stochastic control.
-6. [`docs/PSM5_TWO_TIMESCALE_ADAPTIVE_ORGANIZATION_2026-08-27.md`](docs/PSM5_TWO_TIMESCALE_ADAPTIVE_ORGANIZATION_2026-08-27.md) — two-timescale organization update.
-7. [`docs/PSM6_TELEMETRY_POISONING_RESISTANCE_2026-08-27.md`](docs/PSM6_TELEMETRY_POISONING_RESISTANCE_2026-08-27.md) — telemetry poisoning / committed-effect boundary.
-8. [`docs/PSM7_SLEEPER_POISONING_VERIFIER_INDEPENDENCE_2026-08-27.md`](docs/PSM7_SLEEPER_POISONING_VERIFIER_INDEPENDENCE_2026-08-27.md) — verifier independence.
-9. [`docs/CURRENT_RESEARCH_STATE.md`](docs/CURRENT_RESEARCH_STATE.md) — earlier retained hard-runtime architecture.
+1. [`docs/BAC_TRACK_PROGRESS_2026-08-28_V18.md`](docs/BAC_TRACK_PROGRESS_2026-08-28_V18.md) — causal bottleneck allocator / model / representation evolution through BAC-20.
+2. [`docs/BAC19_BAC20_LATENT_SYNTHESIS_REPRESENTATION_LIFECYCLE_2026-08-28.md`](docs/BAC19_BAC20_LATENT_SYNTHESIS_REPRESENTATION_LIFECYCLE_2026-08-28.md) — latent synthesis, compression, merge, and retirement gate.
+3. [`docs/BAC17_BAC18_REPRESENTATION_BIRTH_EVIDENCE_BOUNDARY_2026-08-28.md`](docs/BAC17_BAC18_REPRESENTATION_BIRTH_EVIDENCE_BOUNDARY_2026-08-28.md) — representation-birth evidence boundary / telemetry poisoning.
+4. [`docs/EXPERIMENT_PROGRESS_2026-08-28_V18.md`](docs/EXPERIMENT_PROGRESS_2026-08-28_V18.md) — latest compact experiment progress.
+5. [`docs/AGENT_PROMPT_CONTROL_SURFACE_2026-08-28.md`](docs/AGENT_PROMPT_CONTROL_SURFACE_2026-08-28.md) — Agent Prompt global control surface.
+6. [`docs/HUMIES_AGENT_PROMPT_CORE_V0_1.md`](docs/HUMIES_AGENT_PROMPT_CORE_V0_1.md) — immutable experimental prompt core.
+7. [`docs/FINITE_WORKFLOW_INFINITE_CONTEXT_2026-08-27.md`](docs/FINITE_WORKFLOW_INFINITE_CONTEXT_2026-08-27.md) — finite workflow / hidden context stochastic control.
+8. [`docs/CURRENT_RESEARCH_STATE.md`](docs/CURRENT_RESEARCH_STATE.md) — earlier retained hard-runtime architecture.
 
 ## Current system thesis
 
@@ -30,24 +29,13 @@ workflow
 + credit-kernel version
 + future-interaction model
 + dynamics-model identity/lifecycle
-+ representation version
++ representation version/group/lifecycle
 + causal-support/exploration state
 ```
 
-The hard-runtime boundary remains external to all learned quantities:
+The hard-runtime boundary remains external to all learned quantities.
 
-```text
-strict/canonical proposal decode
--> authoritative security binding
--> freshness/replay prevention
--> semantic prospective invariant
--> commit binding / anti-TOCTOU
--> certified fallback
--> local hold
--> independent capability suspension
-```
-
-## Retained high-level findings
+## Retained findings
 
 ### Hard runtime
 - Parsing != Authorization; Typing != Authority; Integrity != Freshness; Validation != Commit.
@@ -58,34 +46,36 @@ strict/canonical proposal decode
 - Prompt is an orthogonal global behavior control surface, not the workflow transition kernel.
 - Prompt globality does not imply Prompt is always the bottleneck.
 - Immutable prompt core + versioned patches is preferred to destructive self-rewrite.
-- Finite workflow + hidden context can be modeled as a controlled stochastic process; weak recovery support is preferable to high randomization.
-- Structural organization updates require a slower timescale than operational workflow mixing.
+- Finite workflow + hidden context can be modeled as a controlled stochastic process; pending causal effects may need explicit state augmentation.
 
 ### Causal bottleneck allocation
 - NO-OP is a first-class action.
-- Hidden confounding requires causal support; weak global randomized support + modest targeting outperformed pure targeting in the tested family.
+- Hidden confounding requires causal support.
 - Immediate marginal value is insufficient under persistence, delayed outcomes, mediation, and future control interactions.
 - Credit horizon, persistence horizon, and planning horizon are distinct.
-- Pending causal effects may need to be represented in state to restore useful Markov structure.
 
 ### Model and representation evolution
 - Model diversity != Model freshness and != Model coverage.
 - Unseen regimes require model birth; model birth requires reversibility and retirement.
 - Parameter adaptation != Representation adaptation.
-- Residual search != Structural evidence: in-sample representation search false-birthed in 20/20 stationary runs at candidate pools 16/64/256; heldout validation false-birthed 0/20 in the same stress.
-- Telemetry novelty != Representation-birth authority: poisoned telemetry caused 12/12 false births, while independent authoritative committed-effect validation caused 0/12 in BAC-18.
+- Residual search != Structural evidence; independent heldout validation is required.
+- Telemetry novelty != Representation-birth authority; committed-effect evidence remains the promotion boundary.
+- BAC-19: representation birth can synthesize a compact latent coordinate rather than only select a supplied feature. Eight-seed replication: latent synthesis beat direct primitive expansion `8/8`, with `0/8` stationary false births.
+- BAC-19c: the compact latent beat direct primitive expansion at every tested sample size and reduced deployment action-model coefficients from `168` to `60`.
+- BAC-20: Representation merge != provenance deletion. Destructive merge failed after one constituent changed semantics; provenance-preserving logical merge allowed independent retirement.
+- BAC-20b: degraded constituent retirement `20/20`, stable false retirement `0/20`.
 
-## Reproduction/result entry added in this update
+## Compact numerical result
 
-- `results/bac17_bac18_summary_2026-08-28.json`
+- [`results/bac19_bac20_summary_2026-08-28.json`](results/bac19_bac20_summary_2026-08-28.json)
 
-The detailed BAC-17/18 local scripts are intentionally not claimed as archived by this commit; this update first restores the GitHub source-of-truth/ledger and compact result state.
+Detailed BAC-19/20 reproduction scripts remain in the working experiment archive and are not claimed as committed in this GitHub update.
 
 ## Current next gates
 
-1. BAC-19 latent-feature synthesis: construct new latent state features rather than selecting a supplied correct candidate.
-2. BAC-20 representation lifecycle: merge/retire redundant born features.
-3. Correlated poisoning of telemetry and pseudo-verifier evidence for false model/representation birth.
+1. BAC-21 primitive-map insufficiency / sensor birth: no function of current primitives can recover the missing state.
+2. Observation acquisition competing with Prompt / Organization / Locator / Verifier by Future Control Value.
+3. Correlated poisoning of representation-promotion evidence.
 4. Joint model-birth + representation-birth controller.
 5. Independent frozen/live LLM/Humies behavior gate while preserving the frozen external hard runtime.
 
