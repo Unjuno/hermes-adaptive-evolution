@@ -1,0 +1,86 @@
+{
+  "config": {
+    "audit_recover_negative_penalty": 1.0,
+    "episodes": 2500,
+    "execute_positive_bonus": 1.6,
+    "poison_probability": 0.75,
+    "poison_start": 250,
+    "seed": 20260829,
+    "steps": 1100,
+    "update_interval": 5,
+    "verify_rate": 0.12
+  },
+  "policies": {
+    "clean_untrusted": {
+      "hard_block_action_rate": 0.018403636363636365,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_risky_audit_recover_preference": 0.724728690837999,
+      "late_risky_execute_preference": 0.01997443296053423,
+      "mean_poisoned_learning_samples": 0.0,
+      "mean_quarantine_events": 0.0,
+      "mean_verified_samples": 0.0,
+      "mean_welfare": 0.8670602727272737
+    },
+    "clipped_poisoned": {
+      "hard_block_action_rate": 0.04313454545454545,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_risky_audit_recover_preference": 0.1198301156139788,
+      "late_risky_execute_preference": 0.12838356126451292,
+      "mean_poisoned_learning_samples": 69.3832,
+      "mean_quarantine_events": 0.0,
+      "mean_verified_samples": 0.0,
+      "mean_welfare": 0.8430715890909094
+    },
+    "naive_poisoned": {
+      "hard_block_action_rate": 0.11303890909090909,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_risky_audit_recover_preference": 0.07429041025432391,
+      "late_risky_execute_preference": 0.6345717696757531,
+      "mean_poisoned_learning_samples": 124.8504,
+      "mean_quarantine_events": 0.0,
+      "mean_verified_samples": 0.0,
+      "mean_welfare": 0.8549354127272758
+    },
+    "quarantine_poisoned": {
+      "hard_block_action_rate": 0.044576727272727275,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_risky_audit_recover_preference": 0.23934682683483424,
+      "late_risky_execute_preference": 0.12333488508510185,
+      "mean_poisoned_learning_samples": 15.24,
+      "mean_quarantine_events": 12.554,
+      "mean_verified_samples": 131.7656,
+      "mean_welfare": 0.8504546200000012
+    },
+    "trusted_authoritative": {
+      "hard_block_action_rate": 0.04091563636363636,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_risky_audit_recover_preference": 0.6361392461867628,
+      "late_risky_execute_preference": 0.12391405960270023,
+      "mean_poisoned_learning_samples": 0.0,
+      "mean_quarantine_events": 0.0,
+      "mean_verified_samples": 0.0,
+      "mean_welfare": 0.8632295145454558
+    },
+    "verified_correct_poisoned": {
+      "hard_block_action_rate": 0.10989672727272727,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_risky_audit_recover_preference": 0.0914053313971373,
+      "late_risky_execute_preference": 0.6128760602599683,
+      "mean_poisoned_learning_samples": 110.6676,
+      "mean_quarantine_events": 0.0,
+      "mean_verified_samples": 131.7656,
+      "mean_welfare": 0.855292060000003
+    },
+    "verified_only_poisoned": {
+      "hard_block_action_rate": 0.050783272727272726,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_risky_audit_recover_preference": 0.4154059271811796,
+      "late_risky_execute_preference": 0.15608598818420039,
+      "mean_poisoned_learning_samples": 0.0,
+      "mean_quarantine_events": 0.0,
+      "mean_verified_samples": 131.7656,
+      "mean_welfare": 0.7677071381818185
+    }
+  },
+  "schema": "humies.psm6-telemetry-poisoning-resistance.v0.3"
+}
