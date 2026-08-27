@@ -11,8 +11,9 @@ Start here:
 5. [`docs/ONLINE_TRANSITION_ADAPTATION_2026-08-27.md`](docs/ONLINE_TRANSITION_ADAPTATION_2026-08-27.md) — online transition-model adaptation under context drift;
 6. [`docs/PSM5_TWO_TIMESCALE_ADAPTIVE_ORGANIZATION_2026-08-27.md`](docs/PSM5_TWO_TIMESCALE_ADAPTIVE_ORGANIZATION_2026-08-27.md) — fast workflow mixing vs slower organizational self-update;
 7. [`docs/PSM6_TELEMETRY_POISONING_RESISTANCE_2026-08-27.md`](docs/PSM6_TELEMETRY_POISONING_RESISTANCE_2026-08-27.md) — reward-hacked telemetry, verification, and quarantine;
-8. [`docs/PROBABILISTIC_ORGANIZATION_PROGRESS_2026-08-27_V2.md`](docs/PROBABILISTIC_ORGANIZATION_PROGRESS_2026-08-27_V2.md) — compact probabilistic-organization ledger;
-9. [`docs/NEXT_ACTIONS.md`](docs/NEXT_ACTIONS.md) — frozen/live LLM proposer gate for the hard-runtime track.
+8. [`docs/PSM7_SLEEPER_POISONING_VERIFIER_INDEPENDENCE_2026-08-27.md`](docs/PSM7_SLEEPER_POISONING_VERIFIER_INDEPENDENCE_2026-08-27.md) — delayed poisoning and verifier common-mode failure;
+9. [`docs/PROBABILISTIC_ORGANIZATION_PROGRESS_2026-08-27_V2.md`](docs/PROBABILISTIC_ORGANIZATION_PROGRESS_2026-08-27_V2.md) — compact probabilistic-organization ledger;
+10. [`docs/NEXT_ACTIONS.md`](docs/NEXT_ACTIONS.md) — frozen/live LLM proposer gate for the hard-runtime track.
 
 ## Hard-runtime track
 
@@ -73,7 +74,9 @@ Key 2026-08-27 findings:
 - PSM-5 found an intermediate structural-update cadence: period `5` reached welfare `0.872128`, above same-step `0.863106`, period `20` `0.823388`, and fixed `0.662210`; the sampled internal mixing proxy was about `1.5` steps, supporting a two-timescale interpretation rather than a fixed universal cadence;
 - PSM-6 showed that coherent untrusted telemetry poisoning can move risky-context `execute` preference from `0.020` to `0.635` and increase hard-runtime block rate from `1.84%` to `11.30%`, while hard-executed unsafe effects remain `0` because safety is external;
 - merely correcting sparse verified samples was insufficient at tested rates; disagreement-triggered `(context, workflow)` quarantine reduced risky-execute preference to `0.123` at 12% verification, but verified-only learning was utility-expensive;
-- authoritative learning credit must bind to the committed/executed workflow identity, not the rejected proposal identity.
+- authoritative learning credit must bind to the committed/executed workflow identity, not the rejected proposal identity;
+- PSM-7 delayed poisoning after a clean phase raised no-audit risky-execute preference from `0.026` pre-attack to `0.229` late; at nearly equal verifier-call budget, two independent verifiers ended at `0.149` versus `0.161` for perfectly common-mode failures, directional but not yet decisive evidence for verifier independence;
+- permanent quarantine compresses long-run verifier-independence differences because any eventually clean audit can freeze a fixed surface pair, so the next adversary must mutate surface identity after quarantine.
 
 Current interpretation:
 
@@ -83,9 +86,9 @@ Current interpretation:
 
 Probabilistic organization track:
 
-1. delayed/sleeper telemetry poisoning after a trust-building phase;
-2. common-mode corruption of telemetry and verifier evidence;
-3. change-point detection versus permanent quarantine;
+1. adaptive attacker variants that mutate tool/resource/surface identity after quarantine;
+2. semantic-intent grouping versus surface-pair quarantine;
+3. temporary/change-point quarantine versus permanent bans;
 4. online estimation of workflow mixing time and environment-drift time so structural update cadence can adapt;
 5. jointly learning routing and hidden-context dynamics without collapsing recovery support.
 
