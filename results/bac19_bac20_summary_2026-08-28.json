@@ -1,0 +1,46 @@
+{
+  "schema": "humies.bac19-bac20-summary.v0.1",
+  "bac19": {
+    "single_seed": {
+      "latent_abs_corr": 0.9787183092717375,
+      "old_regret": 0.004627823887796188,
+      "primitive_regret": 0.0006680598913792425,
+      "latent_regret": 0.00012937034986130916,
+      "oracle_regret": 1.0524193633324487e-05
+    },
+    "replication": {
+      "birth_rate": 1.0,
+      "stationary_false_birth_rate": 0.0,
+      "mean_latent_corr": 0.9757647309150039,
+      "mean_latent_regret": 0.00015682242209042547,
+      "mean_primitive_regret": 0.000719005319009254
+    },
+    "sample_efficiency": {
+      "5000": {"mean_latent_regret": 0.00031867989058078706, "mean_poly_regret": 0.0009067477851881648, "latent_better_fraction": 1.0},
+      "9000": {"mean_latent_regret": 0.00017975338110703235, "mean_poly_regret": 0.0006820849041127568, "latent_better_fraction": 1.0},
+      "16000": {"mean_latent_regret": 0.00016953308155460858, "mean_poly_regret": 0.0006324475221346976, "latent_better_fraction": 1.0},
+      "28000": {"mean_latent_regret": 0.00014302363254090913, "mean_poly_regret": 0.0005830255082472338, "latent_better_fraction": 1.0}
+    }
+  },
+  "bac20": {
+    "phase2": {
+      "mean_feature_correlation": 0.975218010007949,
+      "keep_both_regret": 5.840123920649463e-05,
+      "destructive_merge_regret": 5.785160415134608e-05,
+      "single_f2_regret": 9.096136302054307e-05
+    },
+    "phase3": {
+      "destructive_merge_accuracy": 0.5759749999999999,
+      "destructive_merge_regret": 0.0037562013725344775,
+      "keep_both_refit_accuracy": 0.9008750000000001,
+      "keep_both_refit_regret": 0.00017153265007809984,
+      "logical_merge_retire_accuracy": 0.9014749999999999,
+      "logical_merge_retire_regret": 0.00017156834693857307,
+      "retirement_rate": 1.0
+    },
+    "retirement_negative_control": {
+      "degraded_retirement_rate": 1.0,
+      "stable_false_retirement_rate": 0.0
+    }
+  }
+}
