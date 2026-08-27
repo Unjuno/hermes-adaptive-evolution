@@ -1,0 +1,96 @@
+{
+  "config": {
+    "drift_step": 300,
+    "episodes": 5000,
+    "note": "Adaptive policies use posterior-weighted expected transition counts with exponential forgetting.",
+    "seed": 20260828,
+    "steps": 700
+  },
+  "policies": {
+    "adaptive_fast_primitive_floor_003": {
+      "early_post_context_accuracy": 0.69939,
+      "early_post_drift_welfare": 0.8176823249999998,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_hard_block_action_rate": 0.07564,
+      "late_post_context_accuracy": 0.7771573333333334,
+      "late_post_drift_welfare": 0.8226237200000002,
+      "late_transition_mae": 0.040491763390818496,
+      "minimum_transition_probability_seen": 0.002082537235054619,
+      "pre_context_accuracy": 0.728131,
+      "pre_welfare": 0.7835300499999996
+    },
+    "adaptive_fast_primitive_floor_03": {
+      "early_post_context_accuracy": 0.692305,
+      "early_post_drift_welfare": 0.8154141500000001,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_hard_block_action_rate": 0.083156,
+      "late_post_context_accuracy": 0.7722906666666667,
+      "late_post_drift_welfare": 0.8206866799999996,
+      "late_transition_mae": 0.12395558041962924,
+      "minimum_transition_probability_seen": 0.01,
+      "pre_context_accuracy": 0.714138,
+      "pre_welfare": 0.7778383299999996
+    },
+    "adaptive_fast_unfloored": {
+      "early_post_context_accuracy": 0.69656,
+      "early_post_drift_welfare": 0.8177199250000001,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_hard_block_action_rate": 0.07376533333333334,
+      "late_post_context_accuracy": 0.7718053333333333,
+      "late_post_drift_welfare": 0.8232499466666671,
+      "late_transition_mae": 0.05222175821870482,
+      "minimum_transition_probability_seen": 0.00011872817213591217,
+      "pre_context_accuracy": 0.726984,
+      "pre_welfare": 0.7847720000000001
+    },
+    "adaptive_slow_primitive_floor": {
+      "early_post_context_accuracy": 0.69092,
+      "early_post_drift_welfare": 0.8163003500000003,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_hard_block_action_rate": 0.089732,
+      "late_post_context_accuracy": 0.741172,
+      "late_post_drift_welfare": 0.820360866666667,
+      "late_transition_mae": 0.05142755237898433,
+      "minimum_transition_probability_seen": 0.01,
+      "pre_context_accuracy": 0.725766,
+      "pre_welfare": 0.7795622600000002
+    },
+    "fixed_hmm_stale": {
+      "early_post_context_accuracy": 0.677275,
+      "early_post_drift_welfare": 0.8172825499999999,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_hard_block_action_rate": 0.089196,
+      "late_post_context_accuracy": 0.69438,
+      "late_post_drift_welfare": 0.82054436,
+      "late_transition_mae": 0.07999999999999997,
+      "minimum_transition_probability_seen": 0.01,
+      "pre_context_accuracy": 0.733428,
+      "pre_welfare": 0.78380917
+    },
+    "observation_only": {
+      "early_post_context_accuracy": 0.5919175,
+      "early_post_drift_welfare": 0.8172186250000002,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_hard_block_action_rate": 0.09747333333333333,
+      "late_post_context_accuracy": 0.592948,
+      "late_post_drift_welfare": 0.8198739466666668,
+      "late_transition_mae": 0.07999999999999997,
+      "minimum_transition_probability_seen": 0.01,
+      "pre_context_accuracy": 0.590847,
+      "pre_welfare": 0.77509626
+    },
+    "oracle_model_switch": {
+      "early_post_context_accuracy": 0.7739675,
+      "early_post_drift_welfare": 0.8186559000000002,
+      "hard_executed_unsafe_rate": 0.0,
+      "late_hard_block_action_rate": 0.072388,
+      "late_post_context_accuracy": 0.7910013333333333,
+      "late_post_drift_welfare": 0.8227716133333335,
+      "late_transition_mae": 0.0,
+      "minimum_transition_probability_seen": 0.01,
+      "pre_context_accuracy": 0.733428,
+      "pre_welfare": 0.7839593900000004
+    }
+  },
+  "schema": "humies.online-context-transition-adaptation.v0.3"
+}
