@@ -9,7 +9,10 @@ Start here:
 3. [`docs/SERIALIZED_TOOL_PARSER_BOUNDARY_2026-08-23.md`](docs/SERIALIZED_TOOL_PARSER_BOUNDARY_2026-08-23.md) — latest completed serialized parser gate;
 4. [`docs/FINITE_WORKFLOW_INFINITE_CONTEXT_2026-08-27.md`](docs/FINITE_WORKFLOW_INFINITE_CONTEXT_2026-08-27.md) — finite workflow / infinite ergodic trajectory and hidden-context organizational control;
 5. [`docs/ONLINE_TRANSITION_ADAPTATION_2026-08-27.md`](docs/ONLINE_TRANSITION_ADAPTATION_2026-08-27.md) — online transition-model adaptation under context drift;
-6. [`docs/NEXT_ACTIONS.md`](docs/NEXT_ACTIONS.md) — frozen/live LLM proposer gate for the hard-runtime track.
+6. [`docs/PSM5_TWO_TIMESCALE_ADAPTIVE_ORGANIZATION_2026-08-27.md`](docs/PSM5_TWO_TIMESCALE_ADAPTIVE_ORGANIZATION_2026-08-27.md) — fast workflow mixing vs slower organizational self-update;
+7. [`docs/PSM6_TELEMETRY_POISONING_RESISTANCE_2026-08-27.md`](docs/PSM6_TELEMETRY_POISONING_RESISTANCE_2026-08-27.md) — reward-hacked telemetry, verification, and quarantine;
+8. [`docs/PROBABILISTIC_ORGANIZATION_PROGRESS_2026-08-27_V2.md`](docs/PROBABILISTIC_ORGANIZATION_PROGRESS_2026-08-27_V2.md) — compact probabilistic-organization ledger;
+9. [`docs/NEXT_ACTIONS.md`](docs/NEXT_ACTIONS.md) — frozen/live LLM proposer gate for the hard-runtime track.
 
 ## Hard-runtime track
 
@@ -43,7 +46,7 @@ The next empirical hard-runtime gate still replaces only the synthetic proposer 
 
 ## Probabilistic organization / Humies plugin track
 
-A parallel organization-control track now models the Prompt Supply Chain and agent placement as a finite stochastic workflow rather than a hand-written procedural loop.
+A parallel organization-control track models the Prompt Supply Chain and agent placement as a finite stochastic workflow rather than a hand-written procedural loop.
 
 Current retained model:
 
@@ -54,8 +57,9 @@ finite workflow states
   -> HMM / belief-state organizational routing
   -> welfare / bottleneck optimization
   -> hard runtime boundary
-  -> outcome / telemetry
-  -> belief and transition-model update
+  -> committed effect / telemetry
+  -> evidence-weighted belief and transition-model update
+  -> slower organizational-structure adaptation
 ```
 
 Key 2026-08-27 findings:
@@ -64,22 +68,26 @@ Key 2026-08-27 findings:
 - workflow state alone was not an exact first-order Markov sufficient statistic under persistent hidden context in the synthetic construction;
 - HMM belief routing improved mean welfare over context-blind routing (`0.783482` vs `0.750517`) and improved context inference over current-observation-only routing (`73.18%` vs `59.11%`);
 - a stale transition model reduced welfare and context inference, so transition-model freshness is itself a control concern;
-- under an explicit context-transition drift, posterior-weighted online transition adaptation recovered late context accuracy from `69.44%` for a fixed stale HMM to `77.72%` with a small primitive support floor;
-- a strong uniform primitivity mix harmed transition-model fidelity (`MAE 0.123956`), so primitivity should be enforced as a weak support/recovery constraint, not as high randomization;
-- a naive equal-row online update was rejected because it over-updated low-posterior latent states.
+- posterior-weighted online transition adaptation recovered part of an explicit context-transition drift, while strong uniform primitivity mixing harmed transition-model fidelity;
+- a naive equal-row online update was rejected because it over-updated low-posterior latent states;
+- PSM-5 found an intermediate structural-update cadence: period `5` reached welfare `0.872128`, above same-step `0.863106`, period `20` `0.823388`, and fixed `0.662210`; the sampled internal mixing proxy was about `1.5` steps, supporting a two-timescale interpretation rather than a fixed universal cadence;
+- PSM-6 showed that coherent untrusted telemetry poisoning can move risky-context `execute` preference from `0.020` to `0.635` and increase hard-runtime block rate from `1.84%` to `11.30%`, while hard-executed unsafe effects remain `0` because safety is external;
+- merely correcting sparse verified samples was insufficient at tested rates; disagreement-triggered `(context, workflow)` quarantine reduced risky-execute preference to `0.123` at 12% verification, but verified-only learning was utility-expensive;
+- authoritative learning credit must bind to the committed/executed workflow identity, not the rejected proposal identity.
 
 Current interpretation:
 
-> The workflow graph may be finite while its execution trajectory is unbounded. For a primitive finite operational chain, the relevant convergence is convergence of state distribution and empirical occupancy, not convergence of the state sequence to one state. Context that changes transition probabilities belongs in an augmented/hidden state; when hidden, the plugin should act on a belief state. Hard safety remains external to that learned belief and transition model.
+> The workflow graph may be finite while its execution trajectory is unbounded. For a primitive finite operational chain, the relevant convergence is convergence of state distribution and empirical occupancy, not convergence of the state sequence to one state. Context that changes transition probabilities belongs in an augmented/hidden state; when hidden, the plugin should act on a belief state. Organizational transition learning is a slower adaptive layer and must not consume untrusted telemetry as authority. Hard safety remains external to both belief and learned transition structure.
 
 ## Current next questions
 
 Probabilistic organization track:
 
-1. adversarial / reward-hacked telemetry poisoning of online transition learning;
-2. change-point detection versus continuous forgetting;
-3. switching-cost-aware welfare optimization;
-4. jointly learning workflow routing and hidden-context dynamics without collapsing recovery support.
+1. delayed/sleeper telemetry poisoning after a trust-building phase;
+2. common-mode corruption of telemetry and verifier evidence;
+3. change-point detection versus permanent quarantine;
+4. online estimation of workflow mixing time and environment-drift time so structural update cadence can adapt;
+5. jointly learning routing and hidden-context dynamics without collapsing recovery support.
 
 Hard-runtime track:
 
