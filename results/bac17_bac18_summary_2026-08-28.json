@@ -1,0 +1,37 @@
+{
+  "bac17": {
+    "multiple_testing": {
+      "candidate_pools": [16, 64, 256],
+      "heldout_drift_detection_rate": 1.0,
+      "heldout_stationary_false_birth_rate": 0.0,
+      "heldout_true_feature_selection_rate": 1.0,
+      "naive_stationary_false_birth_rate": 1.0
+    },
+    "replication_12": {
+      "birth_rate": 1.0,
+      "correct_family_first_pick_rate": 1.0,
+      "mean_accuracy_birth": 0.9237666667,
+      "mean_accuracy_old_refit": 0.48425,
+      "mean_regret_birth": 0.00014097326,
+      "mean_regret_old_refit": 0.0068820907,
+      "stationary_false_birth_rate": 0.0
+    },
+    "single_seed": {
+      "old_space_refit": {"accuracy": 0.4906785714, "regret": 0.00686925594, "rmse": 0.01285922937},
+      "oracle_representation": {"accuracy": 0.9725357143, "regret": 0.00001823171, "rmse": 0.00066203047},
+      "representation_birth": {"accuracy": 0.9723214286, "regret": 0.00002094205, "rmse": 0.00119001301},
+      "selected_features": ["tanh_sensor", "sensor_gt_0.35"]
+    }
+  },
+  "bac18": {
+    "authoritative_false_birth_rate": 0.0,
+    "core_clean_accuracy": 0.9136964286,
+    "core_clean_regret": 0.00011729018,
+    "false_birth_clean_accuracy": 0.6621011905,
+    "false_birth_clean_regret": 0.00187657437,
+    "replicates": 12,
+    "telemetry_false_birth_rate": 1.0,
+    "telemetry_poison_decoy_selection_rate": 1.0
+  },
+  "schema": "humies.bac17-bac18-summary.v0.1"
+}
