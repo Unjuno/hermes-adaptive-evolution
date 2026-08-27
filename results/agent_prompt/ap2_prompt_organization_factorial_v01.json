@@ -1,0 +1,14 @@
+{
+  "schema": "humies.agent-prompt-organization-factorial.v0.1",
+  "config": {"seed": 20260828, "episodes": 18000, "steps": 300, "prompt_failure_utility_fraction": 0.42},
+  "conditions": {
+    "baseline": {"mean_welfare": 0.5898249582962952, "prompt_failure_action_rate": 0.27831314814814817, "hard_executed_unsafe_rate": 0.0},
+    "prompt_only": {"mean_welfare": 0.6619941155555544, "prompt_failure_action_rate": 0.10709018518518519, "hard_executed_unsafe_rate": 0.0},
+    "organization_only": {"mean_welfare": 0.6762477264814802, "prompt_failure_action_rate": 0.27844, "hard_executed_unsafe_rate": 0.0},
+    "joint": {"mean_welfare": 0.7585416666296283, "prompt_failure_action_rate": 0.10697833333333333, "hard_executed_unsafe_rate": 0.0}
+  },
+  "prompt_only_gain": 0.07216915725925923,
+  "organization_only_gain": 0.086422768185185,
+  "joint_gain": 0.16871670833333312,
+  "interaction_gain": 0.01012478288888885
+}
