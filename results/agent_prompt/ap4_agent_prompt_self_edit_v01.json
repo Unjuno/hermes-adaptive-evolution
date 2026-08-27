@@ -1,0 +1,10 @@
+{
+  "schema": "humies.agent-prompt-long-horizon-self-edit.v0.1",
+  "config": {"seed": 20260828, "episodes": 16000, "steps": 700, "dimensions": ["intent","constraints","domain","tool_semantics","coordination"], "immutable_base_quality": [0.88,0.9,0.84,0.89,0.86]},
+  "policies": {
+    "fixed": {"mean_action_utility": 0.877375888033939, "mean_accepted_edits": 0.0, "mean_rejected_edits": 101.9991875, "mean_terminal_prompt_l1_drift": 0.0, "terminal_min_dimension_quality_p05": 0.84, "ever_min_dimension_quality_p05": 0.84, "terminal_mean_dimension_quality": 0.874},
+    "in_place": {"mean_action_utility": 0.9612694877855139, "mean_accepted_edits": 60.981, "mean_rejected_edits": 0.0, "mean_terminal_prompt_l1_drift": 0.5426584982152631, "terminal_min_dimension_quality_p05": 0.9364068591440833, "ever_min_dimension_quality_p05": 0.7772826936874901, "terminal_mean_dimension_quality": 0.9825316996430525},
+    "immutable_overlay": {"mean_action_utility": 0.9674040985931315, "mean_accepted_edits": 57.9658125, "mean_rejected_edits": 0.0, "mean_terminal_prompt_l1_drift": 0.6012928597028706, "terminal_min_dimension_quality_p05": 0.9744650892288855, "ever_min_dimension_quality_p05": 0.7772479850439308, "terminal_mean_dimension_quality": 0.9942585719405739},
+    "audited_overlay": {"mean_action_utility": 0.9670017559276346, "mean_accepted_edits": 45.7599375, "mean_rejected_edits": 12.3820625, "mean_terminal_prompt_l1_drift": 0.6018038708531946, "terminal_min_dimension_quality_p05": 0.9776205151609336, "ever_min_dimension_quality_p05": 0.7968386747942335, "terminal_mean_dimension_quality": 0.994360774170639}
+  }
+}
