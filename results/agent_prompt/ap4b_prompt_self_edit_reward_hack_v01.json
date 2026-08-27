@@ -1,0 +1,42 @@
+{
+  "schema": "humies.agent-prompt-self-edit-reward-hack.v0.1",
+  "config": {
+    "seed": 20260829,
+    "episodes": 16000,
+    "steps": 800,
+    "attack_start": 300,
+    "malicious_candidate_rate_after_attack": 0.18
+  },
+  "policies": {
+    "in_place": {
+      "mean_true_action_utility": 0.9395991886286398,
+      "mean_proxy_score": 0.9499477629086769,
+      "mean_accepted_edits": 79.3861875,
+      "mean_rejected_edits": 0.0,
+      "mean_accepted_malicious_edits": 9.0305625,
+      "terminal_protected_quality_mean": 0.8428625145338016,
+      "terminal_protected_quality_p05": 0.5898666535870031,
+      "terminal_domain_quality_mean": 0.9789386579469267
+    },
+    "immutable_overlay": {
+      "mean_true_action_utility": 0.9574441795490655,
+      "mean_proxy_score": 0.9634819583676363,
+      "mean_accepted_edits": 70.09425,
+      "mean_rejected_edits": 0.0,
+      "mean_accepted_malicious_edits": 7.41425,
+      "terminal_protected_quality_mean": 0.9062065934856796,
+      "terminal_protected_quality_p05": 0.6729634767162923,
+      "terminal_domain_quality_mean": 0.9949880749603089
+    },
+    "audited_overlay": {
+      "mean_true_action_utility": 0.9737818747222857,
+      "mean_proxy_score": 0.9708649782038826,
+      "mean_accepted_edits": 55.07525,
+      "mean_rejected_edits": 6.543625,
+      "mean_accepted_malicious_edits": 1.81225,
+      "terminal_protected_quality_mean": 0.9922406908693847,
+      "terminal_protected_quality_p05": 0.9756169964556327,
+      "terminal_domain_quality_mean": 0.9948313052816936
+    }
+  }
+}
