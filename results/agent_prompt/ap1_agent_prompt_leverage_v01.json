@@ -1,0 +1,25 @@
+{
+  "config": {
+    "base_detection": 0.84,
+    "profiles": 60000,
+    "prompt_fixed_cost": 4.0,
+    "prompt_logodds_gain": 0.85,
+    "seed": 20260828,
+    "verification_cost_per_action": 0.075,
+    "verified_detection": 0.975
+  },
+  "horizons": {
+    "1": {"base_total_utility": 0.8492957531849498, "prompt_fixed_cost": 4.0, "prompt_gain_per_cost": 0.017668814880577535, "prompt_to_verify_roi_ratio": 0.08237584647375679, "prompt_total_gain": 0.07067525952231014, "verify_gain_per_cost": 0.21449399690242965, "verify_total_cost": 0.075, "verify_total_gain": 0.016087049767682224},
+    "5": {"base_total_utility": 4.246478765924749, "prompt_fixed_cost": 4.0, "prompt_gain_per_cost": 0.08834407440288767, "prompt_to_verify_roi_ratio": 0.41187923236878395, "prompt_total_gain": 0.35337629761155065, "verify_gain_per_cost": 0.21449399690242965, "verify_total_cost": 0.375, "verify_total_gain": 0.08043524883841112},
+    "20": {"base_total_utility": 16.985915063698996, "prompt_fixed_cost": 4.0, "prompt_gain_per_cost": 0.35337629761155066, "prompt_to_verify_roi_ratio": 1.6475169294751358, "prompt_total_gain": 1.4135051904462026, "verify_gain_per_cost": 0.21449399690242965, "verify_total_cost": 1.5, "verify_total_gain": 0.3217409953536445},
+    "100": {"base_total_utility": 84.92957531849498, "prompt_fixed_cost": 4.0, "prompt_gain_per_cost": 1.7668814880577534, "prompt_to_verify_roi_ratio": 8.237584647375679, "prompt_total_gain": 7.067525952231014, "verify_gain_per_cost": 0.21449399690242965, "verify_total_cost": 7.5, "verify_total_gain": 1.6087049767682224},
+    "500": {"base_total_utility": 424.6478765924749, "prompt_fixed_cost": 4.0, "prompt_gain_per_cost": 8.834407440288767, "prompt_to_verify_roi_ratio": 41.187923236878396, "prompt_total_gain": 35.337629761155066, "verify_gain_per_cost": 0.21449399690242965, "verify_total_cost": 37.5, "verify_total_gain": 8.043524883841111},
+    "2000": {"base_total_utility": 1698.5915063698996, "prompt_fixed_cost": 4.0, "prompt_gain_per_cost": 35.33762976115507, "prompt_to_verify_roi_ratio": 164.75169294751358, "prompt_total_gain": 141.35051904462027, "verify_gain_per_cost": 0.21449399690242965, "verify_total_cost": 150.0, "verify_total_gain": 32.174099535364445}
+  },
+  "mean_base_proposal_correctness": 0.6864419450892755,
+  "mean_optimized_prompt_correctness": 0.8275687050316981,
+  "mean_per_action_prompt_utility_gain": 0.07067525952231014,
+  "mean_per_action_verify_utility_gain": 0.016087049767682224,
+  "roi_break_even_horizon_steps": 13,
+  "schema": "humies.agent-prompt-leverage.v0.1"
+}
