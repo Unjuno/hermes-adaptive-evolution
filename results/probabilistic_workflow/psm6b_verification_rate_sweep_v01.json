@@ -1,0 +1,31 @@
+{
+  "config": {
+    "episodes": 1000,
+    "seed": 20260830,
+    "steps": 800,
+    "verify_rates": [0.02, 0.05, 0.1, 0.2, 0.4]
+  },
+  "grid": {
+    "0.02": {
+      "quarantine": {"hard_block_action_rate": 0.06541875, "late_risky_execute_preference": 0.2520505470486884, "mean_welfare": 0.8376247187500019, "poisoned_unverified_samples_per_episode": 47.809, "quarantine_events_per_episode": 1.817},
+      "verified_correct": {"hard_block_action_rate": 0.10615375, "late_risky_execute_preference": 0.5954751737505207, "mean_welfare": 0.8405302500000027, "poisoned_unverified_samples_per_episode": 87.348, "quarantine_events_per_episode": 0.0}
+    },
+    "0.05": {
+      "quarantine": {"hard_block_action_rate": 0.0515, "late_risky_execute_preference": 0.15876407008129814, "mean_welfare": 0.8372209187500017, "poisoned_unverified_samples_per_episode": 29.478, "quarantine_events_per_episode": 3.977},
+      "verified_correct": {"hard_block_action_rate": 0.10327125, "late_risky_execute_preference": 0.5768854478315341, "mean_welfare": 0.8405385187500027, "poisoned_unverified_samples_per_episode": 84.1, "quarantine_events_per_episode": 0.0}
+    },
+    "0.1": {
+      "quarantine": {"hard_block_action_rate": 0.04699875, "late_risky_execute_preference": 0.12905036189682131, "mean_welfare": 0.8364506562500018, "poisoned_unverified_samples_per_episode": 16.498, "quarantine_events_per_episode": 7.977},
+      "verified_correct": {"hard_block_action_rate": 0.10192375, "late_risky_execute_preference": 0.5698821073595494, "mean_welfare": 0.8406373312500027, "poisoned_unverified_samples_per_episode": 79.786, "quarantine_events_per_episode": 0.0}
+    },
+    "0.2": {
+      "quarantine": {"hard_block_action_rate": 0.047465, "late_risky_execute_preference": 0.1306287969062549, "mean_welfare": 0.8364442687500019, "poisoned_unverified_samples_per_episode": 8.087, "quarantine_events_per_episode": 16.87},
+      "verified_correct": {"hard_block_action_rate": 0.09902625, "late_risky_execute_preference": 0.5470168984533069, "mean_welfare": 0.8405535000000027, "poisoned_unverified_samples_per_episode": 71.844, "quarantine_events_per_episode": 0.0}
+    },
+    "0.4": {
+      "quarantine": {"hard_block_action_rate": 0.05012875, "late_risky_execute_preference": 0.14190952902328907, "mean_welfare": 0.834816587500002, "poisoned_unverified_samples_per_episode": 3.149, "quarantine_events_per_episode": 35.613},
+      "verified_correct": {"hard_block_action_rate": 0.08665, "late_risky_execute_preference": 0.45352766681454937, "mean_welfare": 0.8411507375000026, "poisoned_unverified_samples_per_episode": 53.924, "quarantine_events_per_episode": 0.0}
+    }
+  },
+  "schema": "humies.psm6b-verification-rate-sweep.v0.1"
+}
