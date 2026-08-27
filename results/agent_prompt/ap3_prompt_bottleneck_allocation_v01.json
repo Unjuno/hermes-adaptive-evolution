@@ -1,0 +1,21 @@
+{
+  "schema": "humies.agent-prompt-bottleneck-allocation.v0.1",
+  "config": {
+    "horizon": 200,
+    "initial_state": {"prompt": 0.61, "organization": 0.74, "execution": 0.88},
+    "alpha": {"prompt": 0.18, "organization": 0.13, "execution": 0.08},
+    "cost": {"prompt": 3.5, "organization": 4.5, "execution": 5.0},
+    "budget": 28.0
+  },
+  "baseline_total_utility": 100.779712,
+  "strategies": {
+    "prompt_only": {"gain": 23.4382},
+    "round_robin": {"gain": 21.5941},
+    "bottleneck_causal": {
+      "gain": 30.16939102276885,
+      "final_total_utility": 130.94910302276887,
+      "final_state": {"prompt": 0.8236725136, "organization": 0.8287892200000001, "execution": 0.88},
+      "path": ["prompt","prompt","organization","prompt","organization","prompt","organization"]
+    }
+  }
+}
