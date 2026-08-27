@@ -1,0 +1,42 @@
+{
+  "schema": "humies.agent-prompt-control-summary.v0.1",
+  "date": "2026-08-28",
+  "ap1": {
+    "base_prompt_correctness": 0.6864419451,
+    "optimized_prompt_correctness": 0.8275687050,
+    "roi_break_even_horizon_steps": 13,
+    "prompt_to_verify_roi_ratio_h100": 8.2375846474,
+    "prompt_to_verify_roi_ratio_h500": 41.1879232369
+  },
+  "ap2": {
+    "baseline_welfare": 0.5898249583,
+    "prompt_only_welfare": 0.6619941156,
+    "organization_only_welfare": 0.6762477265,
+    "joint_welfare": 0.7585416666,
+    "interaction_gain": 0.0101247829
+  },
+  "ap3": {
+    "baseline_total_utility": 100.779712,
+    "prompt_only_gain": 23.4382,
+    "round_robin_gain": 21.5941,
+    "causal_bottleneck_gain": 30.1693910228,
+    "causal_path": ["prompt","prompt","organization","prompt","organization","prompt","organization"]
+  },
+  "ap4_benign": {
+    "fixed_mean_action_utility": 0.8773758880,
+    "in_place_mean_action_utility": 0.9612694878,
+    "immutable_overlay_mean_action_utility": 0.9674040986,
+    "audited_overlay_mean_action_utility": 0.9670017559,
+    "decision": "always-on edit audit not supported under benign candidate edits"
+  },
+  "ap4b_reward_hack": {
+    "in_place_true_utility": 0.9395991886,
+    "immutable_overlay_true_utility": 0.9574441795,
+    "audited_overlay_true_utility": 0.9737818747,
+    "in_place_protected_quality_p05": 0.5898666536,
+    "immutable_overlay_protected_quality_p05": 0.6729634767,
+    "audited_overlay_protected_quality_p05": 0.9756169965,
+    "audited_overlay_accepted_malicious_edits": 1.81225
+  },
+  "scope": "synthetic mechanism evidence; not a real-LLM production estimate"
+}
