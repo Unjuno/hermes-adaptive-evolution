@@ -1,0 +1,1317 @@
+{
+  "authority": "contract_observation_only",
+  "bundle": "contract-artifact/capture",
+  "events": 10,
+  "hooks": {
+    "api_request_error": {
+      "additive_fields_not_in_checked_contract": [
+        "telemetry_schema_version"
+      ],
+      "events": 1,
+      "expected_fields": [
+        "task_id",
+        "turn_id",
+        "api_request_id",
+        "session_id",
+        "platform",
+        "model",
+        "provider",
+        "status_code",
+        "retry_count",
+        "max_retries",
+        "retryable",
+        "reason",
+        "error"
+      ],
+      "expected_fields_only_null_or_empty": [],
+      "fields": {
+        "api_request_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "error": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "object": 1
+          }
+        },
+        "max_retries": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "int": 1
+          }
+        },
+        "model": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "platform": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 0.0,
+          "key_fraction": 0.0,
+          "key_present": 0,
+          "present": 0,
+          "total": 1,
+          "types": {}
+        },
+        "provider": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "reason": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "object": 1
+          }
+        },
+        "retry_count": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "int": 1
+          }
+        },
+        "retryable": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "bool": 1
+          }
+        },
+        "session_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "status_code": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "int": 1
+          }
+        },
+        "task_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "telemetry_schema_version": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "turn_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        }
+      },
+      "missing_expected_fields_entirely": [
+        "platform"
+      ],
+      "observed_fields": [
+        "api_request_id",
+        "error",
+        "max_retries",
+        "model",
+        "provider",
+        "reason",
+        "retry_count",
+        "retryable",
+        "session_id",
+        "status_code",
+        "task_id",
+        "telemetry_schema_version",
+        "turn_id"
+      ]
+    },
+    "kanban_task_claimed": {
+      "additive_fields_not_in_checked_contract": [
+        "telemetry_schema_version"
+      ],
+      "events": 1,
+      "expected_fields": [
+        "task_id",
+        "profile_name",
+        "board",
+        "assignee",
+        "run_id"
+      ],
+      "expected_fields_only_null_or_empty": [],
+      "fields": {
+        "assignee": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "board": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "profile_name": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "run_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "task_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "telemetry_schema_version": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        }
+      },
+      "missing_expected_fields_entirely": [],
+      "observed_fields": [
+        "assignee",
+        "board",
+        "profile_name",
+        "run_id",
+        "task_id",
+        "telemetry_schema_version"
+      ]
+    },
+    "kanban_task_completed": {
+      "additive_fields_not_in_checked_contract": [
+        "telemetry_schema_version"
+      ],
+      "events": 1,
+      "expected_fields": [
+        "task_id",
+        "profile_name",
+        "board",
+        "assignee",
+        "run_id",
+        "summary"
+      ],
+      "expected_fields_only_null_or_empty": [],
+      "fields": {
+        "assignee": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "board": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "profile_name": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "run_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "summary": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "object": 1
+          }
+        },
+        "task_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "telemetry_schema_version": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        }
+      },
+      "missing_expected_fields_entirely": [],
+      "observed_fields": [
+        "assignee",
+        "board",
+        "profile_name",
+        "run_id",
+        "summary",
+        "task_id",
+        "telemetry_schema_version"
+      ]
+    },
+    "on_session_end": {
+      "additive_fields_not_in_checked_contract": [
+        "telemetry_schema_version"
+      ],
+      "events": 1,
+      "expected_fields": [
+        "session_id",
+        "task_id",
+        "turn_id",
+        "completed",
+        "failed",
+        "interrupted",
+        "turn_exit_reason",
+        "model",
+        "platform"
+      ],
+      "expected_fields_only_null_or_empty": [],
+      "fields": {
+        "completed": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "bool": 1
+          }
+        },
+        "failed": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "bool": 1
+          }
+        },
+        "interrupted": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "bool": 1
+          }
+        },
+        "model": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "platform": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "session_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "task_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "telemetry_schema_version": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "turn_exit_reason": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 0.0,
+          "key_fraction": 0.0,
+          "key_present": 0,
+          "present": 0,
+          "total": 1,
+          "types": {}
+        },
+        "turn_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        }
+      },
+      "missing_expected_fields_entirely": [
+        "turn_exit_reason"
+      ],
+      "observed_fields": [
+        "completed",
+        "failed",
+        "interrupted",
+        "model",
+        "platform",
+        "session_id",
+        "task_id",
+        "telemetry_schema_version",
+        "turn_id"
+      ]
+    },
+    "on_session_start": {
+      "additive_fields_not_in_checked_contract": [
+        "task_id",
+        "telemetry_schema_version",
+        "turn_id"
+      ],
+      "events": 1,
+      "expected_fields": [
+        "session_id",
+        "model",
+        "platform"
+      ],
+      "expected_fields_only_null_or_empty": [],
+      "fields": {
+        "model": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "platform": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "session_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "task_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "telemetry_schema_version": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "turn_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        }
+      },
+      "missing_expected_fields_entirely": [],
+      "observed_fields": [
+        "model",
+        "platform",
+        "session_id",
+        "task_id",
+        "telemetry_schema_version",
+        "turn_id"
+      ]
+    },
+    "on_skill_lifecycle": {
+      "additive_fields_not_in_checked_contract": [
+        "telemetry_schema_version"
+      ],
+      "events": 1,
+      "expected_fields": [
+        "action",
+        "skill_name",
+        "provenance",
+        "task_id",
+        "session_id",
+        "use_count",
+        "reused",
+        "reuse_after_patch"
+      ],
+      "expected_fields_only_null_or_empty": [],
+      "fields": {
+        "action": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "provenance": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "reuse_after_patch": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "bool": 1
+          }
+        },
+        "reused": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "bool": 1
+          }
+        },
+        "session_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "skill_name": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "task_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "telemetry_schema_version": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "use_count": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "int": 1
+          }
+        }
+      },
+      "missing_expected_fields_entirely": [],
+      "observed_fields": [
+        "action",
+        "provenance",
+        "reuse_after_patch",
+        "reused",
+        "session_id",
+        "skill_name",
+        "task_id",
+        "telemetry_schema_version",
+        "use_count"
+      ]
+    },
+    "post_tool_call": {
+      "additive_fields_not_in_checked_contract": [
+        "args",
+        "middleware_trace",
+        "result",
+        "telemetry_schema_version"
+      ],
+      "events": 2,
+      "expected_fields": [
+        "tool_name",
+        "task_id",
+        "session_id",
+        "tool_call_id",
+        "turn_id",
+        "api_request_id",
+        "duration_ms",
+        "status",
+        "error_type",
+        "error_message"
+      ],
+      "expected_fields_only_null_or_empty": [
+        "turn_id",
+        "api_request_id"
+      ],
+      "fields": {
+        "api_request_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 0.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 0,
+          "total": 2,
+          "types": {
+            "str": 2
+          }
+        },
+        "args": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 2,
+          "total": 2,
+          "types": {
+            "object": 2
+          }
+        },
+        "duration_ms": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 2,
+          "total": 2,
+          "types": {
+            "int": 2
+          }
+        },
+        "error_message": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 2,
+          "total": 2,
+          "types": {
+            "object": 1,
+            "str": 1
+          }
+        },
+        "error_type": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 0.5,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 1,
+          "total": 2,
+          "types": {
+            "null": 1,
+            "str": 1
+          }
+        },
+        "middleware_trace": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 2,
+          "total": 2,
+          "types": {
+            "array": 2
+          }
+        },
+        "result": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 2,
+          "total": 2,
+          "types": {
+            "object": 2
+          }
+        },
+        "session_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 2,
+          "total": 2,
+          "types": {
+            "str": 2
+          }
+        },
+        "status": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 2,
+          "total": 2,
+          "types": {
+            "str": 2
+          }
+        },
+        "task_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 2,
+          "total": 2,
+          "types": {
+            "str": 2
+          }
+        },
+        "telemetry_schema_version": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 2,
+          "total": 2,
+          "types": {
+            "str": 2
+          }
+        },
+        "tool_call_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 2,
+          "total": 2,
+          "types": {
+            "str": 2
+          }
+        },
+        "tool_name": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 2,
+          "total": 2,
+          "types": {
+            "str": 2
+          }
+        },
+        "turn_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 0.0,
+          "key_fraction": 1.0,
+          "key_present": 2,
+          "present": 0,
+          "total": 2,
+          "types": {
+            "str": 2
+          }
+        }
+      },
+      "missing_expected_fields_entirely": [],
+      "observed_fields": [
+        "api_request_id",
+        "args",
+        "duration_ms",
+        "error_message",
+        "error_type",
+        "middleware_trace",
+        "result",
+        "session_id",
+        "status",
+        "task_id",
+        "telemetry_schema_version",
+        "tool_call_id",
+        "tool_name",
+        "turn_id"
+      ]
+    },
+    "subagent_start": {
+      "additive_fields_not_in_checked_contract": [
+        "telemetry_schema_version"
+      ],
+      "events": 1,
+      "expected_fields": [
+        "parent_session_id",
+        "parent_turn_id",
+        "parent_subagent_id",
+        "child_session_id",
+        "child_subagent_id",
+        "child_role",
+        "child_goal"
+      ],
+      "expected_fields_only_null_or_empty": [
+        "parent_subagent_id"
+      ],
+      "fields": {
+        "child_goal": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "object": 1
+          }
+        },
+        "child_role": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "child_session_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "child_subagent_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "parent_session_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "parent_subagent_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 0.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 0,
+          "total": 1,
+          "types": {
+            "null": 1
+          }
+        },
+        "parent_turn_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "telemetry_schema_version": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        }
+      },
+      "missing_expected_fields_entirely": [],
+      "observed_fields": [
+        "child_goal",
+        "child_role",
+        "child_session_id",
+        "child_subagent_id",
+        "parent_session_id",
+        "parent_subagent_id",
+        "parent_turn_id",
+        "telemetry_schema_version"
+      ]
+    },
+    "subagent_stop": {
+      "additive_fields_not_in_checked_contract": [
+        "telemetry_schema_version"
+      ],
+      "events": 1,
+      "expected_fields": [
+        "parent_session_id",
+        "parent_turn_id",
+        "child_session_id",
+        "child_role",
+        "child_summary",
+        "child_status",
+        "tool_call_history",
+        "duration_ms"
+      ],
+      "expected_fields_only_null_or_empty": [],
+      "fields": {
+        "child_role": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "child_session_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "child_status": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "child_summary": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "object": 1
+          }
+        },
+        "duration_ms": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "int": 1
+          }
+        },
+        "parent_session_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "parent_turn_id": {
+          "correlation_field": true,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "telemetry_schema_version": {
+          "correlation_field": false,
+          "expected_by_current_contract": false,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "str": 1
+          }
+        },
+        "tool_call_history": {
+          "correlation_field": false,
+          "expected_by_current_contract": true,
+          "fraction": 1.0,
+          "key_fraction": 1.0,
+          "key_present": 1,
+          "present": 1,
+          "total": 1,
+          "types": {
+            "array": 1
+          }
+        }
+      },
+      "missing_expected_fields_entirely": [],
+      "observed_fields": [
+        "child_role",
+        "child_session_id",
+        "child_status",
+        "child_summary",
+        "duration_ms",
+        "parent_session_id",
+        "parent_turn_id",
+        "telemetry_schema_version",
+        "tool_call_history"
+      ]
+    }
+  },
+  "hooks_missing_from_observer_contract": [
+    "kanban_task_blocked",
+    "on_session_finalize",
+    "on_session_reset"
+  ],
+  "hooks_observed": [
+    "api_request_error",
+    "kanban_task_claimed",
+    "kanban_task_completed",
+    "on_session_end",
+    "on_session_start",
+    "on_skill_lifecycle",
+    "post_tool_call",
+    "subagent_start",
+    "subagent_stop"
+  ],
+  "identity": {
+    "start_child_sessions": 1,
+    "stop_child_sessions": 1,
+    "stop_sessions_seen_in_start": 1,
+    "stop_sessions_without_start": 0,
+    "subagent_start_events": 1,
+    "subagent_stop_events": 1
+  },
+  "note": "Field coverage describes this capture only. A key present with null is distinct from a key absent from the payload; neither alone proves the Hermes API cannot provide a non-null value on another path.",
+  "schema": "adaptive-evolution.hook-coverage.v0.2"
+}

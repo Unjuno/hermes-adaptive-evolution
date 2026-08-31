@@ -1,0 +1,120 @@
+  Downloading annotated_types-0.8.0-py3-none-any.whl.metadata (15 kB)
+Collecting pydantic-core==2.46.4 (from pydantic==2.13.4->hermes-agent==0.20.4)
+  Downloading pydantic_core-2.46.4-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+Collecting typing-inspection>=0.4.2 (from pydantic==2.13.4->hermes-agent==0.20.4)
+  Downloading typing_inspection-0.4.4-py3-none-any.whl.metadata (2.6 kB)
+Collecting wcwidth (from prompt_toolkit==3.0.52->hermes-agent==0.20.4)
+  Downloading wcwidth-0.8.3-py3-none-any.whl.metadata (43 kB)
+Collecting charset_normalizer<4,>=2 (from requests==2.33.0->hermes-agent==0.20.4)
+  Downloading charset_normalizer-3.5.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (45 kB)
+Collecting markdown-it-py>=2.2.0 (from rich==14.3.3->hermes-agent==0.20.4)
+  Downloading markdown_it_py-4.2.0-py3-none-any.whl.metadata (7.4 kB)
+Collecting pygments<3.0.0,>=2.13.0 (from rich==14.3.3->hermes-agent==0.20.4)
+  Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting ruamel.yaml.clib>=0.2.15 (from ruamel.yaml==0.18.17->hermes-agent==0.20.4)
+  Downloading ruamel_yaml_clib-0.2.15-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (3.5 kB)
+Collecting starlette>=0.46.0 (from fastapi<1,>=0.104.0->hermes-agent==0.20.4)
+  Downloading starlette-1.6.0-py3-none-any.whl.metadata (6.4 kB)
+Collecting annotated-doc>=0.0.2 (from fastapi<1,>=0.104.0->hermes-agent==0.20.4)
+  Downloading annotated_doc-0.0.5-py3-none-any.whl.metadata (6.5 kB)
+Collecting h11>=0.16 (from httpcore==1.*->httpx==0.28.1->httpx[socks]==0.28.1->hermes-agent==0.20.4)
+  Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+Collecting click>=7.0 (from uvicorn<1,>=0.24.0->uvicorn[standard]<1,>=0.24.0->hermes-agent==0.20.4)
+  Downloading click-8.5.0-py3-none-any.whl.metadata (2.6 kB)
+Collecting httptools>=0.8.0 (from uvicorn[standard]<1,>=0.24.0->hermes-agent==0.20.4)
+  Downloading httptools-0.8.0-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+Collecting uvloop>=0.15.1 (from uvicorn[standard]<1,>=0.24.0->hermes-agent==0.20.4)
+  Downloading uvloop-0.22.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (4.9 kB)
+Collecting watchfiles>=0.20 (from uvicorn[standard]<1,>=0.24.0->hermes-agent==0.20.4)
+  Downloading watchfiles-1.2.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+Collecting pycparser (from cffi>=2.0.0->cryptography==50.0.0->hermes-agent==0.20.4)
+  Downloading pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich==14.3.3->hermes-agent==0.20.4)
+  Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+Collecting six>=1.5 (from python-dateutil->croniter==6.0.0->hermes-agent==0.20.4)
+  Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Downloading certifi-2026.5.20-py3-none-any.whl (134 kB)
+Downloading croniter-6.0.0-py2.py3-none-any.whl (25 kB)
+Downloading cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.7/4.7 MB 33.6 MB/s  0:00:00
+Downloading fire-0.7.1-py3-none-any.whl (115 kB)
+Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Downloading markdown-3.10.2-py3-none-any.whl (108 kB)
+Downloading openai-2.24.0-py3-none-any.whl (1.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 51.2 MB/s  0:00:00
+Downloading pydantic-2.13.4-py3-none-any.whl (472 kB)
+Downloading packaging-26.0-py3-none-any.whl (74 kB)
+Downloading pathspec-1.1.1-py3-none-any.whl (57 kB)
+Downloading pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (6.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.9/6.9 MB 96.9 MB/s  0:00:00
+Downloading prompt_toolkit-3.0.52-py3-none-any.whl (391 kB)
+Downloading psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl (155 kB)
+Downloading pydantic_core-2.46.4-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 118.7 MB/s  0:00:00
+Downloading pyjwt-2.13.0-py3-none-any.whl (31 kB)
+Downloading python_dotenv-1.2.2-py3-none-any.whl (22 kB)
+Downloading pyyaml-6.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (801 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 801.6/801.6 kB 127.6 MB/s  0:00:00
+Downloading requests-2.33.0-py3-none-any.whl (65 kB)
+Downloading rich-14.3.3-py3-none-any.whl (310 kB)
+Downloading ruamel_yaml-0.18.17-py3-none-any.whl (121 kB)
+Downloading tenacity-9.1.4-py3-none-any.whl (28 kB)
+Downloading websockets-15.0.1-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (182 kB)
+Downloading anyio-4.14.2-py3-none-any.whl (125 kB)
+Downloading charset_normalizer-3.5.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (250 kB)
+Downloading distro-1.9.0-py3-none-any.whl (20 kB)
+Downloading fastapi-0.141.1-py3-none-any.whl (131 kB)
+Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+Downloading idna-3.19-py3-none-any.whl (68 kB)
+Downloading jiter-0.16.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (343 kB)
+Downloading nemo_relay-0.7.3-cp311-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (9.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.0/9.0 MB 170.9 MB/s  0:00:00
+Downloading ptyprocess-0.7.0-py2.py3-none-any.whl (13 kB)
+Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 211.9 MB/s  0:00:00
+Downloading python_multipart-0.0.32-py3-none-any.whl (30 kB)
+Downloading socksio-1.0.0-py3-none-any.whl (12 kB)
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Downloading urllib3-2.7.0-py3-none-any.whl (131 kB)
+Downloading uvicorn-0.52.4-py3-none-any.whl (79 kB)
+Downloading annotated_doc-0.0.5-py3-none-any.whl (5.3 kB)
+Downloading annotated_types-0.8.0-py3-none-any.whl (13 kB)
+Downloading cffi-2.1.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+Downloading click-8.5.0-py3-none-any.whl (125 kB)
+Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+Downloading httptools-0.8.0-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (486 kB)
+Downloading markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+Downloading markupsafe-3.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+Downloading pytz-2026.3.post1-py2.py3-none-any.whl (508 kB)
+Downloading ruamel_yaml_clib-0.2.15-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (782 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 782.1/782.1 kB 153.2 MB/s  0:00:00
+Downloading starlette-1.6.0-py3-none-any.whl (75 kB)
+Downloading tqdm-4.70.0-py3-none-any.whl (80 kB)
+Downloading typing_inspection-0.4.4-py3-none-any.whl (14 kB)
+Downloading uvloop-0.22.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (4.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.4/4.4 MB 210.9 MB/s  0:00:00
+Downloading watchfiles-1.2.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (454 kB)
+Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading sniffio-1.3.1-py3-none-any.whl (10 kB)
+Downloading termcolor-3.3.0-py3-none-any.whl (7.7 kB)
+Downloading wcwidth-0.8.3-py3-none-any.whl (331 kB)
+Building wheels for collected packages: hermes-agent
+  Building editable for hermes-agent (pyproject.toml): started
+  Building editable for hermes-agent (pyproject.toml): finished with status 'done'
+  Created wheel for hermes-agent: filename=hermes_agent-0.20.4-0.editable-py3-none-any.whl size=12839 sha256=f4780953d0afe5fae2d0be06e7967cf36da1f0d50ad17106c61d3a7c142b2131
+  Stored in directory: /tmp/pip-ephem-wheel-cache-0pz1rs4u/wheels/3c/ae/d0/7b1ec54211a88b06b1cbaa551e9d7d179b617cfbb4ac92f2ba
+Successfully built hermes-agent
+Installing collected packages: pytz, ptyprocess, websockets, wcwidth, uvloop, urllib3, typing-extensions, tqdm, termcolor, tenacity, socksio, sniffio, six, ruamel.yaml.clib, pyyaml, python-multipart, python-dotenv, PyJWT, pygments, pycparser, psutil, Pillow, pathspec, packaging, nemo-relay, mdurl, MarkupSafe, Markdown, jiter, idna, httptools, h11, distro, click, charset_normalizer, certifi, annotated-types, annotated-doc, uvicorn, typing-inspection, ruamel.yaml, requests, python-dateutil, pydantic-core, prompt_toolkit, markdown-it-py, jinja2, httpcore, fire, cffi, anyio, watchfiles, starlette, rich, pydantic, httpx, cryptography, croniter, openai, fastapi, hermes-agent
+
+Successfully installed Markdown-3.10.2 MarkupSafe-3.0.3 Pillow-12.3.0 PyJWT-2.13.0 annotated-doc-0.0.5 annotated-types-0.8.0 anyio-4.14.2 certifi-2026.5.20 cffi-2.1.1 charset_normalizer-3.5.1 click-8.5.0 croniter-6.0.0 cryptography-50.0.0 distro-1.9.0 fastapi-0.141.1 fire-0.7.1 h11-0.16.0 hermes-agent-0.20.4 httpcore-1.0.9 httptools-0.8.0 httpx-0.28.1 idna-3.19 jinja2-3.1.6 jiter-0.16.0 markdown-it-py-4.2.0 mdurl-0.1.2 nemo-relay-0.7.3 openai-2.24.0 packaging-26.0 pathspec-1.1.1 prompt_toolkit-3.0.52 psutil-7.2.2 ptyprocess-0.7.0 pycparser-3.0 pydantic-2.13.4 pydantic-core-2.46.4 pygments-2.21.0 python-dateutil-2.9.0.post0 python-dotenv-1.2.2 python-multipart-0.0.32 pytz-2026.3.post1 pyyaml-6.0.3 requests-2.33.0 rich-14.3.3 ruamel.yaml-0.18.17 ruamel.yaml.clib-0.2.15 six-1.17.0 sniffio-1.3.1 socksio-1.0.0 starlette-1.6.0 tenacity-9.1.4 termcolor-3.3.0 tqdm-4.70.0 typing-extensions-4.16.0 typing-inspection-0.4.4 urllib3-2.7.0 uvicorn-0.52.4 uvloop-0.22.1 watchfiles-1.2.0 wcwidth-0.8.3 websockets-15.0.1
+Collecting numpy<3,>=1.26
+  Downloading numpy-2.5.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (6.6 kB)
+Downloading numpy-2.5.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (16.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.7/16.7 MB 61.0 MB/s  0:00:00
+Installing collected packages: numpy
+Successfully installed numpy-2.5.2
+hermes-agent distribution: 0.20.4

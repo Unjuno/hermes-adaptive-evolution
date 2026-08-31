@@ -1,0 +1,20 @@
+{
+  "authority": "offline_contract_only",
+  "created_at": "2026-08-31T09:44:29.685319+00:00",
+  "critical_gate_passed": true,
+  "hermes_contract_sha": "b5455fdd16fe608214f91149233660e1836b067c",
+  "note": "This is an offline real-Hermes contract experiment, not the provider-backed E1 gate.",
+  "outcomes": {
+    "corruption": "success",
+    "delegate_contract": "success",
+    "hook_coverage": "success",
+    "install_hermes": "success",
+    "install_plugin": "success",
+    "overhead": "success",
+    "pip_contract": "success",
+    "plugin_doctor": "success"
+  },
+  "run_id": "33379108259",
+  "schema": "adaptive-evolution.offline-m1-result.v0.1",
+  "source_sha": "622a5599a0737e438bcd6813aeeb30fbd1f9df52"
+}

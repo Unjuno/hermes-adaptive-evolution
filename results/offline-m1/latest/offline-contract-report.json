@@ -1,0 +1,96 @@
+{
+  "captured_hooks": [
+    "on_session_start",
+    "subagent_start",
+    "subagent_stop",
+    "post_tool_call",
+    "post_tool_call",
+    "api_request_error",
+    "on_skill_lifecycle",
+    "kanban_task_claimed",
+    "kanban_task_completed",
+    "on_session_end"
+  ],
+  "event_diagnostics": {
+    "duplicates_removed": 0,
+    "known_child_sessions": 1,
+    "known_root_sessions": 1,
+    "raw_count": 10,
+    "unattributed_observer_events": 0,
+    "uncertain_session_events": 0,
+    "unique_count": 10
+  },
+  "loaded_plugin_key": "adaptive-evolution",
+  "organization_state": {
+    "agents": 3,
+    "authority": "diagnostic_only",
+    "completed_flow_connectivity": 1.0,
+    "completed_flow_connectivity_method": "unnormalized_algebraic_lambda2_over_n_binary_completed_relations",
+    "completed_interaction_events": 1,
+    "directed_diffusivity": 0.0,
+    "directed_diffusivity_authority": "deprecated_diagnostic_only",
+    "directed_traffic_breadth": 1.0,
+    "experimental": true,
+    "fragility": {
+      "root:parent-session": 0.5,
+      "subagent:sa-0-99fe8524": 0.6,
+      "worker:worker-1": 0.5
+    },
+    "interaction_completion_coverage": 1.0,
+    "interaction_events": 1,
+    "interaction_sources": 1,
+    "mean_role_entropy": 0.9247991567825665,
+    "note": "Topology is intentionally vector-valued: directed traffic breadth measures local fan-out, while completed-flow connectivity measures global bottlenecks. v0.4 uses monotone unnormalized algebraic connectivity on binary completed relations so additional completed-edge evidence cannot worsen the connectivity value for a fixed node set. Completion coverage remains support metadata, not confidence. The legacy start-only directed_diffusivity is retained only for backward-compatible diagnostics. No synthetic event-count threshold authorizes routing; calibrate gates on real Hermes tasks.",
+    "role_conditioned_traffic_coverage": 0.0,
+    "role_confidence": {
+      "root:parent-session": 0.0,
+      "subagent:sa-0-99fe8524": 0.22560252965230065,
+      "worker:worker-1": 0.0
+    },
+    "role_evidence": {
+      "root:parent-session": 0.0,
+      "subagent:sa-0-99fe8524": 2.0,
+      "worker:worker-1": 0.0
+    },
+    "role_posteriors": {
+      "root:parent-session": {
+        "coordination": 0.25,
+        "implementation": 0.25,
+        "research": 0.25,
+        "verification": 0.25
+      },
+      "subagent:sa-0-99fe8524": {
+        "coordination": 0.125,
+        "implementation": 0.625,
+        "research": 0.125,
+        "verification": 0.125
+      },
+      "worker:worker-1": {
+        "coordination": 0.25,
+        "implementation": 0.25,
+        "research": 0.25,
+        "verification": 0.25
+      }
+    },
+    "schema": "adaptive-evolution.organization-state.v0.4",
+    "support": {
+      "agents_with_outcome_evidence": 1,
+      "agents_with_outgoing_interactions": 1,
+      "agents_with_tool_role_evidence": 1,
+      "completed_interaction_count": 1,
+      "interaction_completion_coverage": 1.0,
+      "interaction_count": 1,
+      "role_conditioned_interaction_weight": 0.0
+    },
+    "tool_outcomes": 3,
+    "traffic_weighted_role_mixing": null
+  },
+  "recognized_tool_success_statuses": [
+    "ok",
+    "success"
+  ],
+  "result": "compatible",
+  "terminal_failure_status": "error",
+  "terminal_failure_type": "tool_error",
+  "terminal_recovery_status": "ok"
+}
