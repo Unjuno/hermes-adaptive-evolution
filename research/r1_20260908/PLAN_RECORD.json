@@ -1,0 +1,31 @@
+{
+  "schema": "hermes.r1-plan-record.v1",
+  "date": "2026-09-08",
+  "timestamp_scope": "Plans were saved and hashed locally before their respective runs. This GitHub commit was made after execution and is NOT external preregistration.",
+  "initial": {
+    "seed": 2026090801,
+    "alpha": 0.05,
+    "bets": [0, 0.02, 0.05, 0.1, 0.2, 0.4, 0.8],
+    "gaussian": {"reps": 10000, "half_n": 350, "means": [-0.04, 0, 0.02, 0.04, 0.08, 0.15, 0.30]},
+    "learned": {"reps": 160, "fit_probes": 800, "gate_probes": 700, "final_eval": 20000, "amps": [0, 0.002, 0.006, 0.012, 0.04]},
+    "bounded": {"reps": 3000, "tasks": 1000, "means": [0, 0.01, 0.03, 0.06, 0.12]},
+    "replay_attack": {"reps": 3000, "tasks": 200, "repeats": 8},
+    "local_plan_sha256": "699825af8b2a7bf351d510cd4fb31154ce1b1e05bde7d5f0c2b54c3cde8b35b3",
+    "runner_sha256": "46544dd2baccf3d2b2ebd58f53af65a25b94f161bfb58128e2c7ac4e6695f514"
+  },
+  "followup": {
+    "reason": "Match false-promotion risk as well as evidence count; test family-level multiplicity after inspecting the initial weak-signal result.",
+    "seed": 2026090817,
+    "matched_risk_reps": 10000,
+    "matched_risk_n": 700,
+    "nominal_alpha": 0.0025,
+    "means": [0, 0.02, 0.04, 0.08, 0.15],
+    "family_reps": 2000,
+    "family_size": 20,
+    "units_per_candidate": 200,
+    "family_alpha": 0.05
+  },
+  "stopping": "Fixed simulation counts; no threshold changes to obtain PASS. Individual evidence processes are evaluated at first crossing or maximum evidence horizon.",
+  "truth_boundary": "Fitted policies and gate do not read evaluation truth. Learned zero nonlinear amplitude is not assumed to be the null of policy value.",
+  "execution_authorized": false
+}
