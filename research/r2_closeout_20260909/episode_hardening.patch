@@ -1,0 +1,125 @@
+--- a/adaptive_evolution_observer/episode_protocol.py
++++ b/adaptive_evolution_observer/episode_protocol.py
+@@ -9,6 +9,7 @@
+ from __future__ import annotations
+ 
+ import math
++import copy
+ from typing import Any, Iterable
+ 
+ from .evidence_gate import EvidenceFamily, RECORD_SCHEMA, digest, exact_keys, sha
+@@ -26,6 +27,8 @@
+ REPORT_SCHEMA = "adaptive-evolution.episode-protocol-report.v0.1"
+ MEASUREMENT = "stateful_episode_fixed_sequence_mean_v1"
+ 
++IMPLEMENTATION_REVISION = "0.2.0"
++MAX_REGISTERED_TASKS = 100_000
+ MAX_EPISODES = 10_000
+ MAX_TASKS_PER_EPISODE = 10_000
+ EVALUATION_MODES = {"matched_cold_start", "policy_owned_endowment"}
+@@ -55,8 +58,8 @@
+             raise ShadowContractError("unsupported episode measurement contract")
+ 
+         self.protocol_id = identifier(plan["protocol_id"], "protocol_id")
+-        self.evaluation_mode = str(plan["evaluation_mode"])
+-        self.endowment_cost_mode = str(plan["endowment_cost_mode"])
++        self.evaluation_mode = identifier(plan["evaluation_mode"], "evaluation_mode")
++        self.endowment_cost_mode = identifier(plan["endowment_cost_mode"], "endowment_cost_mode")
+         if self.evaluation_mode not in EVALUATION_MODES:
+             raise ShadowContractError("unsupported evaluation_mode")
+         if self.endowment_cost_mode not in ENDOWMENT_COST_MODES:
+@@ -70,6 +73,7 @@
+         self.high = high
+ 
+         family = EvidenceFamily(plan["family_plan"])
++        identifier(plan["trial_id"], "trial_id")
+         if plan["trial_id"] not in family.trials:
+             raise ShadowContractError("trial absent from frozen family")
+         trial = family.trials[plan["trial_id"]]
+@@ -148,6 +152,8 @@
+                 if tid in seen_task_ids:
+                     raise ShadowContractError("task IDs must be globally unique within the protocol")
+                 seen_task_ids.add(tid)
++                if len(seen_task_ids) > MAX_REGISTERED_TASKS:
++                    raise ShadowContractError("total registered tasks exceed the local replay limit")
+                 tasks.append(tid)
+             episodes.append(
+                 {
+@@ -168,6 +174,11 @@
+         self.events: dict[str, dict[int, dict[str, Any]]] = {
+             e["episode_id"]: {} for e in episodes
+         }
++        # Receipt continuity is distinct from scored, in-time evidence.
++        # Late tasks extend the receipt chain, but never change closed evidence.
++        self.received_tasks: dict[str, dict[int, dict[str, Any]]] = {
++            e["episode_id"]: {} for e in episodes
++        }
+         self.receipts: dict[tuple[str, int], str] = {}
+         self.closed: dict[str, dict[str, Any]] = {}
+         self.effects: list[dict[str, Any]] = []
+@@ -177,7 +188,7 @@
+     def _expected_before_hash(self, episode_id: str, task_index: int, arm: str) -> str:
+         if task_index == 0:
+             return self.state_contract[f"{arm}_initial_state_hash"]
+-        prev = self.events[episode_id].get(task_index - 1)
++        prev = self.received_tasks[episode_id].get(task_index - 1)
+         if prev is None:
+             raise ShadowContractError(
+                 "stateful task results must arrive in declared sequence order"
+@@ -260,6 +271,28 @@
+         self._flush()
+ 
+     def observe(self, event: dict[str, Any]) -> bool:
++        """Stage one event and publish only after all validations/updates succeed.
++
++        This bounded offline replay engine is single-writer, not a concurrent
++        transaction server. Dictionary copies keep rejected inputs and numerical
++        or downstream failures from leaving partially consumed evidence.
++        """
++        staged = copy.copy(self)
++        staged.events = self.events.copy()
++        staged.received_tasks = self.received_tasks.copy()
++        eid = event.get("independent_episode_id") if isinstance(event, dict) else None
++        if isinstance(eid, str) and eid in self.by_id:
++            staged.events[eid] = self.events[eid].copy()
++            staged.received_tasks[eid] = self.received_tasks[eid].copy()
++        staged.receipts = self.receipts.copy()
++        staged.closed = self.closed.copy()
++        staged.effects = self.effects.copy()
++        staged.family = copy.deepcopy(self.family)
++        result = staged._observe_staged(event)
++        self.__dict__.update(staged.__dict__)
++        return result
++
++    def _observe_staged(self, event: dict[str, Any]) -> bool:
+         if not isinstance(event, dict):
+             raise ShadowContractError("event must be an object")
+         kind = event.get("kind")
+@@ -337,8 +370,11 @@
+ 
+         if ts < self.clock:
+             raise ShadowContractError("event clock regressed")
++        if ti != len(self.received_tasks[eid]):
++            raise ShadowContractError("state receipt tasks must be contiguous")
+         self._advance(ts)
+         self.receipts[receipt_key] = h
++        self.received_tasks[eid][ti] = normalized
+         if ts >= spec["deadline_ns"]:
+             self.late_results += 1
+             return True
+@@ -359,12 +395,14 @@
+         used = {v["independent_episode_id"] for v in self.effects}
+         return {
+             "schema": REPORT_SCHEMA,
++            "implementation_revision": IMPLEMENTATION_REVISION,
++            "estimand": "equal_weight_fixed_sequence_episode_mean",
+             "protocol_id": self.protocol_id,
+             "protocol_hash": self.protocol_hash,
+             "measurement_rule": MEASUREMENT,
+             "evaluation_mode": self.evaluation_mode,
+             "endowment_cost_mode": self.endowment_cost_mode,
+-            "state_contract": self.state_contract,
++            "state_contract": copy.deepcopy(self.state_contract),
+             "registered_episodes": len(self.episodes),
+             "consumed_episodes": len(self.effects),
+             "nominal_registered_tasks": sum(len(e["task_sequence"]) for e in self.episodes),
