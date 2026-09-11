@@ -1,0 +1,28 @@
+{
+  "schema": "hermes.r5-maturity-delta.v0.1",
+  "manifest_id": "research-to-plugin-20260912-r5-local",
+  "source_hash": "93f1eb08a1d075c56335ad1735ce72d40281dc4e964a16d5e03a842e49a260f8",
+  "components_total": 16,
+  "execution_components": [],
+  "added_components": [
+    {
+      "component_id": "hardened-reviewed-worker-jail",
+      "implementation_status": "tested_shadow",
+      "value_status": "synthetic_only",
+      "authority_status": "none",
+      "dependencies": ["forced-mediation-reviewed-worker"],
+      "blockers": ["real-Hermes-worker-image", "real-provider-authentication", "kernel-isolation-review"],
+      "evidence_hashes": ["8c39ffeb4a8f650fe88b8a809dca5b8ba9a461a93b15a4fa45a3fd89e278746f", "5f32e46d82414cc5b6b05cf73deb4b3a326f5f3fb9b9415d68124f82d1bbc360", "63fc6db7e3da483e60d9ea692e3ac0624595048cd0e777c5540870e58bc7715b"]
+    },
+    {
+      "component_id": "release-readiness-gate",
+      "implementation_status": "tested_shadow",
+      "value_status": "synthetic_only",
+      "authority_status": "none",
+      "dependencies": ["hardened-reviewed-worker-jail", "reviewed-reversible-canary"],
+      "blockers": ["independent-release-review", "real-release-evidence"],
+      "evidence_hashes": ["bde1f219efc22aeb8c4c3126015b2601c9dd9710d67efd2c3b6ff8a3ad8ffbde"]
+    }
+  ],
+  "audit_passed": true
+}
