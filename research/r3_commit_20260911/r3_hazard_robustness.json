@@ -1,0 +1,25 @@
+{
+  "schema": "hermes.r3-hazard-robustness.v0.1",
+  "seed": 2026091104,
+  "mu": 1.0,
+  "switch_cost": 0.25,
+  "hazards": [0.01,0.02,0.05,0.1,0.15,0.25],
+  "loss_by_true_hazard": {
+    "0.01": {"fixed2":32.0664,"cusum":13.50545,"hmm_assumed_0.01":12.72835,"hmm_assumed_0.02":13.33655,"hmm_assumed_0.05":15.5717,"hmm_assumed_0.1":18.83675,"hmm_assumed_0.15":23.90005,"hmm_assumed_0.25":30.27085},
+    "0.02": {"fixed2":34.3375,"cusum":17.86255,"hmm_assumed_0.01":17.6913,"hmm_assumed_0.02":18.1993,"hmm_assumed_0.05":20.1319,"hmm_assumed_0.1":23.32045,"hmm_assumed_0.15":27.79185,"hmm_assumed_0.25":32.898},
+    "0.05": {"fixed2":37.206,"cusum":26.81375,"hmm_assumed_0.01":27.2032,"hmm_assumed_0.02":27.4383,"hmm_assumed_0.05":28.64865,"hmm_assumed_0.1":30.61115,"hmm_assumed_0.15":33.8164,"hmm_assumed_0.25":36.85325},
+    "0.1": {"fixed2":38.54725,"cusum":33.09315,"hmm_assumed_0.01":33.36045,"hmm_assumed_0.02":33.45305,"hmm_assumed_0.05":34.1784,"hmm_assumed_0.1":35.1885,"hmm_assumed_0.15":36.90945,"hmm_assumed_0.25":38.3653},
+    "0.15": {"fixed2":39.0905,"cusum":35.8544,"hmm_assumed_0.01":36.0524,"hmm_assumed_0.02":36.0267,"hmm_assumed_0.05":36.35635,"hmm_assumed_0.1":36.9831,"hmm_assumed_0.15":38.0117,"hmm_assumed_0.25":38.9063},
+    "0.25": {"fixed2":39.477,"cusum":38.109,"hmm_assumed_0.01":38.1183,"hmm_assumed_0.02":38.12605,"hmm_assumed_0.05":38.3957,"hmm_assumed_0.1":38.68765,"hmm_assumed_0.15":39.12865,"hmm_assumed_0.25":39.50745}
+  },
+  "robustness": {
+    "fixed2": {"mean_loss":36.78744166666667,"worst_loss":39.477,"mean_regret_to_best":9.405783333333333,"worst_regret_to_best":19.33805},
+    "cusum": {"mean_loss":27.539716666666667,"worst_loss":38.109,"mean_regret_to_best":0.15805833333333327,"worst_regret_to_best":0.777099999999999},
+    "hmm_assumed_0.01": {"mean_loss":27.525666666666666,"worst_loss":38.1183,"mean_regret_to_best":0.14400833333333254,"worst_regret_to_best":0.3894500000000001},
+    "hmm_assumed_0.02": {"mean_loss":27.763325,"worst_loss":38.12605,"mean_regret_to_best":0.38166666666666654,"worst_regret_to_best":0.6245500000000028}
+  },
+  "rank_mean_regret": ["hmm_assumed_0.01","cusum","hmm_assumed_0.02","hmm_assumed_0.05","hmm_assumed_0.1","hmm_assumed_0.15","fixed2","hmm_assumed_0.25"],
+  "authority": "offline_research_only",
+  "execution_authorized": false,
+  "note": "Compact research-branch record. Full calibration and holdout artifacts are in the conversation package; low assumed hazard is not promoted to a production constant."
+}
