@@ -1,0 +1,29 @@
+{
+  "schema": "hermes.r4-local-closeout.v0.1",
+  "date": "2026-09-11",
+  "tests": {"nonoverlapping_passed": 627, "groups": [271,117,239], "skips_claimed": 0},
+  "studies": {
+    "forced_mediation": true,
+    "fd_inheritance_bypass": true,
+    "safe_launcher": true,
+    "filesystem_uds_bypass_reproduced": true,
+    "chroot_mediation": true,
+    "canary_crash_recovery": true,
+    "canary_concurrency": true,
+    "state_vs_effect_rollback_counterexample": true
+  },
+  "maturity": {"components":14,"audit_passed":true,"execution_components":[]},
+  "roadmap": {
+    "r0":"CURRENT_SUBSET_PASS_HISTORICAL_OPEN",
+    "r1":"BLOCKED_EXTERNAL_REAL_MODEL_AND_SPEND_CAP",
+    "r2":"LOCAL_TESTED",
+    "r3":"SYNTHETIC_LOCAL_CLOSED_REAL_OPEN",
+    "r4_local":"CLOSED_FIXTURE",
+    "r4_real":"OPEN",
+    "r5":"OPEN"
+  },
+  "fresh_application": {"files_changed_first_apply":21,"files_changed_second_apply":0,"portable_reproducer_passed":true,"tests_passed_nonoverlapping":627,"unknown_edit_refused_and_preserved":true},
+  "local_model_cache_found": false,
+  "execution_authorized": false,
+  "real_model_run": false
+}
