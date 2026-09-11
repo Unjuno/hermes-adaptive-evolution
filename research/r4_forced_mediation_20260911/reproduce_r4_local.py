@@ -41,10 +41,12 @@ def main():
   for _ in range(200):
    if sp.exists():break
    time.sleep(.01)
+  # Dangerous inheritable resources exist in parent; fixed launcher must close them.
   target=root/'operator.txt';target.write_text('SAFE');os.chmod(target,0o600);ffd=os.open(target,os.O_RDWR);os.set_inheritable(ffd,True)
   tcp=socket.socket();tcp.connect(('127.0.0.1',srv.server_port));os.set_inheritable(tcp.fileno(),True)
   isolated=run_isolated_request(mc,sp,req,authorized=True,timeout_s=4)
   os.close(ffd);tcp.close();bt.join(timeout=7)
+  # Crash recovery of a local-state-only canary.
   cr=root/'canary';cr.mkdir(mode=0o700);(cr/'state.json').write_text('{"template":"solo"}\n');os.chmod(cr/'state.json',0o600)
   ct='e'*64;cp={'schema':CPLAN,'canary_id':'c','from_state':{'template':'solo'},'to_state':{'template':'one_leaf'},'effect_class':'local_state_only_no_external_effects','expires_at_ns':time.time_ns()+10**9,'approval_sha256':approval_hash(ct)}
   planfile=root/'cp.json';planfile.write_text(json.dumps(cp))
