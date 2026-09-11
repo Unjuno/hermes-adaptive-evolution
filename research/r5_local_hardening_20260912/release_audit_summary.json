@@ -1,0 +1,47 @@
+{
+  "schema": "hermes.r5-release-audit-summary.v0.1",
+  "release_id": "hermes-adaptive-evolution-v1-candidate",
+  "manifest_hash": "775aabbe286afbbd0d17a8ff21952e5976e836e0ce4abdc28669f77a0c5443cb",
+  "decision": "BLOCKED",
+  "passed": false,
+  "evidence_records": 5,
+  "blockers": [
+    "provider-bridge: value evidence below real_shadow",
+    "provider-bridge: unresolved blockers: authorized-real-model,real-usage-receipts",
+    "provider-bridge: missing evidence kinds: real_runtime_identity,real_shadow_value,real_usage_cost",
+    "campaign-budget: value evidence below real_shadow",
+    "campaign-budget: unresolved blockers: external-spend-cap,forced-mediation",
+    "campaign-budget: missing evidence kinds: real_usage_cost",
+    "request-broker: value evidence below real_shadow",
+    "request-broker: unresolved blockers: OS-network-enforcement,real-provider-authentication",
+    "request-broker: missing evidence kinds: real_runtime_identity",
+    "hardened-reviewed-worker-jail: value evidence below real_shadow",
+    "hardened-reviewed-worker-jail: unresolved blockers: real-Hermes-worker-image,real-provider-authentication,kernel-isolation-review",
+    "hardened-reviewed-worker-jail: missing evidence kinds: real_runtime_identity",
+    "finite-template-router: value evidence below real_shadow",
+    "finite-template-router: unresolved blockers: real-paired-task-value",
+    "finite-template-router: missing evidence kinds: real_shadow_value,unseen_task_holdout",
+    "commit-cusum: value evidence below real_shadow",
+    "commit-cusum: unresolved blockers: real-task-calibration,measured-evidence-cost",
+    "commit-cusum: missing evidence kinds: real_shadow_value,real_usage_cost",
+    "reviewed-reversible-canary: value evidence below real_canary",
+    "reviewed-reversible-canary: unresolved blockers: real-shadow-value,real-Hermes-canary-target,independent-operator-approval,semantic-effect-reversibility",
+    "reviewed-reversible-canary: missing evidence kinds: real_canary,unseen_task_holdout"
+  ],
+  "maturity": {
+    "components": 16,
+    "passed": true,
+    "execution_components": [],
+    "shadow_components": [
+      "shadow-ledger",
+      "task-protocol",
+      "episode-protocol",
+      "provider-bridge",
+      "campaign-budget",
+      "request-broker",
+      "finite-template-router",
+      "commit-cusum"
+    ]
+  },
+  "execution_authorized": false
+}
