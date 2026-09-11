@@ -1,0 +1,39 @@
+{
+  "schema": "hermes.r5-local-readiness-status.v0.1",
+  "date": "2026-09-12",
+  "baseline_r4_tests": 627,
+  "final_tests": 639,
+  "test_groups": [231, 204, 204],
+  "new_findings": {
+    "pre_hardening_host_file_write": true,
+    "pre_hardening_same_uid_signal": true,
+    "pre_hardening_parent_proc_metadata_read": true,
+    "pre_hardening_unbounded_as_cpu_fsize": true,
+    "hardened_boundary_pass": true,
+    "resource_limit_enforcement_pass": true,
+    "runtime_content_drift_initially_undetected": true,
+    "runtime_content_drift_after_fix_rejected": true,
+    "maturity_label_tamper_naive_pass": true,
+    "strict_release_gate_tamper_blocked": true
+  },
+  "maturity_components": 16,
+  "execution_components": [],
+  "release_decision": "BLOCKED",
+  "release_blocker_count": 21,
+  "real_model_evaluation_completed": false,
+  "production_authority": false,
+  "notes": ["local reviewed mechanism only", "no paid/model job", "no operational merge", "no background job"],
+  "fresh_apply": {
+    "initial_changed_files": 4,
+    "repeat_changed_files": 0,
+    "unknown_edit_refused": true,
+    "applied_test_groups": [231, 204, 204],
+    "applied_total_passed": 639
+  },
+  "single_full_suite": {
+    "completed": false,
+    "reason": "tool execution time limit",
+    "partial_progress_observed": "67% before interruption",
+    "claimed_passed": false
+  }
+}
