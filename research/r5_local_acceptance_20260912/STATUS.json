@@ -1,0 +1,27 @@
+{
+  "schema": "hermes.r5-local-status.v1",
+  "date": "2026-09-12",
+  "bac_1_42_indexed": true,
+  "historical_corpus_index_sha256": "a446919c0abd915c5ab637348c40184b2e6cbd5c7cf30bbf6222669e4ddb47dd",
+  "maturity_manifest_sha256": "2aa2d6d4e45db715e7347009854306f9593e0462962d1ceca6468603b31e91ad",
+  "maturity_audit_sha256": "b6dd9a9c78ee007b094c1e1b29bd4d25920b24b4a911967aedb913d81b451c65",
+  "maturity_components": 15,
+  "execution_components": 0,
+  "regression_tests_passed": 642,
+  "regression_failures": 0,
+  "regression_errors": 0,
+  "regression_skips": 0,
+  "process_boundary_study_sha256": "9bffcfcd8b41c72939be6e6e408156e262af808729acdffaf20937d42e4d5c38",
+  "canary_before_fix_sha256": "28fa8ada5f18763dec1a59668718ddaf7b23d9c7d33b0b90e4ebe25ba49e06fd",
+  "canary_after_fix_sha256": "f45b9e6975381a6c31775efe17d130074dd9f1736ed1df30f1bfeb88a36d524f",
+  "rollback_roundtrip_sha256": "9c6ff76ab00b1326d04da1f51be2cf3204b513037b4248804a8ecdc7647f4170",
+  "real_model_evaluated": false,
+  "production_authorized": false,
+  "open_external_gates": [
+    "real-model-paired-value",
+    "real-task-calibration",
+    "real-Hermes-worker-image",
+    "provider-authentication",
+    "production-release-validation"
+  ]
+}
