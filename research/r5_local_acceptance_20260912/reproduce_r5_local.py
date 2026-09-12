@@ -17,6 +17,7 @@ def main():
     from adaptive_evolution_observer.shadow_io import ShadowContractError
     from adaptive_evolution_observer.forced_mediation import HARDENED_LIMITS
     if os.geteuid()!=0:raise RuntimeError('reviewed namespace reproducer requires root')
+    # Finite resource/proc boundary probe.
     probe="""import ctypes,json,os,resource,subprocess\nout={}\nout['proc_count']=len(os.listdir('/proc'))\nout['nnp']=int(ctypes.CDLL(None).prctl(39,0,0,0,0))\nout['nproc']=list(resource.getrlimit(resource.RLIMIT_NPROC))\ncs=[]\nfor i in range(24):\n try:cs.append(subprocess.Popen(['/bin/sleep','0.08']))\n except OSError:break\nout['spawned']=len(cs)\nfor p in cs:p.wait()\nprint(json.dumps(out))"""
     lim=HARDENED_LIMITS
     shell='mount --make-rprivate /; mount -t tmpfs tmpfs /proc; exec "$@"'
@@ -26,6 +27,7 @@ def main():
          f'--fsize={lim["fsize_bytes"]}:{lim["fsize_bytes"]}','--','unshare','--user','--map-root-user','--mount','--net','--pid','--fork','--','/bin/sh','-c',shell,'sh',sys.executable,'-I','-S','-B','-c',probe]
     p=subprocess.run(cmd,capture_output=True,text=True,timeout=10,env={'PATH':'/usr/sbin:/usr/bin:/sbin:/bin'},close_fds=True)
     boundary=json.loads(p.stdout) if p.returncode==0 else {'rc':p.returncode,'stderr':p.stderr}
+    # Canary concurrent-state preservation check without arbitrary execution.
     TOK='a'*64
     with tempfile.TemporaryDirectory() as td:
         root=Path(td)/'r';root.mkdir(mode=0o700);(root/'state.json').write_text('{"template":"two_leaf"}\n')
