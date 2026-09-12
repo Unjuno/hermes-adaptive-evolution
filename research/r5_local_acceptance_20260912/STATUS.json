@@ -3,11 +3,11 @@
   "date": "2026-09-12",
   "bac_1_42_indexed": true,
   "historical_corpus_index_sha256": "a446919c0abd915c5ab637348c40184b2e6cbd5c7cf30bbf6222669e4ddb47dd",
-  "maturity_manifest_sha256": "2aa2d6d4e45db715e7347009854306f9593e0462962d1ceca6468603b31e91ad",
+  "maturity_manifest_sha256": "dd3f28202e5e6b755480c824cedf76f92bf449ed23e0ca5a757fa0b1b07b5a33",
   "maturity_audit_sha256": "b6dd9a9c78ee007b094c1e1b29bd4d25920b24b4a911967aedb913d81b451c65",
   "maturity_components": 15,
   "execution_components": 0,
-  "regression_tests_passed": 642,
+  "regression_tests_passed": 644,
   "regression_failures": 0,
   "regression_errors": 0,
   "regression_skips": 0,
@@ -23,5 +23,9 @@
     "real-Hermes-worker-image",
     "provider-authentication",
     "production-release-validation"
-  ]
+  ],
+  "shadow_release_candidate_eligible": true,
+  "canary_release_candidate_eligible": false,
+  "production_release_candidate_eligible": false,
+  "shadow_release_audit_sha256": "d1d35f2635214401b6635cffacf370de34e184449a13818db437473db0cef5fc"
 }
