@@ -14,7 +14,7 @@
   "process_boundary_study_sha256": "9bffcfcd8b41c72939be6e6e408156e262af808729acdffaf20937d42e4d5c38",
   "canary_before_fix_sha256": "28fa8ada5f18763dec1a59668718ddaf7b23d9c7d33b0b90e4ebe25ba49e06fd",
   "canary_after_fix_sha256": "f45b9e6975381a6c31775efe17d130074dd9f1736ed1df30f1bfeb88a36d524f",
-  "rollback_roundtrip_sha256": "9c6ff76ab00b1326d04da1f51be2cf3204b513037b4248804a8ecdc7647f4170",
+  "rollback_roundtrip_sha256": "4fd5ca941d1906c12072eaff47e18cc04f21d4e6e589ef6a4892e20f443bbcae",
   "real_model_evaluated": false,
   "production_authorized": false,
   "open_external_gates": [
@@ -27,5 +27,6 @@
   "shadow_release_candidate_eligible": true,
   "canary_release_candidate_eligible": false,
   "production_release_candidate_eligible": false,
-  "shadow_release_audit_sha256": "d1d35f2635214401b6635cffacf370de34e184449a13818db437473db0cef5fc"
+  "shadow_release_audit_sha256": "3b7d9187b37060cbd2ec596a4dbd11ffd04fe8322b2f5b1528f4af46cd6b8628",
+  "release_source_commit": "296caa3f10cb44f654a1b464be54993d7bc7de3e"
 }
