@@ -1,0 +1,46 @@
+{
+  "schema": "hermes.r0-r5-roadmap-closeout.v1",
+  "date": "2026-09-12",
+  "state": "LOCAL_FRONTIER_COMPLETE_EXTERNAL_GATES_REMAIN",
+  "gates": {
+    "R0": {
+      "local_state": "PASS",
+      "evidence": "BAC-1 through BAC-42 and current local evidence corpus indexed by explicit headings and SHA-256",
+      "remaining": "operational-branch adoption is a release/merge action, not a research-evidence gap"
+    },
+    "R1": {
+      "local_state": "BLOCKED_EXTERNAL",
+      "evidence": "historical live-model evidence audited but does not satisfy current paired-value acceptance requirements",
+      "remaining": "authorized fixed real model plus real usage/cost receipts"
+    },
+    "R2": {
+      "local_state": "PASS_LOCAL_SHADOW",
+      "evidence": "observer/evidence/task/episode/provider/campaign/broker paths covered by local regression and replay",
+      "remaining": "Hermes-specific live producer validation depends on R1/runtime availability"
+    },
+    "R3": {
+      "local_state": "PASS_SYNTHETIC_SHADOW",
+      "evidence": "fixed/CUSUM/hazard commit comparisons plus shadow commit implementation",
+      "remaining": "real-task calibration and measured evidence cost depend on R1"
+    },
+    "R4": {
+      "local_state": "PASS_REVIEWED_FIXTURE_ONLY",
+      "evidence": "UID/namespaces/FD hygiene/PID/proc/resource limits and local-state-only canary crash recovery",
+      "remaining": "real Hermes worker image, integrated minimal-root filesystem containment, provider authentication, semantic side-effect compensation"
+    },
+    "R5": {
+      "local_state": "PASS_SHADOW_RELEASE_CANDIDATE",
+      "evidence": "644 clean tests, verified runtime rollback, passing maturity audit, shadow release eligible",
+      "remaining": "canary/production rejected until real-value and external gates pass"
+    }
+  },
+  "terminal_blockers": [
+    "real-model-paired-value",
+    "real-task-calibration",
+    "real-Hermes-worker-image",
+    "provider-authentication",
+    "production-release-validation"
+  ],
+  "no_further_local_synthetic_gate_is_allowed_to_substitute_for_these": true,
+  "execution_authorized": false
+}
