@@ -32,17 +32,17 @@ A machine-readable historical index now hashes the local BAC/runtime/prompt/evid
 
 A release validator was added. A shadow-only candidate requires a passing maturity audit, clean test suites with zero failures/errors/skips, a verified rollback artifact, frozen source/corpus hashes, and zero execution-authority components. Canary/production modes cannot be promoted by this validator; they require the maturity manifest to already contain corresponding real-value evidence and no open external gates.
 
-The local maturity manifest has 15 components and passes, with zero canary/production execution components. Therefore only a non-executing shadow release candidate can be locally accepted. Real-model value, real Hermes isolation, provider authentication and production release remain external/open gates.
+The local maturity manifest has 15 components and passes, with zero canary/production execution components. The actual local release audit accepted the non-executing shadow candidate and rejected both canary and production negative controls. Real-model value, real Hermes isolation, provider authentication and production release remain external/open gates.
 
 ## Validation
 
 Completed non-overlapping regression groups after the fixes:
 
-- core evidence/budget/broker/commit/R4/R5: 349 passed;
+- core evidence/budget/broker/commit/R4/R5: 351 passed;
 - environment/provider/producer: 176 passed;
 - shadow CLI/router/ledger: 117 passed.
 
-Total: 642 passed, zero failures/errors/skips in the completed groups.
+Total: 644 passed, zero failures/errors/skips in the completed groups.
 
 A runtime package apply/rollback roundtrip restored the exact pre-R5 runtime tree SHA-256. The portable local reproducer also passes with `/proc` masked, `no_new_privs=1`, process-cap enforcement and concurrent-canary-state preservation.
 
