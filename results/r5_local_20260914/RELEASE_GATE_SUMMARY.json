@@ -1,0 +1,25 @@
+{
+  "shadow_candidate": {
+    "release_id": "v0.3-shadow-rc-20260914",
+    "target_stage": "shadow_candidate",
+    "passed": true,
+    "tests": {"passed": 640, "failed": 0, "skipped": 0},
+    "maturity_components": 16,
+    "execution_components": [],
+    "execution_authorized": false,
+    "decision": "ACCEPT_RELEASE_METADATA"
+  },
+  "canary_negative_control": {
+    "release_id": "v0.4-canary-negative-control",
+    "target_stage": "canary_candidate",
+    "passed": false,
+    "errors": [
+      "no maturity component is approved for execution",
+      "missing execution evidence: hermes_runtime_validated",
+      "missing execution evidence: real_model_paired_value",
+      "missing execution evidence: real_usage_measured"
+    ],
+    "execution_authorized": false,
+    "decision": "REJECT_RELEASE"
+  }
+}
