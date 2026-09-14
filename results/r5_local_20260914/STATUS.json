@@ -1,0 +1,27 @@
+{
+  "schema": "hermes.r0-r5-local-closeout-status.v0.1",
+  "date": "2026-09-14",
+  "pytest": {
+    "passed": 640,
+    "failed": 0,
+    "groups": [350, 114, 104, 72]
+  },
+  "r0": {
+    "historical_bac_coverage": "PASS",
+    "documents": 28,
+    "missing": []
+  },
+  "r1": "BLOCKED_EXTERNAL_REAL_MODEL_AND_COST",
+  "r2": "LOCAL_TESTED",
+  "r3": "SYNTHETIC_LOCAL_CLOSED_REAL_OPEN",
+  "r4": {"local": "CLOSED_FIXTURE_V0_2", "real": "OPEN"},
+  "r5": {"local_shadow_release": "PASS", "canary": "BLOCKED_EXTERNAL", "stable": "BLOCKED_EXTERNAL"},
+  "shadow_release_gate_passed": true,
+  "canary_negative_control_passed": false,
+  "execution_components": [],
+  "execution_authorized": false,
+  "real_model_run": false,
+  "paid_job_started": false,
+  "historical_manifest_sha256": "4e6bcdff228eca8610a0d1d0ffc2f22dc23155dabe82a62d7100b4243dc076f7",
+  "shadow_release_candidate": "v0.3-shadow-rc-20260914"
+}
