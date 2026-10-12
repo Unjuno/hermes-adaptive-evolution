@@ -1,0 +1,5 @@
+Plugin Doctor: 
+/home/runner/work/hermes-adaptive-evolution/hermes-adaptive-evolution
+  manifest: adaptive-evolution 0.2.0 (standalone)
+  OK: runtime discovery, manifest parsing, import, and registration passed
+  registrations: 0 tool(s), 12 hook(s)
