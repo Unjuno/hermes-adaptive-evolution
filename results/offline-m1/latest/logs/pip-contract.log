@@ -1,0 +1,21 @@
+{
+  "entry_point": "adaptive_evolution_observer",
+  "hermes_agent_version": "0.20.4",
+  "invalid_hooks": [],
+  "observer_hooks": [
+    "on_session_start",
+    "on_session_end",
+    "on_session_finalize",
+    "on_session_reset",
+    "post_tool_call",
+    "api_request_error",
+    "on_skill_lifecycle",
+    "subagent_start",
+    "subagent_stop",
+    "kanban_task_claimed",
+    "kanban_task_completed",
+    "kanban_task_blocked"
+  ],
+  "plugin_distribution_version": "0.2.0",
+  "result": "compatible"
+}
