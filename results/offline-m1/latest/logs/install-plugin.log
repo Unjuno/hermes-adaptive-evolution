@@ -1,0 +1,69 @@
+Obtaining file:///home/runner/work/hermes-adaptive-evolution/hermes-adaptive-evolution
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: numpy<3,>=1.26 in /opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/site-packages (from hermes-adaptive-evolution==0.2.0) (2.5.5)
+Building wheels for collected packages: hermes-adaptive-evolution
+  Building editable for hermes-adaptive-evolution (pyproject.toml): started
+  Building editable for hermes-adaptive-evolution (pyproject.toml): finished with status 'done'
+  /tmp/pip-build-env-pocj32dr/overlay/lib/python3.13/site-packages/setuptools/command/build_py.py:215: BuildBackendWarning: Package 'adaptive_evolution_observer.compat' is absent from the `packages` configuration.
+  !!
+  
+          ********************************************************************************
+          ############################
+          # Package would be ignored #
+          ############################
+          Python recognizes 'adaptive_evolution_observer.compat' as an importable package[^1],
+          but it is absent from setuptools' `packages` configuration.
+  
+          This leads to an ambiguous overall configuration. If you want to distribute this
+          package, please make sure that 'adaptive_evolution_observer.compat' is explicitly added
+          to the `packages` configuration field.
+  
+          Alternatively, you can also rely on setuptools' discovery methods
+          (for example by using `find_namespace_packages(...)`/`find_namespace:`
+          instead of `find_packages(...)`/`find:`).
+  
+          You can read more about "package discovery" on setuptools documentation page:
+  
+          - https://setuptools.pypa.io/en/latest/userguide/package_discovery.html
+  
+          If you don't want 'adaptive_evolution_observer.compat' to be distributed and are
+          already explicitly excluding 'adaptive_evolution_observer.compat' via
+          `find_namespace_packages(...)/find_namespace` or `find_packages(...)/find`,
+          you can try to use `exclude_package_data`, or `include-package-data=False` in
+          combination with a more fine grained `package-data` configuration.
+  
+          You can read more about "package data files" on setuptools documentation page:
+  
+          - https://setuptools.pypa.io/en/latest/userguide/datafiles.html
+  
+  
+          [^1]: For Python, any directory (with suitable naming) can be imported,
+                even if it does not contain any `.py` files.
+                On the other hand, currently there is no concept of package data
+                directory, all directories are treated like packages.
+          ********************************************************************************
+  
+  !!
+    check.warn(importable)
+  /tmp/pip-build-env-pocj32dr/overlay/lib/python3.13/site-packages/setuptools/command/editable_wheel.py:354: BuildBackendWarning: Editable installation.
+  !!
+  
+          ********************************************************************************
+          Please be careful with folders in your working directory with the same
+          name as your package as they may take precedence during imports.
+          ********************************************************************************
+  
+  !!
+    with strategy, WheelFile(wheel_path, "w") as wheel_obj:
+  Created wheel for hermes-adaptive-evolution: filename=hermes_adaptive_evolution-0.2.0-0.editable-py3-none-any.whl size=10819 sha256=76966ab6b887f74adadd69d4d23aca67d71f96c5eec01996563b48e18dea1e3c
+  Stored in directory: /tmp/pip-ephem-wheel-cache-11mp_v42/wheels/5c/95/79/f1ab60d5124e874caea5ef89cf06c95c0b1c353e23bdf40f62
+Successfully built hermes-adaptive-evolution
+Installing collected packages: hermes-adaptive-evolution
+Successfully installed hermes-adaptive-evolution-0.2.0
